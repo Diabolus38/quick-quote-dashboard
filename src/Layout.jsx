@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const navRoutes = {
-  Overview: '/admin',
-  Clients:  '/admin/clients',
+  Overview:  '/admin',
+  Clients:   '/admin/clients',
+  Estimates: '/admin/estimates',
 };
 
 export default function Layout({ title, children }) {
