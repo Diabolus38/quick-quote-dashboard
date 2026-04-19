@@ -1,4 +1,7 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function LoginPage() {
+  const navigate = useNavigate();
   const styles = {
     page: {
       minHeight: '100vh',
@@ -102,7 +105,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <button type="button" style={styles.button}>Sign in</button>
+        <button type="button" style={styles.button} onClick={() => navigate('/admin')}>Sign in</button>
 
         <p style={styles.adminNote}>Admin access only</p>
       </div>
