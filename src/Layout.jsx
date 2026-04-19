@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const navRoutes = {
+  Overview: '/admin',
+  Clients:  '/admin/clients',
+};
 
 export default function Layout({ title, children }) {
   const navItems = ['Overview', 'Clients', 'Estimates', 'Billing', 'Settings'];
@@ -33,7 +39,7 @@ export default function Layout({ title, children }) {
         {/* Nav */}
         <nav style={{ padding: '12px 0', flex: 1 }}>
           {navItems.map((item) => (
-            <NavItem key={item} label={item} />
+            <NavItem key={item} label={item} route={navRoutes[item] ?? null} />
           ))}
         </nav>
       </aside>
@@ -99,13 +105,15 @@ export default function Layout({ title, children }) {
   );
 }
 
-function NavItem({ label }) {
+function NavItem({ label, route }) {
   const [hovered, setHovered] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div
       role="button"
       tabIndex={0}
+      onClick={() => route && navigate(route)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -113,7 +121,7 @@ function NavItem({ label }) {
         fontSize: '14px',
         color: hovered ? '#ffffff' : '#94a3b8',
         backgroundColor: hovered ? 'rgba(255,255,255,0.06)' : 'transparent',
-        cursor: 'pointer',
+        cursor: route ? 'pointer' : 'default',
         transition: 'color 0.15s, background-color 0.15s',
         userSelect: 'none',
       }}
