@@ -3,6 +3,7 @@ import LoginPage from './LoginPage';
 import AdminOverview from './pages/AdminOverview';
 import Clients from './pages/Clients';
 import Estimates from './pages/Estimates';
+import Billing from './pages/Billing';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/admin" element={<AdminOverview />} />
         <Route path="/admin/clients" element={<Clients />} />
         <Route path="/admin/estimates" element={<Estimates />} />
+        <Route path="/admin/billing" element={<Billing />} />
       </Routes>
     </BrowserRouter>
   );

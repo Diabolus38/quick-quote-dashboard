@@ -5,6 +5,7 @@ const navRoutes = {
   Overview:  '/admin',
   Clients:   '/admin/clients',
   Estimates: '/admin/estimates',
+  Billing:   '/admin/billing',
 };
 
 export default function Layout({ title, children }) {
