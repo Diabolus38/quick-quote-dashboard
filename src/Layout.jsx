@@ -6,6 +6,7 @@ const navRoutes = {
   Clients:   '/admin/clients',
   Estimates: '/admin/estimates',
   Billing:   '/admin/billing',
+  Settings:  '/admin/settings',
 };
 
 export default function Layout({ title, children }) {
