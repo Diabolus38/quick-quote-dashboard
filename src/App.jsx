@@ -5,6 +5,8 @@ import Clients from './pages/Clients';
 import Estimates from './pages/Estimates';
 import Billing from './pages/Billing';
 import Settings from './pages/Settings';
+import ClientOverview from './pages/client/ClientOverview';
+import ClientEstimates from './pages/client/ClientEstimates';
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
         <Route path="/admin/estimates" element={<Estimates />} />
         <Route path="/admin/billing" element={<Billing />} />
         <Route path="/admin/settings" element={<Settings />} />
+        <Route path="/client" element={<ClientOverview />} />
+        <Route path="/client/estimates" element={<ClientEstimates />} />
       </Routes>
     </BrowserRouter>
   );
