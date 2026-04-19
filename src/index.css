@@ -52,6 +52,8 @@
 
 body {
   margin: 0;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background-color: #F0F2F5;
 }
 
 #root {
