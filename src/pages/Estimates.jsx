@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../Layout';
+import { supabase } from '../lib/supabase';
 
 const ACCENT = '#0d3d2a';
 
@@ -25,44 +26,85 @@ const statCards = [
   },
 ];
 
-const avatarColors = {
-  'Acme AB':        { bg: '#dcfce7', color: '#166534' },
-  'NordBygg':       { bg: '#dbeafe', color: '#1d4ed8' },
-  'VattSystem':     { bg: '#fef9c3', color: '#854d0e' },
-  'EkoTeknik':      { bg: '#ede9fe', color: '#7c3aed' },
-  'MarkVatten':     { bg: '#ccfbf1', color: '#0d9488' },
-  'Bergström AB':   { bg: '#fee2e2', color: '#991b1b' },
-  'Lindqvist & Co': { bg: '#fce7f3', color: '#9d174d' },
-  'Hansson Bygg':   { bg: '#f3f4f6', color: '#374151' },
-};
-
-const estimates = [
-  { id: 'EST-001', client: 'Acme AB',        customer: 'Erik Bergström',   email: 'erik@bergstrom.se',   price: '125,000 kr', lang: 'Swedish', date: '2026-04-14', status: 'Completed' },
-  { id: 'EST-002', client: 'NordBygg',        customer: 'Anna Lindqvist',   email: 'anna@lindqvist.se',   price: '87,500 kr',  lang: 'Swedish', date: '2026-04-13', status: 'Sent'      },
-  { id: 'EST-003', client: 'VattSystem',      customer: 'Johan Karlsson',   email: 'johan@karlsson.se',   price: '143,000 kr', lang: 'English', date: '2026-04-12', status: 'Pending'   },
-  { id: 'EST-004', client: 'EkoTeknik',       customer: 'Maria Svensson',   email: 'maria@svensson.se',   price: '96,000 kr',  lang: 'German',  date: '2026-04-11', status: 'Completed' },
-  { id: 'EST-005', client: 'MarkVatten',      customer: 'Lars Nilsson',     email: 'lars@nilsson.se',     price: '78,000 kr',  lang: 'Swedish', date: '2026-04-10', status: 'Completed' },
-  { id: 'EST-006', client: 'Bergström AB',    customer: 'Karin Johansson',  email: 'karin@johansson.se',  price: '112,000 kr', lang: 'English', date: '2026-04-09', status: 'Sent'      },
-  { id: 'EST-007', client: 'Lindqvist & Co',  customer: 'Per Andersson',    email: 'per@andersson.se',    price: '67,500 kr',  lang: 'Swedish', date: '2026-04-08', status: 'Pending'   },
-  { id: 'EST-008', client: 'Hansson Bygg',    customer: 'Sofia Eriksson',   email: 'sofia@eriksson.se',   price: '134,000 kr', lang: 'German',  date: '2026-04-07', status: 'Completed' },
-  { id: 'EST-009', client: 'Acme AB',         customer: 'Magnus Holm',      email: 'magnus@holm.se',      price: '89,000 kr',  lang: 'Swedish', date: '2026-04-06', status: 'Sent'      },
-  { id: 'EST-010', client: 'VattSystem',      customer: 'Ingrid Berg',      email: 'ingrid@berg.se',      price: '156,000 kr', lang: 'English', date: '2026-04-05', status: 'Completed' },
+const avatarPalette = [
+  { bg: '#dcfce7', color: '#166534' },
+  { bg: '#dbeafe', color: '#1d4ed8' },
+  { bg: '#fef9c3', color: '#854d0e' },
+  { bg: '#ede9fe', color: '#7c3aed' },
+  { bg: '#ccfbf1', color: '#0d9488' },
+  { bg: '#fee2e2', color: '#991b1b' },
+  { bg: '#fce7f3', color: '#9d174d' },
+  { bg: '#f3f4f6', color: '#374151' },
 ];
 
 const statusStyle = {
   Completed: { backgroundColor: '#dcfce7', color: '#166534' },
   Sent:      { backgroundColor: '#dbeafe', color: '#1d4ed8' },
   Pending:   { backgroundColor: '#fef9c3', color: '#854d0e' },
+  Submitted: { backgroundColor: '#dbeafe', color: '#1d4ed8' },
 };
 
 const columns = ['Invoice ID', 'Client', 'Customer Name', 'Customer Email', 'Price', 'Language', 'Date', 'Status', 'Actions'];
 
 const filters = ['All', 'This Week', 'This Month'];
 
+function getInitials(name) {
+  const words = name.split(' ').filter(w => /[a-zA-ZäåöÄÅÖ]/.test(w));
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function Estimates() {
   const [activeFilter, setActiveFilter]   = useState('All');
   const [hoveredRow,   setHoveredRow]     = useState(null);
   const [hoveredAction, setHoveredAction] = useState(null);
+  const [estimates,    setEstimates]      = useState([]);
+  const [clientsMap,   setClientsMap]     = useState({});
+  const [loading,      setLoading]        = useState(true);
+  const [error,        setError]          = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      const [estResult, cliResult] = await Promise.all([
+        supabase.from('estimates').select('*'),
+        supabase.from('clients').select('*'),
+      ]);
+
+      if (estResult.error || cliResult.error) {
+        setError((estResult.error || cliResult.error).message);
+        setLoading(false);
+        return;
+      }
+
+      const map = {};
+      (cliResult.data || []).forEach((c, i) => {
+        map[c.id] = { name: c.name, paletteIdx: i % avatarPalette.length };
+      });
+
+      setClientsMap(map);
+      setEstimates(estResult.data || []);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  if (loading) return (
+    <Layout title="Estimates">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: '#9ca3af', fontSize: '14px' }}>
+        Loading...
+      </div>
+    </Layout>
+  );
+
+  if (error) return (
+    <Layout title="Estimates">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: '#dc2626', fontSize: '14px' }}>
+        Failed to load estimates.
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout title="Estimates">
@@ -183,113 +225,128 @@ export default function Estimates() {
         marginTop: '16px', backgroundColor: '#fff',
         border: '1px solid #f0f0f0', borderRadius: '14px', overflow: 'hidden',
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#fafafa' }}>
-              {columns.map((col) => (
-                <th key={col} style={{
-                  textAlign: 'left', padding: '12px 20px',
-                  fontSize: '11px', fontWeight: '600', color: '#9ca3af',
-                  textTransform: 'uppercase', letterSpacing: '0.06em',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {estimates.map((row, i) => {
-              const av       = avatarColors[row.client] ?? { bg: '#f3f4f6', color: '#374151' };
-              const initials = row.client.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-              return (
-                <tr
-                  key={row.id}
-                  onMouseEnter={() => setHoveredRow(i)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                  style={{
-                    backgroundColor: hoveredRow === i ? '#fafef9' : 'transparent',
-                    borderBottom: i < estimates.length - 1 ? '1px solid #f7f7f7' : 'none',
-                  }}
-                >
-                  {/* Invoice ID */}
-                  <td style={{ padding: '14px 20px', fontWeight: '600', color: '#0d1117', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                    {row.id}
-                  </td>
+        {estimates.length === 0 ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '160px', color: '#9ca3af', fontSize: '14px' }}>
+            No estimates yet.
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#fafafa' }}>
+                {columns.map((col) => (
+                  <th key={col} style={{
+                    textAlign: 'left', padding: '12px 20px',
+                    fontSize: '11px', fontWeight: '600', color: '#9ca3af',
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {estimates.map((row, i) => {
+                const clientEntry = row.client_id ? clientsMap[row.client_id] : null;
+                const clientName  = clientEntry ? clientEntry.name : 'Unknown';
+                const av          = clientEntry
+                  ? avatarPalette[clientEntry.paletteIdx]
+                  : { bg: '#f3f4f6', color: '#374151' };
+                const initials    = getInitials(clientName);
+                const estId       = (row.id || '').toString().slice(0, 8).toUpperCase();
+                const date        = row.created_at ? row.created_at.slice(0, 10) : '—';
+                const status      = row.status || 'Submitted';
+                const style       = statusStyle[status] ?? { backgroundColor: '#f3f4f6', color: '#374151' };
 
-                  {/* Client */}
-                  <td style={{ padding: '14px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-                        backgroundColor: av.bg, color: av.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '11px', fontWeight: '700',
-                      }}>
-                        {initials}
+                return (
+                  <tr
+                    key={row.id ?? i}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    style={{
+                      backgroundColor: hoveredRow === i ? '#fafef9' : 'transparent',
+                      borderBottom: i < estimates.length - 1 ? '1px solid #f7f7f7' : 'none',
+                    }}
+                  >
+                    {/* Invoice ID */}
+                    <td style={{ padding: '14px 20px', fontWeight: '600', color: '#0d1117', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                      {estId}
+                    </td>
+
+                    {/* Client */}
+                    <td style={{ padding: '14px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                          width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                          backgroundColor: av.bg, color: av.color,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '11px', fontWeight: '700',
+                        }}>
+                          {initials}
+                        </div>
+                        <span style={{ fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{clientName}</span>
                       </div>
-                      <span style={{ fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{row.client}</span>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Customer Name */}
-                  <td style={{ padding: '14px 20px', color: '#374151', whiteSpace: 'nowrap' }}>{row.customer}</td>
+                    {/* Customer Name */}
+                    <td style={{ padding: '14px 20px', color: '#374151', whiteSpace: 'nowrap' }}>{row.contact_name}</td>
 
-                  {/* Customer Email */}
-                  <td style={{ padding: '14px 20px', color: '#6b7280' }}>{row.email}</td>
+                    {/* Customer Email */}
+                    <td style={{ padding: '14px 20px', color: '#6b7280' }}>{row.contact_email}</td>
 
-                  {/* Price */}
-                  <td style={{ padding: '14px 20px', color: '#0d1117', fontWeight: '600', whiteSpace: 'nowrap' }}>{row.price}</td>
+                    {/* Price */}
+                    <td style={{ padding: '14px 20px', color: '#0d1117', fontWeight: '600', whiteSpace: 'nowrap' }}>{row.price}</td>
 
-                  {/* Language */}
-                  <td style={{ padding: '14px 20px', color: '#374151' }}>{row.lang}</td>
+                    {/* Language */}
+                    <td style={{ padding: '14px 20px', color: '#374151' }}>{row.language}</td>
 
-                  {/* Date */}
-                  <td style={{ padding: '14px 20px', color: '#6b7280', whiteSpace: 'nowrap' }}>{row.date}</td>
+                    {/* Date */}
+                    <td style={{ padding: '14px 20px', color: '#6b7280', whiteSpace: 'nowrap' }}>{date}</td>
 
-                  {/* Status */}
-                  <td style={{ padding: '14px 20px' }}>
-                    <span style={{
-                      display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
-                      fontSize: '11px', fontWeight: '600',
-                      ...statusStyle[row.status],
-                    }}>
-                      {row.status}
-                    </span>
-                  </td>
+                    {/* Status */}
+                    <td style={{ padding: '14px 20px' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+                        fontSize: '11px', fontWeight: '600',
+                        ...style,
+                      }}>
+                        {status}
+                      </span>
+                    </td>
 
-                  {/* Actions */}
-                  <td style={{ padding: '14px 20px' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      {[['👁', 'View'], ['✎', 'Edit'], ['↓', 'Download']].map(([symbol, label], ai) => {
-                        const key = `${i}-${ai}`;
-                        const isHov = hoveredAction === key;
-                        return (
-                          <button
-                            key={label}
-                            type="button"
-                            title={label}
-                            onMouseEnter={() => setHoveredAction(key)}
-                            onMouseLeave={() => setHoveredAction(null)}
-                            style={{
-                              border: 'none', background: 'transparent',
-                              cursor: 'pointer', fontSize: '13px',
-                              color: isHov ? ACCENT : '#9ca3af',
-                              padding: '2px', fontFamily: 'inherit',
-                              transition: 'color 0.15s', lineHeight: 1,
-                            }}
-                          >
-                            {symbol}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    {/* Actions */}
+                    <td style={{ padding: '14px 20px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {[['👁', 'View'], ['✎', 'Edit'], ['↓', 'Download']].map(([symbol, label], ai) => {
+                          const key = `${i}-${ai}`;
+                          const isHov = hoveredAction === key;
+                          return (
+                            <button
+                              key={label}
+                              type="button"
+                              title={label}
+                              onMouseEnter={() => setHoveredAction(key)}
+                              onMouseLeave={() => setHoveredAction(null)}
+                              style={{
+                                border: 'none', background: 'transparent',
+                                cursor: 'pointer', fontSize: '13px',
+                                color: isHov ? ACCENT : '#9ca3af',
+                                padding: '2px', fontFamily: 'inherit',
+                                transition: 'color 0.15s', lineHeight: 1,
+                              }}
+                            >
+                              {symbol}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </Layout>
   );
