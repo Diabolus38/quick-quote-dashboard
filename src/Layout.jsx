@@ -1,237 +1,250 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const ACCENT = '#0d3d2a';
+const SIDEBAR_BG = '#1a1f2e';
 
-const navGroups = [
-  {
-    label: 'MENU',
-    items: [
-      { label: 'Overview',  route: '/admin',            icon: '⊞' },
-      { label: 'Clients',   route: '/admin/clients',    icon: '◎' },
-      { label: 'Estimates', route: '/admin/estimates',  icon: '▤' },
-    ],
-  },
-  {
-    label: 'GENERAL',
-    items: [
-      { label: 'Billing',   route: '/admin/billing',   icon: '◈' },
-      { label: 'Settings',  route: '/admin/settings',  icon: '✦' },
-    ],
-  },
+const topNavItems = [
+  { icon: '▤', route: '/admin'           },
+  { icon: '◎', route: '/admin/clients'   },
+  { icon: '⊞', route: '/admin/estimates' },
+  { icon: '◈', route: '/admin/billing'   },
 ];
 
-export default function Layout({ title, children }) {
+const bottomNavItems = [
+  { icon: '✦', route: '/admin/settings' },
+  { icon: '✉', route: null              },
+];
+
+export default function Layout({ title, children, rightPanel }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{
+      display: 'flex', height: '100vh', overflow: 'hidden',
+      fontFamily: "'DM Sans', system-ui, sans-serif",
+    }}>
 
-      {/* Sidebar */}
+      {/* ── Sidebar ── */}
       <aside style={{
-        width: '220px',
-        flexShrink: 0,
-        backgroundColor: '#ffffff',
-        borderRight: '1px solid #eaeaea',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
+        width: '64px', flexShrink: 0,
+        backgroundColor: SIDEBAR_BG,
+        position: 'fixed', top: 0, left: 0, height: '100vh',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        zIndex: 20,
       }}>
-
-        {/* Logo */}
-        <div style={{ padding: '24px 20px 20px' }}>
-          <div style={{ fontSize: '18px', fontWeight: '700', color: ACCENT, letterSpacing: '-0.3px' }}>
-            QQ360
-          </div>
-          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', letterSpacing: '0.2px' }}>
-            Admin Dashboard
-          </div>
+        {/* Q logo */}
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '8px',
+          backgroundColor: '#2d3548',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '18px', fontWeight: '700', color: '#fff',
+          margin: '16px auto 16px', flexShrink: 0,
+        }}>
+          Q
         </div>
 
-        {/* Nav groups */}
-        <nav style={{ flex: 1, padding: '4px 0', overflowY: 'auto' }}>
-          {navGroups.map((group) => (
-            <div key={group.label} style={{ marginBottom: '8px' }}>
-              <div style={{
-                padding: '10px 20px 6px',
-                fontSize: '10px',
-                fontWeight: '600',
-                letterSpacing: '1px',
-                color: '#c4c9d4',
-                textTransform: 'uppercase',
-              }}>
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <NavItem key={item.label} label={item.label} route={item.route} icon={item.icon} />
-              ))}
-            </div>
+        {/* Top nav icons */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, alignItems: 'center', paddingTop: '4px' }}>
+          {topNavItems.map((item) => (
+            <NavIcon key={item.route} icon={item.icon} route={item.route} />
           ))}
         </nav>
 
-        {/* User row */}
-        <div style={{
-          padding: '16px 20px',
-          borderTop: '1px solid #eaeaea',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-        }}>
-          <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '8px',
-            backgroundColor: ACCENT,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '12px',
-            fontWeight: '700',
-            color: '#ffffff',
-            flexShrink: 0,
-          }}>
-            AD
-          </div>
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#0d1117', lineHeight: 1.3 }}>Admin</div>
-            <div style={{ fontSize: '11px', color: '#9ca3af' }}>Super Admin</div>
-          </div>
+        {/* Bottom nav icons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', paddingBottom: '20px' }}>
+          {bottomNavItems.map((item, i) => (
+            <NavIcon key={i} icon={item.icon} route={item.route} />
+          ))}
         </div>
       </aside>
 
-      {/* Main area */}
+      {/* ── Main area ── */}
       <div style={{
-        marginLeft: '220px',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
+        marginLeft: '64px', flex: 1,
+        display: 'flex', flexDirection: 'column',
+        height: '100vh', overflow: 'hidden',
         backgroundColor: '#F0F2F5',
       }}>
 
         {/* Top bar */}
         <header style={{
-          height: '60px',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #eaeaea',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 28px',
-          flexShrink: 0,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
+          height: '56px', flexShrink: 0,
+          backgroundColor: '#fff',
+          borderBottom: '1px solid #f0f0f0',
+          display: 'flex', alignItems: 'center',
+          padding: '0 24px', gap: '16px',
         }}>
+          {/* Title */}
+          <span style={{ fontSize: '16px', fontWeight: '700', color: '#0d1117', whiteSpace: 'nowrap' }}>
+            {title || 'Homepage'}
+          </span>
+
           {/* Search — centered */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '999px',
-              padding: '0 14px',
-              width: '100%',
-              maxWidth: '400px',
-              height: '38px',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              border: '1px solid #e5e7eb', borderRadius: '8px',
+              padding: '0 12px', width: '260px', height: '36px',
+              backgroundColor: '#fff', flexShrink: 0,
             }}>
-              <SearchIcon />
+              <MagnifyIcon />
               <input
                 type="text"
-                placeholder="Search clients, estimates..."
+                placeholder="Quick Search..."
                 style={{
-                  border: 'none',
-                  background: 'none',
-                  outline: 'none',
-                  fontSize: '13px',
-                  color: '#0d1117',
-                  width: '100%',
-                  fontFamily: 'inherit',
+                  border: 'none', outline: 'none', background: 'none',
+                  fontSize: '13px', color: '#0d1117', width: '100%', fontFamily: 'inherit',
                 }}
               />
             </div>
           </div>
 
-          {/* Date filters — far right */}
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {['Today', 'This Week', 'This Month'].map((f) => {
-              const active = f === 'This Month';
-              return (
-                <button key={f} type="button" style={{
-                  padding: '6px 14px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  borderRadius: '999px',
-                  border: active ? 'none' : '1px solid #eaeaea',
-                  backgroundColor: active ? ACCENT : '#ffffff',
-                  color: active ? '#ffffff' : '#9ca3af',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
+          {/* Right actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {/* Mail */}
+            <span style={{ fontSize: '16px', color: '#6b7280', cursor: 'pointer', lineHeight: 1 }}>✉</span>
+            {/* Share */}
+            <ShareIcon />
+
+            {/* Avatar group */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {[
+                { initials: 'AB', bg: '#dbeafe', color: '#1d4ed8' },
+                { initials: 'SC', bg: '#fce7f3', color: '#9d174d' },
+                { initials: 'MH', bg: '#d1fae5', color: '#065f46' },
+              ].map((a, i) => (
+                <div key={i} style={{
+                  width: '26px', height: '26px', borderRadius: '50%',
+                  backgroundColor: a.bg, color: a.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '9px', fontWeight: '700',
+                  marginLeft: i > 0 ? '-7px' : '0',
+                  border: '2px solid #fff',
+                  position: 'relative', zIndex: 3 - i,
                 }}>
-                  {f}
-                </button>
-              );
-            })}
+                  {a.initials}
+                </div>
+              ))}
+              <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '6px', fontWeight: '500' }}>+10</span>
+            </div>
+
+            {/* Invite button */}
+            <button type="button" style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              border: '1px solid #e5e7eb', borderRadius: '8px',
+              padding: '6px 14px', fontSize: '13px', fontWeight: '500',
+              backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer',
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+              <PersonIcon /> Invite
+            </button>
+
+            {/* Bell */}
+            <BellIcon />
+
+            {/* User avatar + name + chevron */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+              <div style={{
+                width: '30px', height: '30px', borderRadius: '50%',
+                backgroundColor: SIDEBAR_BG,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0,
+              }}>
+                AD
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#0d1117' }}>Admin</span>
+              <ChevronIcon />
+            </div>
           </div>
         </header>
 
-        {/* Content area */}
-        <main style={{ padding: '32px', flex: 1 }}>
-          {children}
-        </main>
+        {/* Content: left col + optional right col */}
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          <main style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+            {children}
+          </main>
+          {rightPanel && (
+            <aside style={{
+              width: '300px', flexShrink: 0,
+              borderLeft: '1px solid #f0f0f0',
+              padding: '24px', overflowY: 'auto',
+              backgroundColor: '#fff',
+            }}>
+              {rightPanel}
+            </aside>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function NavItem({ label, route, icon }) {
+function NavIcon({ icon, route }) {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const active = location.pathname === route;
+  const active = route != null && location.pathname === route;
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(route)}
+      onClick={() => route && navigate(route)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '10px 16px',
-        margin: '1px 0',
-        fontSize: '13px',
-        fontWeight: active ? '600' : '500',
-        color: active ? ACCENT : hovered ? '#0d1117' : '#6b7280',
-        backgroundColor: 'transparent',
-        borderLeft: active ? `3px solid ${ACCENT}` : '3px solid transparent',
-        cursor: 'pointer',
-        transition: 'color 0.15s, border-color 0.15s',
-        userSelect: 'none',
+        width: '40px', height: '40px', borderRadius: '10px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '18px',
+        backgroundColor: active ? '#2d3548' : hovered ? '#252b3b' : 'transparent',
+        color: active || hovered ? '#fff' : '#6b7280',
+        cursor: route ? 'pointer' : 'default',
+        transition: 'background-color 0.15s, color 0.15s',
       }}
     >
-      <span style={{
-        fontSize: '14px',
-        marginRight: '10px',
-        opacity: active ? 1 : 0.5,
-      }}>
-        {icon}
-      </span>
-      {label}
+      {icon}
     </div>
   );
 }
 
-function SearchIcon() {
+/* ── SVG icons ── */
+function MagnifyIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round">
       <circle cx="6" cy="6" r="4.5" />
       <line x1="9.5" y1="9.5" x2="13" y2="13" />
+    </svg>
+  );
+}
+function ShareIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="13" cy="3" r="1.5" />
+      <circle cx="13" cy="13" r="1.5" />
+      <circle cx="3"  cy="8" r="1.5" />
+      <line x1="4.3" y1="7.3"  x2="11.7" y2="3.7"  />
+      <line x1="4.3" y1="8.7"  x2="11.7" y2="12.3" />
+    </svg>
+  );
+}
+function PersonIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="6.5" cy="4" r="2.5" />
+      <path d="M1.5 12c0-2.76 2.24-5 5-5s5 2.24 5 5" />
+    </svg>
+  );
+}
+function BellIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 2a5 5 0 00-5 5v3l-1.5 2h13L14 10V7a5 5 0 00-5-5z" />
+      <path d="M7.5 15.5a1.5 1.5 0 003 0" />
+    </svg>
+  );
+}
+function ChevronIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round">
+      <polyline points="2,4 6,8 10,4" />
     </svg>
   );
 }
