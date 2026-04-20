@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../Layout';
+import { supabase } from '../lib/supabase';
 
 const ACCENT = '#0d3d2a';
 
@@ -26,22 +27,62 @@ const statCards = [
   },
 ];
 
-const clients = [
-  { name: 'Acme AB',         email: 'acme@example.com',    plan: 'Pro',     estimates: 24, active: true,  avatarBg: '#dcfce7', avatarColor: '#166534' },
-  { name: 'NordBygg',        email: 'info@nordbygg.se',    plan: 'Starter', estimates: 18, active: true,  avatarBg: '#dbeafe', avatarColor: '#1d4ed8' },
-  { name: 'VattSystem',      email: 'hello@vattsys.com',   plan: 'Pro',     estimates: 31, active: true,  avatarBg: '#fef9c3', avatarColor: '#854d0e' },
-  { name: 'EkoTeknik',       email: 'eko@teknik.se',       plan: 'Starter', estimates:  9, active: false, avatarBg: '#ede9fe', avatarColor: '#7c3aed' },
-  { name: 'MarkVatten',      email: 'mv@markvatten.se',    plan: 'Pro',     estimates: 41, active: true,  avatarBg: '#ccfbf1', avatarColor: '#0d9488' },
-  { name: 'Bergström AB',    email: 'info@bergstrom.se',   plan: 'Starter', estimates: 12, active: true,  avatarBg: '#fee2e2', avatarColor: '#991b1b' },
-  { name: 'Lindqvist & Co',  email: 'lq@lindqvist.se',     plan: 'Pro',     estimates: 22, active: true,  avatarBg: '#fce7f3', avatarColor: '#9d174d' },
-  { name: 'Hansson Bygg',    email: 'hb@hanssonbygg.se',   plan: 'Starter', estimates:  7, active: false, avatarBg: '#f3f4f6', avatarColor: '#374151' },
+const avatarPalette = [
+  { bg: '#dcfce7', color: '#166534' },
+  { bg: '#dbeafe', color: '#1d4ed8' },
+  { bg: '#fef9c3', color: '#854d0e' },
+  { bg: '#ede9fe', color: '#7c3aed' },
+  { bg: '#ccfbf1', color: '#0d9488' },
+  { bg: '#fee2e2', color: '#991b1b' },
+  { bg: '#fce7f3', color: '#9d174d' },
+  { bg: '#f3f4f6', color: '#374151' },
 ];
 
 const columns = ['Client', 'Contact Email', 'Plan', 'Estimates This Month', 'Status', 'Actions'];
 
+function getInitials(name) {
+  const words = name.split(' ').filter(w => /[a-zA-ZäåöÄÅÖ]/.test(w));
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function Clients() {
+  const [clients,       setClients]       = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
   const [hoveredRow,    setHoveredRow]    = useState(null);
   const [hoveredAction, setHoveredAction] = useState(null);
+
+  useEffect(() => {
+    async function fetchClients() {
+      const { data, error } = await supabase.from('clients').select('*');
+      if (error) {
+        setError(error.message);
+      } else {
+        setClients(data);
+      }
+      setLoading(false);
+    }
+    fetchClients();
+  }, []);
+
+  if (loading) return (
+    <Layout title="Clients">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: '#9ca3af', fontSize: '14px' }}>
+        Loading...
+      </div>
+    </Layout>
+  );
+
+  if (error) return (
+    <Layout title="Clients">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: '#dc2626', fontSize: '14px' }}>
+        Failed to load clients.
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout title="Clients">
@@ -151,10 +192,11 @@ export default function Clients() {
           </thead>
           <tbody>
             {clients.map((client, i) => {
-              const initials = client.name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+              const av       = avatarPalette[i % avatarPalette.length];
+              const initials = getInitials(client.name || '');
               return (
                 <tr
-                  key={client.name}
+                  key={client.id ?? i}
                   onMouseEnter={() => setHoveredRow(i)}
                   onMouseLeave={() => setHoveredRow(null)}
                   style={{
@@ -167,16 +209,13 @@ export default function Clients() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{
                         width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-                        backgroundColor: client.avatarBg, color: client.avatarColor,
+                        backgroundColor: av.bg, color: av.color,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '11px', fontWeight: '700',
                       }}>
                         {initials}
                       </div>
-                      <div>
-                        <div style={{ fontWeight: '600', fontSize: '13px', color: '#0d1117' }}>{client.name}</div>
-                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '1px' }}>{client.email}</div>
-                      </div>
+                      <div style={{ fontWeight: '600', fontSize: '13px', color: '#0d1117' }}>{client.name}</div>
                     </div>
                   </td>
 
