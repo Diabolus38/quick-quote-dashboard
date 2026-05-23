@@ -86,6 +86,22 @@ export default function LoginPage() {
       color: '#9ca3af',
       textAlign: 'center',
     },
+    signUpRow: {
+      marginTop: '12px',
+      fontSize: '13px',
+      color: '#6b7280',
+      textAlign: 'center',
+    },
+    link: {
+      color: '#111827',
+      fontWeight: '600',
+      textDecoration: 'none',
+      cursor: 'pointer',
+      background: 'none',
+      border: 'none',
+      padding: 0,
+      fontSize: '13px',
+    },
     errorText: {
       marginTop: '12px',
       fontSize: '13px',
@@ -170,6 +186,12 @@ export default function LoginPage() {
         </form>
 
         <p style={styles.adminNote}>Admin access only</p>
+        <p style={styles.signUpRow}>
+          New client?{' '}
+          <button style={styles.link} onClick={() => navigate('/signup')}>
+            Create an account
+          </button>
+        </p>
       </div>
     </div>
   );

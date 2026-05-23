@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './LoginPage';
+import SignupPage from './pages/SignupPage';
 import AdminOverview from './pages/AdminOverview';
 import Clients from './pages/Clients';
 import Estimates from './pages/Estimates';
@@ -20,6 +21,7 @@ export default function App() {
           {/* Public */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
 
           {/* Super-admin protected */}
           <Route
