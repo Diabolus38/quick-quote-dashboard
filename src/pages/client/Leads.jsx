@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
@@ -25,6 +26,8 @@ function formatDate(dateStr) {
 
 export default function Leads() {
   const { profile } = useAuth();
+
+  const navigate = useNavigate();
 
   const [leads, setLeads]             = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -348,6 +351,7 @@ export default function Leads() {
               <span>
                 <button
                   type="button"
+                  onClick={() => navigate(`/client/leads/${lead.id}`)}
                   style={{
                     fontSize: '12px',
                     color: '#0d3d2a',
