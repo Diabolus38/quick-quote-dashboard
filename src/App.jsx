@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AuthProvider from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './LoginPage';
 import AdminOverview from './pages/AdminOverview';
 import Clients from './pages/Clients';
@@ -13,18 +15,89 @@ import ClientSettings from './pages/client/ClientSettings';
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/admin" element={<AdminOverview />} />
-        <Route path="/admin/clients" element={<Clients />} />
-        <Route path="/admin/estimates" element={<Estimates />} />
-        <Route path="/admin/billing" element={<Billing />} />
-        <Route path="/admin/settings" element={<Settings />} />
-        <Route path="/client" element={<ClientOverview />} />
-        <Route path="/client/estimates" element={<ClientEstimates />} />
-        <Route path="/client/customers" element={<ClientCustomers />} />
-        <Route path="/client/settings" element={<ClientSettings />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Super-admin protected */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="super_admin">
+                <AdminOverview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/clients"
+            element={
+              <ProtectedRoute requiredRole="super_admin">
+                <Clients />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/estimates"
+            element={
+              <ProtectedRoute requiredRole="super_admin">
+                <Estimates />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/billing"
+            element={
+              <ProtectedRoute requiredRole="super_admin">
+                <Billing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute requiredRole="super_admin">
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Client protected */}
+          <Route
+            path="/client"
+            element={
+              <ProtectedRoute requiredRole="client">
+                <ClientOverview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/estimates"
+            element={
+              <ProtectedRoute requiredRole="client">
+                <ClientEstimates />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/customers"
+            element={
+              <ProtectedRoute requiredRole="client">
+                <ClientCustomers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/settings"
+            element={
+              <ProtectedRoute requiredRole="client">
+                <ClientSettings />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -1,7 +1,17 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { supabase } from './lib/supabase';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { signIn, profile } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const styles = {
     page: {
       minHeight: '100vh',
@@ -65,9 +75,10 @@ export default function LoginPage() {
       backgroundColor: '#111827',
       border: 'none',
       borderRadius: '8px',
-      cursor: 'pointer',
+      cursor: loading ? 'not-allowed' : 'pointer',
       marginTop: '8px',
       letterSpacing: '0.2px',
+      opacity: loading ? 0.7 : 1,
     },
     adminNote: {
       marginTop: '16px',
@@ -75,7 +86,46 @@ export default function LoginPage() {
       color: '#9ca3af',
       textAlign: 'center',
     },
+    errorText: {
+      marginTop: '12px',
+      fontSize: '13px',
+      color: '#dc2626',
+      textAlign: 'center',
+    },
   };
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const { error: signInError } = await signIn(email, password);
+
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Re-fetch the profile directly here so we can redirect immediately
+    // without waiting for onAuthStateChange to propagate through context.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileData?.role === 'super_admin') {
+        navigate('/admin');
+      } else {
+        navigate('/client');
+      }
+    }
+
+    setLoading(false);
+  }
 
   return (
     <div style={styles.page}>
@@ -83,29 +133,41 @@ export default function LoginPage() {
         <p style={styles.logoText}>Quick Quote 360</p>
         <p style={styles.subtitle}>Dashboard</p>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label} htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="admin@example.com"
-            style={styles.input}
-            autoComplete="email"
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label} htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="admin@example.com"
+              style={styles.input}
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label} htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            style={styles.input}
-            autoComplete="current-password"
-          />
-        </div>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label} htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              style={styles.input}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        <button type="button" style={styles.button} onClick={() => navigate('/admin')}>Sign in</button>
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+
+          {error && <p style={styles.errorText}>{error}</p>}
+        </form>
 
         <p style={styles.adminNote}>Admin access only</p>
       </div>
