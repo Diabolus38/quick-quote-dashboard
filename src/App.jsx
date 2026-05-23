@@ -12,6 +12,7 @@ import ClientOverview from './pages/client/ClientOverview';
 import ClientEstimates from './pages/client/ClientEstimates';
 import ClientCustomers from './pages/client/ClientCustomers';
 import ClientSettings from './pages/client/ClientSettings';
+import Leads from './pages/client/Leads';
 
 export default function App() {
   return (
@@ -71,6 +72,14 @@ export default function App() {
             element={
               <ProtectedRoute requiredRole="client">
                 <ClientOverview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/leads"
+            element={
+              <ProtectedRoute requiredRole="client">
+                <Leads />
               </ProtectedRoute>
             }
           />
