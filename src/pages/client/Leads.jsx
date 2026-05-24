@@ -4,6 +4,9 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
 
+const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const PRIMARY = '#166534';
+
 const STATUS_COLORS = {
   'New':          '#1d4ed8',
   'Contacted':    '#d97706',
@@ -12,28 +15,33 @@ const STATUS_COLORS = {
   'Closed Lost':  '#dc2626',
 };
 
-const FILTER_OPTIONS = ['All', 'New', 'Contacted', 'In Progress', 'Closed Won', 'Closed Lost'];
+const STATUS_BADGE = {
+  'New':          { bg: '#dbeafe', color: '#1d4ed8' },
+  'Contacted':    { bg: '#fef9c3', color: '#854d0e' },
+  'In Progress':  { bg: '#ede9fe', color: '#7c3aed' },
+  'Closed Won':   { bg: '#dcfce7', color: '#166534' },
+  'Closed Lost':  { bg: '#fee2e2', color: '#991b1b' },
+};
 
+const FILTER_OPTIONS = ['All', 'New', 'Contacted', 'In Progress', 'Closed Won', 'Closed Lost'];
 const COLUMNS = ['Date', 'Name', 'Email', 'Phone', 'Municipality', 'System Type', 'Estimated Price', 'Status', 'Actions'];
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
+
+const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e8ede8', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '24px' };
 
 export default function Leads() {
   const { profile } = useAuth();
-
   const navigate = useNavigate();
 
-  const [leads, setLeads]             = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [search, setSearch]           = useState('');
+  const [leads,        setLeads]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [search,       setSearch]       = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-  const [hoveredRow, setHoveredRow]   = useState(null);
+  const [hoveredRow,   setHoveredRow]   = useState(null);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -43,10 +51,7 @@ export default function Leads() {
   async function fetchLeads() {
     setLoading(true);
     const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('client_id', profile.client_id)
-      .order('created_at', { ascending: false });
+      .from('leads').select('*').eq('client_id', profile.client_id).order('created_at', { ascending: false });
     if (!error && data) setLeads(data);
     setLoading(false);
   }
@@ -58,320 +63,122 @@ export default function Leads() {
 
   function handleExportCSV() {
     if (leads.length === 0) return;
-    const headers = ['Date', 'Name', 'Email', 'Phone', 'Municipality', 'System Type', 'Estimated Price', 'Status'];
-    const rows = leads.map(l => [
-      formatDate(l.created_at),
-      l.name || '',
-      l.email || '',
-      l.phone || '',
-      l.municipality || '',
-      l.answers?.wastewaterType || '',
-      l.estimated_price ?? '',
-      l.status || '',
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
+    const headers = ['Date','Name','Email','Phone','Municipality','System Type','Estimated Price','Status'];
+    const rows = leads.map(l => [formatDate(l.created_at), l.name||'', l.email||'', l.phone||'', l.municipality||'', l.answers?.wastewaterType||'', l.estimated_price??'', l.status||'']);
+    const csv = [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'leads.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'leads.csv'; a.click();
   }
 
-  // Computed stats
   const now = new Date();
-  const thisMonthCount = leads.filter(l => {
-    const d = new Date(l.created_at);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
+  const thisMonthCount = leads.filter(l => { const d = new Date(l.created_at); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }).length;
+  const avgPrice = leads.length > 0 ? Math.round(leads.reduce((s,l)=>s+(Number(l.estimated_price)||0),0)/leads.length) : null;
 
-  const avgPrice = leads.length > 0
-    ? Math.round(leads.reduce((sum, l) => sum + (Number(l.estimated_price) || 0), 0) / leads.length)
-    : null;
-
-  // Filtered list
   const filteredLeads = leads.filter(l => {
     const q = search.toLowerCase();
-    const matchesSearch = !q ||
-      (l.name  || '').toLowerCase().includes(q) ||
-      (l.email || '').toLowerCase().includes(q);
-    const matchesFilter = activeFilter === 'All' || l.status === activeFilter;
-    return matchesSearch && matchesFilter;
+    const matchSearch = !q||(l.name||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q);
+    const matchFilter = activeFilter==='All'||l.status===activeFilter;
+    return matchSearch && matchFilter;
   });
+
+  const statCards = [
+    { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '▤' },
+    { label: 'This Month',         value: loading ? '—' : String(thisMonthCount),  color: '#dbeafe', textColor: '#1d4ed8', icon: '◎' },
+    { label: 'Conversion Rate',    value: '—',                                      color: '#dcfce7', textColor: '#166534', icon: '▤' },
+    { label: 'Avg Estimate Value', value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '⊞' },
+  ];
 
   return (
     <ClientLayout title="Leads">
+      <div style={{ fontFamily: FONT }}>
 
-      {/* ── Top row ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0d1117', margin: 0 }}>Leads</h1>
-          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '4px 0 0' }}>
-            All leads generated by your estimator tool.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleExportCSV}
-          style={{
-            border: '1px solid #e5e7eb',
-            backgroundColor: '#ffffff',
-            color: '#111827',
-            borderRadius: '10px',
-            padding: '10px 18px',
-            fontSize: '13px',
-            cursor: 'pointer',
-            fontWeight: '500',
-          }}
-        >
-          Export CSV
-        </button>
-      </div>
-
-      {/* ── Stat cards ── */}
-      <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-
-        {/* Card 1 — Total Leads */}
-        <div style={{ flex: 1, backgroundColor: '#ffffff', border: '1px solid #f0f0f0', borderRadius: '14px', padding: '20px' }}>
-          <div style={{
-            width: '42px', height: '42px', borderRadius: '10px',
-            backgroundColor: '#0d3d2a',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', color: '#ffffff',
-          }}>▤</div>
-          <p style={{ fontSize: '12px', color: '#9ca3af', margin: '16px 0 4px', fontWeight: '500' }}>Total Leads</p>
-          <p style={{ fontSize: '22px', fontWeight: '700', color: '#0d1117', margin: 0 }}>
-            {loading ? '—' : leads.length}
-          </p>
-        </div>
-
-        {/* Card 2 — This Month */}
-        <div style={{ flex: 1, backgroundColor: '#ffffff', border: '1px solid #f0f0f0', borderRadius: '14px', padding: '20px' }}>
-          <div style={{
-            width: '42px', height: '42px', borderRadius: '10px',
-            backgroundColor: '#dbeafe',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', color: '#1d4ed8',
-          }}>◎</div>
-          <p style={{ fontSize: '12px', color: '#9ca3af', margin: '16px 0 4px', fontWeight: '500' }}>This Month</p>
-          <p style={{ fontSize: '22px', fontWeight: '700', color: '#0d1117', margin: 0 }}>
-            {loading ? '—' : thisMonthCount}
-          </p>
-        </div>
-
-        {/* Card 3 — Conversion Rate */}
-        <div style={{ flex: 1, backgroundColor: '#ffffff', border: '1px solid #f0f0f0', borderRadius: '14px', padding: '20px' }}>
-          <div style={{
-            width: '42px', height: '42px', borderRadius: '10px',
-            backgroundColor: '#dcfce7',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', color: '#16a34a',
-          }}>▤</div>
-          <p style={{ fontSize: '12px', color: '#9ca3af', margin: '16px 0 4px', fontWeight: '500' }}>Conversion Rate</p>
-          <p style={{ fontSize: '22px', fontWeight: '700', color: '#0d1117', margin: 0 }}>—</p>
-        </div>
-
-        {/* Card 4 — Avg Estimate Value */}
-        <div style={{ flex: 1, backgroundColor: '#ffffff', border: '1px solid #f0f0f0', borderRadius: '14px', padding: '20px' }}>
-          <div style={{
-            width: '42px', height: '42px', borderRadius: '10px',
-            backgroundColor: '#fef9c3',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', color: '#ca8a04',
-          }}>⊞</div>
-          <p style={{ fontSize: '12px', color: '#9ca3af', margin: '16px 0 4px', fontWeight: '500' }}>Avg Estimate Value</p>
-          <p style={{ fontSize: '22px', fontWeight: '700', color: '#0d1117', margin: 0 }}>
-            {loading ? '—' : avgPrice !== null ? `${avgPrice.toLocaleString()} kr` : '—'}
-          </p>
-        </div>
-
-      </div>
-
-      {/* ── Search + filter row ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '28px', flexWrap: 'wrap' }}>
-
-        <input
-          type="text"
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            flex: 1,
-            minWidth: '200px',
-            height: '42px',
-            padding: '0 16px',
-            fontSize: '13px',
-            border: '1px solid #e5e7eb',
-            borderRadius: '10px',
-            outline: 'none',
-            color: '#111827',
-            backgroundColor: '#ffffff',
-            boxSizing: 'border-box',
-          }}
-        />
-
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {FILTER_OPTIONS.map(opt => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setActiveFilter(opt)}
-              style={{
-                padding: '7px 14px',
-                fontSize: '12px',
-                borderRadius: '8px',
-                border: activeFilter === opt ? 'none' : '1px solid #e5e7eb',
-                backgroundColor: activeFilter === opt ? '#0d3d2a' : '#ffffff',
-                color: activeFilter === opt ? '#ffffff' : '#6b7280',
-                cursor: 'pointer',
-                fontWeight: activeFilter === opt ? '600' : '400',
-              }}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-
-      </div>
-
-      {/* ── Table ── */}
-      <div style={{
-        marginTop: '16px',
-        backgroundColor: '#ffffff',
-        border: '1px solid #f0f0f0',
-        borderRadius: '14px',
-        overflow: 'hidden',
-      }}>
-
-        {/* Header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '100px 130px 180px 120px 130px 130px 140px 140px 80px',
-          backgroundColor: '#fafafa',
-          borderBottom: '1px solid #f0f0f0',
-          padding: '12px 20px',
-        }}>
-          {COLUMNS.map(col => (
-            <span key={col} style={{
-              fontSize: '11px',
-              fontWeight: '600',
-              color: '#9ca3af',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              {col}
-            </span>
-          ))}
-        </div>
-
-        {/* Body */}
-        {loading ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center', fontSize: '13px', color: '#9ca3af' }}>
-            Loading leads...
+        {/* Top row */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
+          <div>
+            <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Leads</h1>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>All leads generated by your estimator tool.</p>
           </div>
-        ) : filteredLeads.length === 0 ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center', fontSize: '13px', color: '#9ca3af', marginTop: '40px' }}>
-            {leads.length === 0
-              ? 'No leads yet. Your leads will appear here once customers use your estimator tool.'
-              : 'No leads match your search or filter.'}
-          </div>
-        ) : (
-          filteredLeads.map(lead => (
-            <div
-              key={lead.id}
-              onMouseEnter={() => setHoveredRow(lead.id)}
-              onMouseLeave={() => setHoveredRow(null)}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '100px 130px 180px 120px 130px 130px 140px 140px 80px',
-                padding: '12px 20px',
-                fontSize: '13px',
-                color: '#374151',
-                borderBottom: '1px solid #f7f7f7',
-                backgroundColor: hoveredRow === lead.id ? '#fafef9' : '#ffffff',
-                alignItems: 'center',
-              }}
-            >
-              {/* Date */}
-              <span>{formatDate(lead.created_at)}</span>
+          <button type="button" onClick={handleExportCSV} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#0d1117', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+            Export CSV
+          </button>
+        </div>
 
-              {/* Name */}
-              <span style={{ fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {lead.name || '—'}
-              </span>
-
-              {/* Email */}
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#6b7280' }}>
-                {lead.email || '—'}
-              </span>
-
-              {/* Phone */}
-              <span style={{ color: '#6b7280' }}>{lead.phone || '—'}</span>
-
-              {/* Municipality */}
-              <span style={{ color: '#6b7280' }}>{lead.municipality || '—'}</span>
-
-              {/* System Type */}
-              <span style={{ color: '#6b7280' }}>
-                {lead.answers?.wastewaterType || '—'}
-              </span>
-
-              {/* Estimated Price */}
-              <span style={{ fontWeight: '500' }}>
-                {lead.estimated_price != null
-                  ? `${Number(lead.estimated_price).toLocaleString()} kr`
-                  : '—'}
-              </span>
-
-              {/* Status dropdown */}
-              <span>
-                <select
-                  value={lead.status || 'New'}
-                  onChange={e => updateStatus(lead.id, e.target.value)}
-                  style={{
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    padding: '4px 8px',
-                    fontSize: '12px',
-                    color: STATUS_COLORS[lead.status] || '#374151',
-                    fontWeight: '600',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                >
-                  {['New', 'Contacted', 'In Progress', 'Closed Won', 'Closed Lost'].map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </span>
-
-              {/* Actions */}
-              <span>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/client/leads/${lead.id}`)}
-                  style={{
-                    fontSize: '12px',
-                    color: '#0d3d2a',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    padding: 0,
-                  }}
-                >
-                  View
-                </button>
-              </span>
-
+        {/* Stat cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+          {statCards.map(card => (
+            <div key={card.label} style={CARD}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.color, color: card.textColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '14px' }}>{card.icon}</div>
+              <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
+              <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{card.value}</p>
             </div>
-          ))
-        )}
+          ))}
+        </div>
+
+        {/* Search + filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', height: '42px', backgroundColor: '#fff' }}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"><circle cx="6" cy="6" r="4.5"/><line x1="9.5" y1="9.5" x2="13" y2="13"/></svg>
+            <input type="text" placeholder="Search by name or email…" value={search} onChange={e => setSearch(e.target.value)}
+              style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13.5px', color: '#0d1117', width: '100%', fontFamily: FONT }} />
+          </div>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {FILTER_OPTIONS.map(opt => (
+              <button key={opt} type="button" onClick={() => setActiveFilter(opt)} style={{ padding: '7px 14px', fontSize: '12px', borderRadius: '8px', border: activeFilter===opt ? 'none' : '1px solid #e8ede8', backgroundColor: activeFilter===opt ? PRIMARY : '#fff', color: activeFilter===opt ? '#fff' : '#4b5563', cursor: 'pointer', fontFamily: FONT, fontWeight: activeFilter===opt ? '600' : '400' }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Table */}
+        <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: '100px 130px 180px 120px 130px 130px 140px 150px 80px', backgroundColor: '#f9fbf9', borderBottom: '1px solid #e8ede8', padding: '12px 20px' }}>
+            {COLUMNS.map(col => (
+              <span key={col} style={{ fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{col}</span>
+            ))}
+          </div>
+
+          {loading ? (
+            <div style={{ padding: '48px', textAlign: 'center', fontSize: '13.5px', color: '#9ca3af' }}>Loading leads…</div>
+          ) : filteredLeads.length === 0 ? (
+            <div style={{ padding: '48px', textAlign: 'center', fontSize: '13.5px', color: '#9ca3af' }}>
+              {leads.length === 0 ? 'No leads yet. Your leads will appear here once customers use your estimator tool.' : 'No leads match your filter.'}
+            </div>
+          ) : (
+            filteredLeads.map(lead => {
+              const sb = STATUS_BADGE[lead.status] || { bg: '#f3f4f6', color: '#6b7280' };
+              return (
+                <div key={lead.id}
+                  onMouseEnter={() => setHoveredRow(lead.id)} onMouseLeave={() => setHoveredRow(null)}
+                  style={{ display: 'grid', gridTemplateColumns: '100px 130px 180px 120px 130px 130px 140px 150px 80px', padding: '12px 20px', fontSize: '13.5px', color: '#4b5563', borderBottom: '1px solid #f4f6f4', backgroundColor: hoveredRow===lead.id ? '#f9fbf9' : '#fff', alignItems: 'center' }}>
+                  <span style={{ color: '#9ca3af', fontSize: '12px' }}>{formatDate(lead.created_at)}</span>
+                  <span style={{ fontWeight: '600', color: '#0d1117', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name||'—'}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#4b5563' }}>{lead.email||'—'}</span>
+                  <span>{lead.phone||'—'}</span>
+                  <span>{lead.municipality||'—'}</span>
+                  <span>{lead.answers?.wastewaterType||'—'}</span>
+                  <span style={{ fontWeight: '600', color: '#0d1117' }}>{lead.estimated_price!=null?`${Number(lead.estimated_price).toLocaleString()} kr`:'—'}</span>
+                  <span>
+                    <select value={lead.status||'New'} onChange={e=>updateStatus(lead.id,e.target.value)}
+                      style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: '600', color: STATUS_COLORS[lead.status]||'#374151', backgroundColor: '#fff', cursor: 'pointer', outline: 'none', fontFamily: FONT }}>
+                      {['New','Contacted','In Progress','Closed Won','Closed Lost'].map(s=><option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </span>
+                  <span>
+                    <button type="button" onClick={()=>navigate(`/client/leads/${lead.id}`)}
+                      style={{ fontSize: '12px', color: PRIMARY, backgroundColor: '#ecfccb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>
+                      View
+                    </button>
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
 
       </div>
-
     </ClientLayout>
   );
 }

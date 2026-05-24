@@ -2,258 +2,171 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
-const SIDEBAR_BG = '#1a1f2e';
+const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
+const SIDEBAR_BG = '#0d1f12';
+const LIME = '#a3e635';
+const LIME_BG = 'rgba(163,230,53,0.08)';
+const INACTIVE = '#6b9e6e';
+const SECTION_LABEL = '#3d6b42';
+const PRIMARY = '#166534';
 
-const BASE_TOP_NAV = [
-  { icon: '▤', route: '/admin'           },
-  { icon: '◎', route: '/admin/clients'   },
-  { icon: '⊞', route: '/admin/estimates' },
-  { icon: '◆', route: '/admin/billing'   },
+const MENU_ITEMS = [
+  { icon: '⊞', label: 'Overview',   route: '/admin'           },
+  { icon: '◎', label: 'Clients',    route: '/admin/clients'   },
+  { icon: '▤', label: 'Estimates',  route: '/admin/estimates' },
+  { icon: '$', label: 'Billing',    route: '/admin/billing'   },
 ];
 
-const SUPER_ADMIN_ITEM = { icon: '◈', route: '/admin/super' };
-
-const bottomNavItems = [
-  { icon: '✦', route: '/admin/settings' },
-  { icon: '✉', route: null              },
+const GENERAL_ITEMS = [
+  { icon: '✦', label: 'Settings',   route: '/admin/settings'  },
+  { icon: '?', label: 'Help',       route: null               },
 ];
 
-export default function Layout({ title, children, rightPanel }) {
-  const { profile } = useAuth();
+const SUPER_ADMIN_ITEM = { icon: '◈', label: 'Super Admin', route: '/admin/super' };
+
+function getInitials(name) {
+  if (!name) return 'AD';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+export default function Layout({ title, subtitle, children }) {
+  const { profile, signOut } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin';
-  const topNavItems = isSuperAdmin
-    ? [...BASE_TOP_NAV, SUPER_ADMIN_ITEM]
-    : BASE_TOP_NAV;
+  const menuItems = isSuperAdmin ? [...MENU_ITEMS, SUPER_ADMIN_ITEM] : MENU_ITEMS;
+  const initials = getInitials(profile?.full_name);
 
   return (
-    <div style={{
-      display: 'flex', height: '100vh', overflow: 'hidden',
-      fontFamily: "'DM Sans', system-ui, sans-serif",
-    }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: FONT, backgroundColor: '#f4f6f4' }}>
 
       {/* ── Sidebar ── */}
       <aside style={{
-        width: '64px', flexShrink: 0,
+        width: '240px', flexShrink: 0,
         backgroundColor: SIDEBAR_BG,
         position: 'fixed', top: 0, left: 0, height: '100vh',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        display: 'flex', flexDirection: 'column',
         zIndex: 20,
       }}>
-        {/* Q logo */}
-        <div style={{
-          width: '36px', height: '36px', borderRadius: '8px',
-          backgroundColor: '#2d3548',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '18px', fontWeight: '700', color: '#fff',
-          margin: '16px auto 16px', flexShrink: 0,
-        }}>
-          Q
+        {/* Logo */}
+        <div style={{ padding: '24px 20px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: LIME, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '800', color: '#0d1f12', flexShrink: 0 }}>Q</div>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', lineHeight: 1.2 }}>QuickQuote</div>
+            <div style={{ fontSize: '10px', fontWeight: '600', color: LIME, letterSpacing: '0.1em', marginTop: '1px' }}>360</div>
+          </div>
         </div>
 
-        {/* Top nav icons */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, alignItems: 'center', paddingTop: '4px' }}>
-          {topNavItems.map((item) => (
-            <NavIcon key={item.route} icon={item.icon} route={item.route} />
-          ))}
+        {/* Menu section */}
+        <div style={{ padding: '16px 20px 6px' }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Menu</span>
+        </div>
+        <nav style={{ padding: '0 12px' }}>
+          {menuItems.map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
-        {/* Bottom nav icons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', paddingBottom: '20px' }}>
-          {bottomNavItems.map((item, i) => (
-            <NavIcon key={i} icon={item.icon} route={item.route} />
-          ))}
+        {/* General section */}
+        <div style={{ padding: '16px 20px 6px', marginTop: '8px' }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.12em' }}>General</span>
+        </div>
+        <nav style={{ padding: '0 12px' }}>
+          {GENERAL_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+        </nav>
+
+        {/* Bottom user block */}
+        <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: LIME, color: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
+              {initials}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {profile?.full_name || 'Admin'}
+              </div>
+              <div style={{ fontSize: '11px', color: INACTIVE }}>
+                {profile?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+              </div>
+            </div>
+            <button type="button" onClick={() => signOut()} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: INACTIVE, padding: 0, fontFamily: FONT, flexShrink: 0, transition: 'color 0.15s' }}
+              onMouseEnter={e => e.target.style.color = '#ff6b6b'}
+              onMouseLeave={e => e.target.style.color = INACTIVE}>
+              Out
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* ── Main area ── */}
-      <div style={{
-        marginLeft: '64px', flex: 1,
-        display: 'flex', flexDirection: 'column',
-        height: '100vh', overflow: 'hidden',
-        backgroundColor: '#F0F2F5',
-      }}>
+      <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
 
         {/* Top bar */}
-        <header style={{
-          height: '56px', flexShrink: 0,
-          backgroundColor: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          display: 'flex', alignItems: 'center',
-          padding: '0 24px', gap: '16px',
-        }}>
+        <header style={{ height: '64px', flexShrink: 0, backgroundColor: '#ffffff', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', padding: '0 32px', gap: '20px' }}>
           {/* Title */}
-          <span style={{ fontSize: '16px', fontWeight: '700', color: '#0d1117', whiteSpace: 'nowrap' }}>
-            {title || 'Homepage'}
-          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#0d1117', whiteSpace: 'nowrap' }}>{title || 'Dashboard'}</div>
+            {subtitle && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{subtitle}</div>}
+          </div>
 
-          {/* Search — centered */}
+          {/* Search */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              border: '1px solid #e5e7eb', borderRadius: '8px',
-              padding: '0 12px', width: '260px', height: '36px',
-              backgroundColor: '#fff', flexShrink: 0,
-            }}>
-              <MagnifyIcon />
-              <input
-                type="text"
-                placeholder="Quick Search..."
-                style={{
-                  border: 'none', outline: 'none', background: 'none',
-                  fontSize: '13px', color: '#0d1117', width: '100%', fontFamily: 'inherit',
-                }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', width: '280px', height: '38px', backgroundColor: '#ffffff' }}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"><circle cx="6" cy="6" r="4.5" /><line x1="9.5" y1="9.5" x2="13" y2="13" /></svg>
+              <input type="text" placeholder="Search..." style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#0d1117', width: '100%', fontFamily: FONT }} />
             </div>
           </div>
 
           {/* Right actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            {/* Mail */}
-            <span style={{ fontSize: '16px', color: '#6b7280', cursor: 'pointer', lineHeight: 1 }}>✉</span>
-            {/* Share */}
-            <ShareIcon />
-
-            {/* Avatar group */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {[
-                { initials: 'AB', bg: '#dbeafe', color: '#1d4ed8' },
-                { initials: 'SC', bg: '#fce7f3', color: '#9d174d' },
-                { initials: 'MH', bg: '#d1fae5', color: '#065f46' },
-              ].map((a, i) => (
-                <div key={i} style={{
-                  width: '26px', height: '26px', borderRadius: '50%',
-                  backgroundColor: a.bg, color: a.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '9px', fontWeight: '700',
-                  marginLeft: i > 0 ? '-7px' : '0',
-                  border: '2px solid #fff',
-                  position: 'relative', zIndex: 3 - i,
-                }}>
-                  {a.initials}
-                </div>
-              ))}
-              <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '6px', fontWeight: '500' }}>+10</span>
-            </div>
-
-            {/* Invite button */}
-            <button type="button" style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              border: '1px solid #e5e7eb', borderRadius: '8px',
-              padding: '6px 14px', fontSize: '13px', fontWeight: '500',
-              backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer',
-              fontFamily: 'inherit', whiteSpace: 'nowrap',
-            }}>
-              <PersonIcon /> Invite
-            </button>
-
-            {/* Bell */}
-            <BellIcon />
-
-            {/* User avatar + name + chevron */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-              <div style={{
-                width: '30px', height: '30px', borderRadius: '50%',
-                backgroundColor: SIDEBAR_BG,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '11px', fontWeight: '700', color: '#fff', flexShrink: 0,
-              }}>
-                AD
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#0d1117' }}>Admin</span>
-              <ChevronIcon />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {['Today', 'This Week', 'This Month'].map(label => (
+              <button key={label} type="button" style={{ padding: '5px 12px', fontSize: '12px', border: '1px solid #e8ede8', borderRadius: '20px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>{label}</button>
+            ))}
+            <div style={{ width: '36px', height: '36px', border: '1px solid #e8ede8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#4b5563', cursor: 'pointer' }}>◉</div>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: LIME, color: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>{initials}</div>
           </div>
         </header>
 
-        {/* Content: left col + optional right col */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <main style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
-            {children}
-          </main>
-          {rightPanel && (
-            <aside style={{
-              width: '300px', flexShrink: 0,
-              borderLeft: '1px solid #f0f0f0',
-              padding: '24px', overflowY: 'auto',
-              backgroundColor: '#fff',
-            }}>
-              {rightPanel}
-            </aside>
-          )}
-        </div>
+        {/* Content */}
+        <main style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+          {children}
+        </main>
       </div>
     </div>
   );
 }
 
-function NavIcon({ icon, route }) {
+function NavItem({ item }) {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const active = route != null && location.pathname === route;
+  const active = item.route != null && (
+    item.route === '/admin'
+      ? location.pathname === '/admin'
+      : location.pathname.startsWith(item.route)
+  );
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => route && navigate(route)}
+      onClick={() => item.route && navigate(item.route)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        width: '40px', height: '40px', borderRadius: '10px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '18px',
-        backgroundColor: active ? '#2d3548' : hovered ? '#252b3b' : 'transparent',
-        color: active || hovered ? '#fff' : '#6b7280',
-        cursor: route ? 'pointer' : 'default',
-        transition: 'background-color 0.15s, color 0.15s',
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: active ? '11px 17px' : '11px 20px',
+        margin: '2px 0',
+        borderRadius: '10px',
+        fontSize: '13.5px', fontWeight: active ? '600' : '500',
+        color: active ? LIME : hovered ? '#9dd99e' : INACTIVE,
+        backgroundColor: active ? LIME_BG : hovered ? 'rgba(255,255,255,0.05)' : 'transparent',
+        borderLeft: active ? `3px solid ${LIME}` : '3px solid transparent',
+        cursor: item.route ? 'pointer' : 'default',
+        transition: 'all 0.15s',
+        userSelect: 'none',
       }}
     >
-      {icon}
+      <span style={{ fontSize: '15px', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+      <span>{item.label}</span>
     </div>
-  );
-}
-
-/* ── SVG icons ── */
-function MagnifyIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="6" cy="6" r="4.5" />
-      <line x1="9.5" y1="9.5" x2="13" y2="13" />
-    </svg>
-  );
-}
-function ShareIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="13" cy="3" r="1.5" />
-      <circle cx="13" cy="13" r="1.5" />
-      <circle cx="3"  cy="8" r="1.5" />
-      <line x1="4.3" y1="7.3"  x2="11.7" y2="3.7"  />
-      <line x1="4.3" y1="8.7"  x2="11.7" y2="12.3" />
-    </svg>
-  );
-}
-function PersonIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="6.5" cy="4" r="2.5" />
-      <path d="M1.5 12c0-2.76 2.24-5 5-5s5 2.24 5 5" />
-    </svg>
-  );
-}
-function BellIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 2a5 5 0 00-5 5v3l-1.5 2h13L14 10V7a5 5 0 00-5-5z" />
-      <path d="M7.5 15.5a1.5 1.5 0 003 0" />
-    </svg>
-  );
-}
-function ChevronIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round">
-      <polyline points="2,4 6,8 10,4" />
-    </svg>
   );
 }

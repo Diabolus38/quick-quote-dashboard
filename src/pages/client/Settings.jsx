@@ -3,21 +3,26 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
 
+const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const PRIMARY = '#166534';
+
+const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e8ede8', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '24px', marginBottom: '16px' };
+
 /* ── shared helpers ─────────────────────────────────────────── */
 
 function SectionHeader({ title, subtitle }) {
   return (
     <div style={{ marginBottom: '20px' }}>
-      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>{title}</h1>
-      {subtitle && <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>{subtitle}</p>}
+      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{title}</h1>
+      {subtitle && <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>{subtitle}</p>}
     </div>
   );
 }
 
 function SettingsCard({ title, children }) {
   return (
-    <div style={{ backgroundColor: '#fff', border: '1px solid #f0f0f0', borderRadius: '14px', padding: '20px', marginBottom: '16px' }}>
-      {title && <p style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '600', color: '#0d1117' }}>{title}</p>}
+    <div style={CARD}>
+      {title && <p style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{title}</p>}
       {children}
     </div>
   );
@@ -26,8 +31,9 @@ function SettingsCard({ title, children }) {
 function SaveButton({ onClick, saveMsg }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
-      {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>{saveMsg}</span>}
-      <button type="button" onClick={onClick} style={{ backgroundColor: '#0d3d2a', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+      {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{saveMsg}</span>}
+      <button type="button" onClick={onClick}
+        style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
         Save
       </button>
     </div>
@@ -36,8 +42,9 @@ function SaveButton({ onClick, saveMsg }) {
 
 function Toggle({ value, onChange }) {
   return (
-    <div onClick={() => onChange(!value)} style={{ width: '44px', height: '24px', borderRadius: '12px', backgroundColor: value ? '#0d3d2a' : '#e5e7eb', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background-color 0.2s' }}>
-      <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: value ? '23px' : '3px', transition: 'left 0.2s' }} />
+    <div onClick={() => onChange(!value)}
+      style={{ width: '40px', height: '22px', borderRadius: '11px', backgroundColor: value ? PRIMARY : '#e5e7eb', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background-color 0.2s' }}>
+      <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: value ? '21px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
     </div>
   );
 }
@@ -45,7 +52,7 @@ function Toggle({ value, onChange }) {
 function FieldRow({ label, children }) {
   return (
     <div style={{ marginBottom: '14px' }}>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: '#6b7280', marginBottom: '6px' }}>{label}</label>
+      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>{label}</label>
       {children}
     </div>
   );
@@ -54,21 +61,21 @@ function FieldRow({ label, children }) {
 function TextInput({ value, onChange, placeholder = '' }) {
   return (
     <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'inherit' }} />
+      style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }} />
   );
 }
 
 function Textarea({ value, onChange, placeholder = '' }) {
   return (
     <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={5}
-      style={{ width: '100%', boxSizing: 'border-box', minHeight: '100px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#0d1117', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }} />
+      style={{ width: '100%', boxSizing: 'border-box', minHeight: '100px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '12px 14px', fontSize: '13.5px', color: '#0d1117', fontFamily: FONT, resize: 'vertical', outline: 'none', backgroundColor: '#fff' }} />
   );
 }
 
 function PriceInput({ value, onChange }) {
   return (
     <input type="number" value={value} onChange={e => onChange(e.target.value)}
-      style={{ width: '80px', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '6px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: 'inherit' }} />
+      style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
   );
 }
 
@@ -85,8 +92,8 @@ function BrandingSection({ initialSettings }) {
   const clientId = profile?.client_id;
   const b = initialSettings?.branding || {};
 
-  const [primaryColor, setPrimaryColor] = useState(b.primary_color || '#0d3d2a');
-  const [colorHex,     setColorHex]     = useState(b.primary_color || '#0d3d2a');
+  const [primaryColor, setPrimaryColor] = useState(b.primary_color || '#166534');
+  const [colorHex,     setColorHex]     = useState(b.primary_color || '#166534');
   const [launcherText, setLauncherText] = useState(b.launcher_text || 'Get an instant estimate');
   const [companyName,  setCompanyName]  = useState(b.company_name  || '');
   const [saveMsg, flash] = useSaveMsg();
@@ -104,8 +111,8 @@ function BrandingSection({ initialSettings }) {
 
       <SettingsCard title="Company Logo">
         <FieldRow label="Company Logo">
-          <input type="file" accept="image/*" style={{ fontSize: '13px', color: '#374151' }} />
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af' }}>Recommended: PNG or SVG, max 2MB</p>
+          <input type="file" accept="image/*" style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }} />
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Recommended: PNG or SVG, max 2MB</p>
         </FieldRow>
       </SettingsCard>
 
@@ -114,10 +121,10 @@ function BrandingSection({ initialSettings }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <input type="color" value={primaryColor}
               onChange={e => { setPrimaryColor(e.target.value); setColorHex(e.target.value); }}
-              style={{ width: '42px', height: '36px', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer', padding: '2px' }} />
+              style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
             <input type="text" value={colorHex}
               onChange={e => { setColorHex(e.target.value); if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setPrimaryColor(e.target.value); }}
-              style={{ width: '120px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace' }} />
+              style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
           </div>
         </FieldRow>
       </SettingsCard>
@@ -198,11 +205,11 @@ function PricingSection({ initialPricing }) {
     const toObj = arr => Object.fromEntries(arr.map(item => [item.key, Number(item.value || 0)]));
     await supabase.from('client_pricing').update({
       base_prices,
-      fixed_costs:    toObj(fixedCosts),
+      fixed_costs:     toObj(fixedCosts),
       per_meter_costs: toObj(perMeter),
       addons:          toObj(addOns),
-      rot_enabled:    rotEnabled,
-      rot_percentage: Number(rotPercent || 30),
+      rot_enabled:     rotEnabled,
+      rot_percentage:  Number(rotPercent || 30),
       currency,
     }).eq('client_id', clientId);
     flash();
@@ -210,12 +217,14 @@ function PricingSection({ initialPricing }) {
 
   function PriceRows({ items, setter }) {
     return items.map((item, i) => (
-      <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f7f7f7' }}>
-        <span style={{ fontSize: '13px', color: '#374151' }}>{item.label}</span>
+      <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+        <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
         <PriceInput value={item.value} onChange={val => updateList(setter, i, val)} />
       </div>
     ));
   }
+
+  const selStyle = { width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' };
 
   return (
     <>
@@ -225,10 +234,10 @@ function PricingSection({ initialPricing }) {
         <div style={{ overflowX: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '100px repeat(5, 80px)', gap: '8px', alignItems: 'center' }}>
             <div />
-            {hh.map(h => <div key={h} style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', textAlign: 'center' }}>{h} hh</div>)}
+            {hh.map(h => <div key={h} style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textAlign: 'center', fontFamily: FONT }}>{h} hh</div>)}
             {baseGrid.map((row, ri) => (
               <>
-                <div key={row.key} style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>{row.label}</div>
+                <div key={row.key} style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>{row.label}</div>
                 {hh.map((_, ci) => <PriceInput key={ci} value={row.values[ci]} onChange={val => updateGrid(ri, ci, val)} />)}
               </>
             ))}
@@ -243,13 +252,13 @@ function PricingSection({ initialPricing }) {
       <SettingsCard title="ROT Deduction">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: rotEnabled ? '14px' : 0 }}>
           <Toggle value={rotEnabled} onChange={setRotEnabled} />
-          <span style={{ fontSize: '13px', color: '#374151' }}>ROT Deduction {rotEnabled ? 'enabled' : 'disabled'}</span>
+          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>ROT Deduction {rotEnabled ? 'enabled' : 'disabled'}</span>
         </div>
         {rotEnabled && (
           <FieldRow label="Deduction Percentage">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <PriceInput value={rotPercent} onChange={setRotPercent} />
-              <span style={{ fontSize: '13px', color: '#6b7280' }}>%</span>
+              <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>%</span>
             </div>
           </FieldRow>
         )}
@@ -257,8 +266,7 @@ function PricingSection({ initialPricing }) {
 
       <SettingsCard title="Currency">
         <FieldRow label="Currency">
-          <select value={currency} onChange={e => setCurrency(e.target.value)}
-            style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'inherit', backgroundColor: '#fff' }}>
+          <select value={currency} onChange={e => setCurrency(e.target.value)} style={selStyle}>
             {['SEK','EUR','GBP','NOK','DKK'].map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </FieldRow>
@@ -356,14 +364,14 @@ function EmailSection({ initialSettings }) {
       <SettingsCard title="Customer Email">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           <Toggle value={sendCustomer} onChange={setSendCustomer} />
-          <span style={{ fontSize: '13px', color: '#374151' }}>Send customer email after estimate</span>
+          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>Send customer email after estimate</span>
         </div>
         {sendCustomer && (
           <>
             <FieldRow label="Subject Line"><TextInput value={custSubject} onChange={setCustSubject} /></FieldRow>
             <FieldRow label="Body">
               <Textarea value={custBody} onChange={setCustBody} placeholder="Write your customer email body here..." />
-              <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af' }}>Available variables: {'{name}'}, {'{price}'}, {'{municipality}'}</p>
+              <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Available variables: {'{name}'}, {'{price}'}, {'{municipality}'}</p>
             </FieldRow>
           </>
         )}
@@ -371,12 +379,13 @@ function EmailSection({ initialSettings }) {
       <SettingsCard title="Internal Notification">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Toggle value={sendInternal} onChange={setSendInternal} />
-          <span style={{ fontSize: '13px', color: '#374151' }}>Send internal notification on new lead</span>
+          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>Send internal notification on new lead</span>
         </div>
       </SettingsCard>
       <SettingsCard title="Test Email">
-        <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#6b7280' }}>Send a test email to verify your settings.</p>
-        <button type="button" style={{ border: '1px solid #0d3d2a', color: '#0d3d2a', backgroundColor: '#fff', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+        <p style={{ margin: '0 0 14px', fontSize: '13.5px', color: '#6b7280', fontFamily: FONT }}>Send a test email to verify your settings.</p>
+        <button type="button"
+          style={{ border: `1px solid ${PRIMARY}`, color: PRIMARY, backgroundColor: '#fff', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>
           Send Test Email
         </button>
       </SettingsCard>
@@ -426,13 +435,13 @@ function MunicipalitiesSection({ initialMunicipalities }) {
       <SettingsCard>
         <div style={{ position: 'relative' }}>
           <input type="text" placeholder="Search municipality..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box', height: '42px', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '0 16px', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }} />
+            style={{ width: '100%', boxSizing: 'border-box', height: '42px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 16px', fontSize: '13.5px', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
           {showDropdown && (
-            <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 10, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', boxShadow: '0 4px 16px rgba(13,31,18,0.10)', zIndex: 10, overflow: 'hidden' }}>
               {filtered.map(m => (
                 <div key={m} onClick={() => addMunicipality(m)}
-                  style={{ padding: '10px 16px', fontSize: '13px', color: '#374151', cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  style={{ padding: '10px 16px', fontSize: '13.5px', color: '#374151', cursor: 'pointer', fontFamily: FONT }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f6f4'}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                   {m}
                 </div>
@@ -443,27 +452,27 @@ function MunicipalitiesSection({ initialMunicipalities }) {
 
         <div style={{ marginTop: '20px' }}>
           {covered.length === 0 ? (
-            <p style={{ fontSize: '13px', color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No municipalities added yet.</p>
+            <p style={{ fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>No municipalities added yet.</p>
           ) : covered.map(c => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f7f7f7' }}>
-              <span style={{ flex: 1, fontSize: '13px', color: '#0d1117', fontWeight: '500' }}>{c.municipality}</span>
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
+              <span style={{ flex: 1, fontSize: '13.5px', color: '#0d1117', fontWeight: '500', fontFamily: FONT }}>{c.municipality}</span>
               {[1, 2].map(z => (
                 <button key={z} type="button" onClick={() => changeZone(c.id, z)}
-                  style={{ padding: '4px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', border: c.zone === z ? 'none' : '1px solid #e5e7eb', backgroundColor: c.zone === z ? (z === 1 ? '#0d3d2a' : '#1d4ed8') : '#fff', color: c.zone === z ? '#fff' : '#6b7280' }}>
+                  style={{ padding: '4px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, border: c.zone === z ? 'none' : '1px solid #e8ede8', backgroundColor: c.zone === z ? (z === 1 ? PRIMARY : '#1d4ed8') : '#fff', color: c.zone === z ? '#fff' : '#6b7280' }}>
                   Zone {z}
                 </button>
               ))}
-              <button type="button" onClick={() => removeRow(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#dc2626', lineHeight: 1, padding: '0 4px' }}>×</button>
+              <button type="button" onClick={() => removeRow(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#dc2626', lineHeight: 1, padding: '0 4px' }}>×</button>
             </div>
           ))}
         </div>
 
         <div style={{ marginTop: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '500', marginBottom: '6px' }}>
+          <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px', fontFamily: FONT }}>
             Message shown when municipality is not covered
           </label>
           <input type="text" value={notCoveredMsg} onChange={e => setNotCoveredMsg(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'inherit' }} />
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }} />
         </div>
       </SettingsCard>
     </>
@@ -491,7 +500,7 @@ function LanguagesSection({ initialSettings }) {
     flash();
   }
 
-  const selStyle = { border: '1px solid #e5e7eb', borderRadius: '8px', padding: '9px 12px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'inherit', backgroundColor: '#fff' };
+  const selStyle = { width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' };
 
   return (
     <>
@@ -505,8 +514,8 @@ function LanguagesSection({ initialSettings }) {
       </SettingsCard>
       <SettingsCard title="Available Languages">
         {LANGUAGES.map(lang => (
-          <div key={lang} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f7f7f7' }}>
-            <span style={{ fontSize: '13px', color: '#374151' }}>{lang}</span>
+          <div key={lang} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
+            <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>{lang}</span>
             <Toggle value={!!enabled[lang]} onChange={() => setEnabled(prev => ({ ...prev, [lang]: !prev[lang] }))} />
           </div>
         ))}
@@ -545,26 +554,27 @@ function EmbedCodeSection({ clientId }) {
     <>
       <SectionHeader title="Embed Code" subtitle="Copy this code and paste it into your website." />
       <SettingsCard>
-        <pre style={{ backgroundColor: '#1a1f2e', color: '#67e8f9', fontFamily: 'monospace', borderRadius: '12px', padding: '20px', fontSize: '13px', wordBreak: 'break-all', whiteSpace: 'pre-wrap', margin: 0 }}>
+        <pre style={{ backgroundColor: '#0d1f12', color: '#a3e635', fontFamily: 'monospace', borderRadius: '12px', padding: '20px', fontSize: '13px', wordBreak: 'break-all', whiteSpace: 'pre-wrap', margin: 0 }}>
           {scriptTag}
         </pre>
         <div style={{ marginTop: '12px' }}>
-          <button type="button" onClick={handleCopy} style={{ backgroundColor: '#0d3d2a', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button type="button" onClick={handleCopy}
+            style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
             {copied ? 'Copied!' : 'Copy Code'}
           </button>
         </div>
       </SettingsCard>
       <SettingsCard>
-        <p style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '600', color: '#0d1117' }}>How to install</p>
+        <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>How to install</p>
         {INSTALL_GUIDES.map(guide => (
-          <div key={guide.title} style={{ borderBottom: '1px solid #f7f7f7' }}>
+          <div key={guide.title} style={{ borderBottom: '1px solid #f4f6f4' }}>
             <button type="button" onClick={() => setExpanded(prev => ({ ...prev, [guide.title]: !prev[guide.title] }))}
-              style={{ width: '100%', textAlign: 'left', padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'inherit' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>{guide.title}</span>
+              style={{ width: '100%', textAlign: 'left', padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: FONT }}>
+              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#374151' }}>{guide.title}</span>
               <span style={{ fontSize: '16px', color: '#9ca3af', display: 'inline-block', transform: expanded[guide.title] ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
             </button>
             {expanded[guide.title] && (
-              <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#6b7280', lineHeight: '1.7', whiteSpace: 'pre-line' }}>{guide.content}</p>
+              <p style={{ margin: '0 0 12px', fontSize: '13.5px', color: '#6b7280', lineHeight: '1.7', whiteSpace: 'pre-line', fontFamily: FONT }}>{guide.content}</p>
             )}
           </div>
         ))}
@@ -603,33 +613,37 @@ export default function ClientSettingsPage() {
     load();
   }, [clientId]);
 
-  const navBtn = (item) => (
-    <button key={item} type="button" onClick={() => setActiveSection(item)}
-      style={{ width: '100%', textAlign: 'left', padding: '9px 12px', marginBottom: '2px', fontSize: '13px', fontWeight: activeSection === item ? '600' : '400', color: activeSection === item ? '#0d3d2a' : '#6b7280', backgroundColor: activeSection === item ? '#f0fdf4' : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}>
-      {item}
-    </button>
-  );
-
   return (
     <ClientLayout title="Settings">
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
 
-        <div style={{ width: '180px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #f0f0f0', borderRadius: '14px', padding: '8px', position: 'sticky', top: '80px' }}>
-          {NAV_ITEMS.map(navBtn)}
+        {/* Side nav */}
+        <div style={{ width: '190px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '16px', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '10px', position: 'sticky', top: '80px' }}>
+          <p style={{ margin: '0 0 8px', padding: '0 8px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT }}>Settings</p>
+          {NAV_ITEMS.map(item => {
+            const active = activeSection === item;
+            return (
+              <button key={item} type="button" onClick={() => setActiveSection(item)}
+                style={{ width: '100%', textAlign: 'left', padding: active ? '9px 11px' : '9px 14px', marginBottom: '2px', fontSize: '13.5px', fontWeight: active ? '600' : '400', color: active ? PRIMARY : '#6b7280', backgroundColor: active ? '#f0fdf4' : 'transparent', border: 'none', borderLeft: active ? `3px solid ${PRIMARY}` : '3px solid transparent', borderRadius: active ? '0 8px 8px 0' : '8px', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.12s' }}>
+                {item}
+              </button>
+            );
+          })}
         </div>
 
+        {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!dataReady ? (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px' }}>Loading settings...</div>
+            <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading settings…</div>
           ) : (
             <>
-              {activeSection === 'Branding'       && <BrandingSection      key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Pricing'        && <PricingSection       key={clientId} initialPricing={pricingRow} />}
-              {activeSection === 'PDF Content'    && <PDFSection           key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Email Settings' && <EmailSection         key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Branding'       && <BrandingSection       key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Pricing'        && <PricingSection        key={clientId} initialPricing={pricingRow} />}
+              {activeSection === 'PDF Content'    && <PDFSection            key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Email Settings' && <EmailSection          key={clientId} initialSettings={settingsRow} />}
               {activeSection === 'Municipalities' && <MunicipalitiesSection key={clientId} initialMunicipalities={municipalities} />}
-              {activeSection === 'Languages'      && <LanguagesSection     key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Embed Code'     && <EmbedCodeSection     clientId={clientId} />}
+              {activeSection === 'Languages'      && <LanguagesSection      key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Embed Code'     && <EmbedCodeSection      clientId={clientId} />}
             </>
           )}
         </div>
