@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const navRoutes = {
-  Overview: '/client',
-  Leads:    '/client/leads',
-  Settings: '/client/settings',
+  Overview:  '/client',
+  Leads:     '/client/leads',
+  Questions: '/client/questions',
+  Settings:  '/client/settings',
 };
 
 export default function ClientLayout({ title, children }) {
-  const navItems = ['Overview', 'Leads', 'Settings'];
+  const navItems = ['Overview', 'Leads', 'Questions', 'Settings'];
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "system-ui, 'Segoe UI', Roboto, sans-serif" }}>

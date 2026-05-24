@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
 const SIDEBAR_BG = '#1a1f2e';
 
-const topNavItems = [
+const BASE_TOP_NAV = [
   { icon: '▤', route: '/admin'           },
   { icon: '◎', route: '/admin/clients'   },
   { icon: '⊞', route: '/admin/estimates' },
-  { icon: '◈', route: '/admin/billing'   },
+  { icon: '◆', route: '/admin/billing'   },
 ];
+
+const SUPER_ADMIN_ITEM = { icon: '◈', route: '/admin/super' };
 
 const bottomNavItems = [
   { icon: '✦', route: '/admin/settings' },
@@ -16,6 +19,12 @@ const bottomNavItems = [
 ];
 
 export default function Layout({ title, children, rightPanel }) {
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const topNavItems = isSuperAdmin
+    ? [...BASE_TOP_NAV, SUPER_ADMIN_ITEM]
+    : BASE_TOP_NAV;
+
   return (
     <div style={{
       display: 'flex', height: '100vh', overflow: 'hidden',

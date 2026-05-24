@@ -165,7 +165,12 @@ export default function LoginPage() {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label} htmlFor="password">Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ ...styles.label, marginBottom: 0 }} htmlFor="password">Password</label>
+              <button type="button" onClick={() => navigate('/forgot-password')} style={{ ...styles.link, fontSize: '12px', color: '#6b7280', fontWeight: '400' }}>
+                Forgot password?
+              </button>
+            </div>
             <input
               id="password"
               type="password"
