@@ -12,6 +12,7 @@ import AdminOverview from './pages/AdminOverview';
 import Clients       from './pages/Clients';
 import ClientDetail  from './pages/admin/ClientDetail';
 import SuperAdmin    from './pages/admin/SuperAdmin';
+import AllLeads      from './pages/admin/AllLeads';
 import Estimates     from './pages/Estimates';
 import Billing       from './pages/Billing';
 import Settings      from './pages/Settings';
@@ -41,18 +42,19 @@ export default function App() {
           <Route path="/admin/clients"     element={<ProtectedRoute requiredRole="super_admin"><Clients /></ProtectedRoute>} />
           <Route path="/admin/clients/:id" element={<ProtectedRoute requiredRole="super_admin"><ClientDetail /></ProtectedRoute>} />
           <Route path="/admin/super"       element={<ProtectedRoute requiredRole="super_admin"><SuperAdmin /></ProtectedRoute>} />
+          <Route path="/admin/leads"       element={<ProtectedRoute requiredRole="super_admin"><AllLeads /></ProtectedRoute>} />
           <Route path="/admin/estimates"   element={<ProtectedRoute requiredRole="super_admin"><Estimates /></ProtectedRoute>} />
           <Route path="/admin/billing"     element={<ProtectedRoute requiredRole="super_admin"><Billing /></ProtectedRoute>} />
           <Route path="/admin/settings"    element={<ProtectedRoute requiredRole="super_admin"><Settings /></ProtectedRoute>} />
 
           {/* ── Client protected ── */}
-          <Route path="/client"              element={<ProtectedRoute requiredRole="client"><ClientOverview /></ProtectedRoute>} />
-          <Route path="/client/leads"      element={<ProtectedRoute requiredRole="client"><Leads /></ProtectedRoute>} />
-          <Route path="/client/leads/:id"  element={<ProtectedRoute requiredRole="client"><LeadDetail /></ProtectedRoute>} />
-          <Route path="/client/estimates"  element={<ProtectedRoute requiredRole="client"><ClientEstimates /></ProtectedRoute>} />
-          <Route path="/client/customers"  element={<ProtectedRoute requiredRole="client"><ClientCustomers /></ProtectedRoute>} />
-          <Route path="/client/settings"   element={<ProtectedRoute requiredRole="client"><ClientSettings /></ProtectedRoute>} />
-          <Route path="/client/questions"  element={<ProtectedRoute requiredRole="client"><QuestionEditor /></ProtectedRoute>} />
+          <Route path="/client"             element={<ProtectedRoute requiredRole="client"><ClientOverview /></ProtectedRoute>} />
+          <Route path="/client/leads"       element={<ProtectedRoute requiredRole="client"><Leads /></ProtectedRoute>} />
+          <Route path="/client/leads/:id"   element={<ProtectedRoute requiredRole="client"><LeadDetail /></ProtectedRoute>} />
+          <Route path="/client/estimates"   element={<ProtectedRoute requiredRole="client"><ClientEstimates /></ProtectedRoute>} />
+          <Route path="/client/customers"   element={<ProtectedRoute requiredRole="client"><ClientCustomers /></ProtectedRoute>} />
+          <Route path="/client/settings"    element={<ProtectedRoute requiredRole="client"><ClientSettings /></ProtectedRoute>} />
+          <Route path="/client/questions"   element={<ProtectedRoute requiredRole="client"><QuestionEditor /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

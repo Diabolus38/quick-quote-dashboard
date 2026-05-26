@@ -13,7 +13,7 @@ const PRIMARY = '#166534';
 const MENU_ITEMS = [
   { icon: '⊞', label: 'Overview',   route: '/admin'           },
   { icon: '◎', label: 'Clients',    route: '/admin/clients'   },
-  { icon: '▤', label: 'Estimates',  route: '/admin/estimates' },
+  { icon: '▤', label: 'Leads',      route: '/admin/leads'     },
   { icon: '$', label: 'Billing',    route: '/admin/billing'   },
 ];
 

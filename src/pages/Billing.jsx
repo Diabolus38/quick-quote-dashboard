@@ -1,118 +1,250 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../Layout';
+import { supabase } from '../lib/supabase';
 
-const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
 
-const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e8ede8', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '24px' };
-
-const statCards = [
-  { label: 'Total Revenue', value: '12,400 kr', sub: null,                            color: '#ecfccb', textColor: '#3f6212' },
-  { label: 'Collected',     value: '9,800 kr',  sub: { text: 'Paid transactions',  color: '#16a34a' }, color: '#dcfce7', textColor: '#166534' },
-  { label: 'Pending',       value: '1,800 kr',  sub: { text: 'Awaiting payment',   color: '#d97706' }, color: '#fef9c3', textColor: '#854d0e' },
-  { label: 'Outstanding',   value: '800 kr',    sub: { text: 'Overdue payments',   color: '#dc2626' }, color: '#fee2e2', textColor: '#991b1b' },
-];
-
-const invoices = [
-  { id: 'INV-2401', client: 'Acme AB',     service: 'New Installation',    amount: '125,000 kr', method: 'Bank Transfer', date: '2026-04-14', status: 'Paid'        },
-  { id: 'INV-2402', client: 'NordBygg',    service: 'Renovation',          amount: '87,500 kr',  method: 'Invoice',       date: '2026-04-13', status: 'Paid'        },
-  { id: 'INV-2403', client: 'VattSystem',  service: 'WC + BDT System',     amount: '143,000 kr', method: 'Bank Transfer', date: '2026-04-12', status: 'Pending'     },
-  { id: 'INV-2404', client: 'EkoTeknik',   service: 'Underground Install', amount: '96,000 kr',  method: 'Invoice',       date: '2026-04-10', status: 'Paid'        },
-  { id: 'INV-2405', client: 'MarkVatten',  service: 'Pump Installation',   amount: '78,000 kr',  method: 'Credit',        date: '2026-04-09', status: 'Outstanding' },
-  { id: 'INV-2406', client: 'Bergström AB',service: 'Municipality Plan',   amount: '34,000 kr',  method: 'Invoice',       date: '2026-04-07', status: 'Paid'        },
-];
-
-const statusStyle = {
-  Paid:        { backgroundColor: '#dcfce7', color: '#166534' },
-  Pending:     { backgroundColor: '#fef9c3', color: '#854d0e' },
-  Outstanding: { backgroundColor: '#fee2e2', color: '#991b1b' },
+const CARD = {
+  backgroundColor: '#ffffff',
+  borderRadius: '16px',
+  border: '1px solid #e8ede8',
+  boxShadow: '0 2px 12px rgba(13,31,18,0.06)',
+  padding: '24px',
 };
 
-const COLUMNS = ['Invoice ID', 'Client', 'Service', 'Amount', 'Payment Method', 'Date', 'Status', 'Actions'];
+const PLAN_FEE     = { starter: 300,  growth: 600,  scale: 1149 };
+const PLAN_LIMIT   = { starter: 30,   growth: 75,   scale: Infinity };
+const OVERAGE_RATE = { starter: 25,   growth: 18,   scale: 0 };
+
+const PLAN_BADGE = {
+  starter: { bg: '#dbeafe', color: '#1d4ed8' },
+  growth:  { bg: '#ede9fe', color: '#7c3aed' },
+  scale:   { bg: '#ecfccb', color: '#3f6212' },
+};
+
+function capitalize(s) {
+  if (!s) return '—';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function exportBillingCSV(rows) {
+  const headers = ['Client','Plan','Monthly Fee','Leads Used','Limit','Overage','Overage Charge','Total This Month','Status'];
+  const data = rows.map(r => [
+    r.name,
+    r.plan,
+    r.fee,
+    r.used,
+    r.limit === Infinity ? 'Unlimited' : r.limit,
+    r.overage,
+    r.overageCharge,
+    r.total,
+    r.status,
+  ]);
+  const csv = [headers, ...data]
+    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `quickquote360-billing-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function Billing() {
-  const [hoveredRow,    setHoveredRow]    = useState(null);
-  const [hoveredAction, setHoveredAction] = useState(null);
+  const [clients,  setClients]  = useState([]);
+  const [leads,    setLeads]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [hovRow,   setHovRow]   = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      const now        = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [clientsRes, leadsRes] = await Promise.all([
+        supabase.from('clients').select('*').order('created_at', { ascending: false }),
+        supabase.from('leads').select('id, client_id, created_at').gte('created_at', monthStart),
+      ]);
+      setClients(clientsRes.data || []);
+      setLeads(leadsRes.data   || []);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  /* ── Build billing rows ── */
+  const leadsThisMonth = {};
+  leads.forEach(l => {
+    leadsThisMonth[l.client_id] = (leadsThisMonth[l.client_id] || 0) + 1;
+  });
+
+  const billingRows = clients.map(c => {
+    const plan    = c.plan || 'starter';
+    const fee     = PLAN_FEE[plan]     || 300;
+    const limit   = PLAN_LIMIT[plan]   ?? 30;
+    const rate    = OVERAGE_RATE[plan] ?? 25;
+    const used    = leadsThisMonth[c.id] || 0;
+    const overage = limit === Infinity ? 0 : Math.max(0, used - limit);
+    const overageCharge = overage * rate;
+    const total   = fee + overageCharge;
+    return {
+      id:            c.id,
+      name:          c.name,
+      email:         c.email,
+      active:        c.active !== false,
+      plan,
+      fee,
+      limit,
+      used,
+      overage,
+      rate,
+      overageCharge,
+      total,
+      status:        'Paid',
+    };
+  });
+
+  /* ── Computed totals ── */
+  const totalMRR      = billingRows.reduce((s, r) => s + r.fee, 0);
+  const totalOverages = billingRows.reduce((s, r) => s + r.overageCharge, 0);
+  const totalRevenue  = totalMRR + totalOverages;
+  const activeCount   = clients.filter(c => c.active !== false).length;
+
+  const statCards = [
+    { label: 'Monthly Revenue',      value: `$${totalRevenue.toLocaleString()}`,  bg: '#ecfccb', color: '#3f6212' },
+    { label: 'Collected',            value: `$${totalRevenue.toLocaleString()}`,  bg: '#dcfce7', color: '#166534' },
+    { label: 'Pending Overages',     value: `$${totalOverages.toLocaleString()}`, bg: '#fef9c3', color: '#854d0e' },
+    { label: 'Active Subscriptions', value: activeCount,                           bg: '#dbeafe', color: '#1d4ed8' },
+  ];
+
+  if (loading) return (
+    <Layout title="Billing">
+      <div style={{ textAlign: 'center', padding: '80px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>
+    </Layout>
+  );
 
   return (
     <Layout title="Billing">
       <div style={{ fontFamily: FONT }}>
 
-        {/* Top row */}
+        {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
           <div>
-            <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Billing &amp; Invoices</h1>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>6 transactions this month</p>
+            <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Billing</h1>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Revenue tracking and invoice management</p>
           </div>
-          <button type="button" style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+          <button type="button" onClick={() => exportBillingCSV(billingRows)}
+            style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
             ↓ Export Report
           </button>
         </div>
 
-        {/* Stat cards */}
+        {/* ── Stat Cards ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
           {statCards.map(card => (
             <div key={card.label} style={CARD}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '16px', fontWeight: '700', color: card.textColor }}>$</div>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '16px', fontWeight: '700', color: card.color }}>$</div>
               <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
               <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{card.value}</p>
-              {card.sub && <p style={{ margin: '6px 0 0', fontSize: '12px', color: card.sub.color, fontWeight: '500' }}>{card.sub.text}</p>}
             </div>
           ))}
         </div>
 
-        {/* Search */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', height: '42px', backgroundColor: '#fff' }}>
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"><circle cx="6" cy="6" r="4.5" /><line x1="9.5" y1="9.5" x2="13" y2="13" /></svg>
-            <input type="text" placeholder="Search by client name or invoice ID…" style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13.5px', color: '#0d1117', width: '100%', fontFamily: FONT }} />
-          </div>
-          <button type="button" style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '9px 16px', fontSize: '13px', fontWeight: '500', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, height: '42px' }}>
-            ≡ Filter
-          </button>
-        </div>
-
-        {/* Table */}
+        {/* ── Billing Table ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fbf9' }}>
-                {COLUMNS.map(col => (
-                  <th key={col} style={{ textAlign: 'left', padding: '12px 20px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((row, i) => (
-                <tr key={row.id} onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)}
-                  style={{ backgroundColor: hoveredRow === i ? '#f9fbf9' : '#fff', borderBottom: i < invoices.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
-                  <td style={{ padding: '14px 20px', fontWeight: '700', color: '#0d1117' }}>{row.id}</td>
-                  <td style={{ padding: '14px 20px', color: '#4b5563', fontWeight: '500' }}>{row.client}</td>
-                  <td style={{ padding: '14px 20px', color: '#4b5563' }}>{row.service}</td>
-                  <td style={{ padding: '14px 20px', fontWeight: '600', color: '#0d1117' }}>{row.amount}</td>
-                  <td style={{ padding: '14px 20px', color: '#4b5563' }}>{row.method}</td>
-                  <td style={{ padding: '14px 20px', color: '#9ca3af' }}>{row.date}</td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', ...statusStyle[row.status] }}>{row.status}</span>
-                  </td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      {[{ sym: '👁', lbl: 'View' }, { sym: '⎙', lbl: 'Print' }, { sym: '↓', lbl: 'Save' }].map((action, ai) => {
-                        const key = `${i}-${ai}`;
-                        return (
-                          <button key={ai} type="button" title={action.lbl}
-                            onMouseEnter={() => setHoveredAction(key)} onMouseLeave={() => setHoveredAction(null)}
-                            style={{ width: '28px', height: '28px', borderRadius: '8px', border: 'none', background: hoveredAction === key ? '#f4f6f4' : 'transparent', cursor: 'pointer', fontSize: '13px', color: hoveredAction === key ? PRIMARY : '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
-                            {action.sym}
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Billing Overview</span>
+            <span style={{ fontSize: '13px', color: '#9ca3af' }}>{billingRows.length} clients</span>
+          </div>
+          {billingRows.length === 0 ? (
+            <div style={{ padding: '64px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients yet.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#fafafa' }}>
+                    {['Client','Plan','Monthly Fee','Leads Used','Limit','Overage','Overage Charge','Total This Month','Status','Actions'].map(col => (
+                      <th key={col} style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {billingRows.map((row, i) => {
+                    const pb = PLAN_BADGE[row.plan] || PLAN_BADGE.starter;
+                    return (
+                      <tr key={row.id}
+                        onMouseEnter={() => setHovRow(row.id)}
+                        onMouseLeave={() => setHovRow(null)}
+                        style={{ backgroundColor: hovRow === row.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
+
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ fontWeight: '600', color: '#0d1117' }}>{row.name}</div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{row.email}</div>
+                        </td>
+
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>
+                            {capitalize(row.plan)}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '14px 16px', fontWeight: '600', color: '#0d1117' }}>${row.fee.toLocaleString()}</td>
+
+                        <td style={{ padding: '14px 16px', fontWeight: '600', color: '#0d1117' }}>{row.used}</td>
+
+                        <td style={{ padding: '14px 16px', color: '#4b5563' }}>
+                          {row.limit === Infinity ? '∞' : row.limit}
+                        </td>
+
+                        <td style={{ padding: '14px 16px', color: row.overage > 0 ? '#dc2626' : '#9ca3af', fontWeight: row.overage > 0 ? '700' : '400' }}>
+                          {row.overage > 0 ? `+${row.overage}` : '0'}
+                        </td>
+
+                        <td style={{ padding: '14px 16px', fontWeight: '600', color: row.overageCharge > 0 ? '#dc2626' : '#9ca3af' }}>
+                          ${row.overageCharge.toLocaleString()}
+                        </td>
+
+                        <td style={{ padding: '14px 16px', fontWeight: '700', color: '#0d1117' }}>
+                          ${row.total.toLocaleString()}
+                        </td>
+
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: row.status === 'Paid' ? '#dcfce7' : '#fef9c3', color: row.status === 'Paid' ? '#166534' : '#854d0e' }}>
+                            {row.status}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '14px 16px' }}>
+                          <button type="button" onClick={() => alert('Invoice feature coming with Stripe integration')}
+                            style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: '#f4f6f4', color: '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                            Send Invoice
                           </button>
-                        );
-                      })}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Totals row */}
+          {billingRows.length > 0 && (
+            <div style={{ padding: '16px 24px', borderTop: '2px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '32px', backgroundColor: '#fafafa' }}>
+              <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
+                MRR: <span style={{ color: '#0d1117' }}>${totalMRR.toLocaleString()}</span>
+              </span>
+              <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
+                Overages: <span style={{ color: totalOverages > 0 ? '#dc2626' : '#0d1117' }}>${totalOverages.toLocaleString()}</span>
+              </span>
+              <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>
+                Total: ${totalRevenue.toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
 
       </div>
