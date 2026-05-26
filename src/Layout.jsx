@@ -103,7 +103,7 @@ export default function Layout({ title, subtitle, children }) {
         <div style={{ padding: '8px 10px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
           <BottomNavItem icon="💬" label="Get Help" onClick={() => window.open('mailto:support@quickquote360.com')} />
           <BottomNavItem icon="⚙" label="Settings"  onClick={() => navigate('/admin/settings')} />
-          <BottomNavItem icon="↩" label="Logout"    onClick={() => signOut()} />
+          <BottomNavItem icon="↩" label="Logout"    onClick={async () => { await signOut(); navigate('/login'); }} />
         </div>
       </aside>
 
