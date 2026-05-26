@@ -148,7 +148,19 @@ export default function AdminOverview() {
 
   if (loading) return (
     <Layout title="Dashboard">
-      <div style={{ textAlign: 'center', padding: '80px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+      <div style={{ fontFamily: FONT }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ borderRadius: '16px', background: '#f0f0f0', height: '120px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ flex: 1, borderRadius: '16px', background: '#f0f0f0', height: '320px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ width: '320px', flexShrink: 0, borderRadius: '16px', background: '#f0f0f0', height: '320px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+        <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '240px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      </div>
     </Layout>
   );
 

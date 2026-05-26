@@ -159,7 +159,23 @@ export default function ClientDetail() {
 
   if (loading) return (
     <Layout title="Client Detail">
-      <div style={{ textAlign: 'center', padding: '80px 0', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+      <div style={{ fontFamily: FONT }}>
+        <div style={{ borderRadius: '8px', background: '#f0f0f0', height: '20px', width: '130px', marginBottom: '20px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '56px', marginBottom: '28px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '300px', marginBottom: '16px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '160px', marginBottom: '16px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '220px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          </div>
+          <div style={{ width: '300px', flexShrink: 0 }}>
+            <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '220px', marginBottom: '16px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '180px', marginBottom: '16px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ borderRadius: '16px', background: '#f0f0f0', height: '200px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 
