@@ -134,7 +134,7 @@ export default function QuestionEditor() {
             {QUESTION_DEFS.map(({ key, label }, idx) => {
               const q = questions[key] || makeDefault(key);
               return (
-                <div key={key} style={{ backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #e8ede8', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '22px 24px', marginBottom: '14px' }}>
+                <div key={key} style={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '22px 24px', marginBottom: '14px' }}>
 
                   {/* Card header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>

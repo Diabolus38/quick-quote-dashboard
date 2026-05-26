@@ -51,8 +51,8 @@ export default function LoginPage() {
       <AuthLeft />
 
       {/* Right panel */}
-      <div style={{ flex: 1, backgroundColor: '#f4f6f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
+      <div style={{ flex: 1, backgroundColor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)', border: 'none' }}>
 
           <h1 style={{ margin: '0 0 6px', fontSize: '24px', fontWeight: '700', color: '#0d1117' }}>Welcome back</h1>
           <p style={{ margin: '0 0 32px', fontSize: '14px', color: '#9ca3af' }}>Sign in to your dashboard</p>
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
 export function AuthLeft() {
   return (
-    <div style={{ flex: 1, backgroundColor: DARK, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 64px' }}>
+    <div style={{ flex: 1, background: 'linear-gradient(135deg, #0d1f12 0%, #166534 100%)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 64px' }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '52px' }}>
         <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: LIME, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '800', color: DARK }}>Q</div>

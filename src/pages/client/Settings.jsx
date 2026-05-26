@@ -6,7 +6,7 @@ import ClientLayout from '../../ClientLayout';
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
 
-const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e8ede8', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '24px', marginBottom: '16px' };
+const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' };
 
 /* ── shared helpers ─────────────────────────────────────────── */
 
@@ -655,7 +655,7 @@ export default function ClientSettingsPage() {
       <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
 
         {/* Side nav */}
-        <div style={{ width: '190px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '16px', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '10px', position: 'sticky', top: '80px' }}>
+        <div style={{ width: '190px', flexShrink: 0, backgroundColor: '#fff', border: 'none', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '10px', position: 'sticky', top: '80px' }}>
           <p style={{ margin: '0 0 8px', padding: '0 8px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT }}>Settings</p>
           {NAV_ITEMS.map(item => {
             const active = activeSection === item;

@@ -34,8 +34,8 @@ export default function ForgotPassword() {
       <AuthLeft />
 
       {/* Right panel */}
-      <div style={{ flex: 1, backgroundColor: '#f4f6f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
+      <div style={{ flex: 1, backgroundColor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)', border: 'none' }}>
 
           {emailSent ? (
             <div style={{ textAlign: 'center' }}>

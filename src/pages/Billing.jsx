@@ -8,8 +8,8 @@ const PRIMARY = '#166534';
 const CARD = {
   backgroundColor: '#ffffff',
   borderRadius: '16px',
-  border: '1px solid #e8ede8',
-  boxShadow: '0 2px 12px rgba(13,31,18,0.06)',
+  border: 'none',
+  boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
   padding: '24px',
 };
 
