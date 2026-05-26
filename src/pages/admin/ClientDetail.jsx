@@ -231,10 +231,15 @@ export default function ClientDetail() {
               style={{ backgroundColor: copiedEmbed ? '#ecfccb' : '#fff', border: '1px solid #e8ede8', color: copiedEmbed ? '#3f6212' : '#0d1117', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s' }}>
               {copiedEmbed ? '✓ Copied!' : 'Copy Embed Code'}
             </button>
-            <button type="button" onClick={() => alert(`Password reset email sent to ${client.email}`)}
+            <button type="button" onClick={async () => {
+              const { error } = await supabase.auth.resetPasswordForEmail(client.email, { redirectTo: window.location.origin + '/login' });
+              setResetMsg(error ? 'Failed to send reset email.' : `Reset email sent to ${client.email}`);
+              setTimeout(() => setResetMsg(''), 3000);
+            }}
               style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', color: '#0d1117', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
               Reset Password
             </button>
+            {resetMsg && <span style={{ fontSize: '12px', color: resetMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontWeight: '600', fontFamily: FONT, alignSelf: 'center' }}>{resetMsg}</span>}
             <a href={`https://estimator.quickquote360.com?clientId=${id}`} target="_blank" rel="noopener noreferrer"
               style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', color: '#0d1117', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
               View Live Tool →
@@ -399,8 +404,8 @@ export default function ClientDetail() {
                 </button>
               </div>
 
-              <button type="button" onClick={() => alert('View as client — full impersonation requires backend work.')} style={BTN_PRIMARY}>
-                View as Client
+              <button type="button" onClick={() => navigate('/client')} style={BTN_PRIMARY}>
+                Go to Client View
               </button>
 
               <button type="button" onClick={handleDeactivate} style={BTN_DANGER}>

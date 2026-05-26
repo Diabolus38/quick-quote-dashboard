@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 
@@ -83,13 +84,19 @@ function startOfMonth() {
 }
 
 export default function AllLeads() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [leads,    setLeads]    = useState([]);
   const [clients,  setClients]  = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [hovRow,   setHovRow]   = useState(null);
 
   const [search,        setSearch]        = useState('');
-  const [clientFilter,  setClientFilter]  = useState('all');
+  const [clientFilter,  setClientFilter]  = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('client') || 'all';
+  });
   const [statusFilter,  setStatusFilter]  = useState('All');
   const [dateFilter,    setDateFilter]    = useState('All Time');
 
@@ -296,7 +303,7 @@ export default function AllLeads() {
                         </td>
 
                         <td style={{ padding: '12px 16px' }}>
-                          <button type="button" onClick={() => alert('Lead detail coming soon')}
+                          <button type="button" onClick={() => navigate(`/admin/leads/${lead.id}`)}
                             style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', backgroundColor: '#ecfccb', color: '#3f6212', border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: FONT }}>
                             View
                           </button>

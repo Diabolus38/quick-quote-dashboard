@@ -157,8 +157,9 @@ export default function SuperAdmin() {
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
   const [showModal,  setShowModal]  = useState(false);
-  const [copiedId,   setCopiedId]   = useState(null);
-  const [hoveredRow, setHoveredRow] = useState(null);
+  const [copiedId,     setCopiedId]     = useState(null);
+  const [copiedGlobal, setCopiedGlobal] = useState(false);
+  const [hoveredRow,   setHoveredRow]   = useState(null);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -221,7 +222,7 @@ export default function SuperAdmin() {
 
   function copyGlobalEmbed() {
     const code = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="YOUR_CLIENT_ID"></script>`;
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(code).then(() => { setCopiedGlobal(true); setTimeout(() => setCopiedGlobal(false), 2000); });
   }
 
   const filteredClients = clients.filter(c => {
@@ -377,12 +378,12 @@ export default function SuperAdmin() {
                           <td style={TD}>
                             <div style={{ display: 'flex', gap: '4px' }}>
                               <SmallBtn label="View"    bg="#ecfccb" color="#3f6212" onClick={() => navigate(`/admin/clients/${client.id}`)} />
-                              <SmallBtn label="Leads"   bg="#dbeafe" color="#1d4ed8" onClick={() => navigate(`/admin/clients/${client.id}`)} />
+                              <SmallBtn label="Leads"   bg="#dbeafe" color="#1d4ed8" onClick={() => navigate(`/admin/leads?client=${client.id}`)} />
                               {isActive
                                 ? <SmallBtn label="Deactivate" bg="#fee2e2" color="#dc2626" onClick={() => toggleActive(client.id, true)}  />
                                 : <SmallBtn label="Activate"   bg="#dcfce7" color="#166534" onClick={() => toggleActive(client.id, false)} />
                               }
-                              <SmallBtn label="Impersonate" bg="#f3f4f6" color="#374151" onClick={() => alert('Impersonation coming in next version')} />
+                              <SmallBtn label="Open Tool" bg="#f3f4f6" color="#374151" onClick={() => window.open(`https://estimator.quickquote360.com?clientId=${client.id}`, '_blank')} />
                             </div>
                           </td>
                         </tr>
@@ -495,7 +496,7 @@ export default function SuperAdmin() {
               <div style={{ ...CARD, width: '320px', flexShrink: 0 }}>
                 <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Quick Actions</p>
                 {[
-                  { label: 'Copy Global Embed Code', icon: '⊞', action: copyGlobalEmbed },
+                  { label: copiedGlobal ? '✓ Copied!' : 'Copy Global Embed Code', icon: '⊞', action: copyGlobalEmbed },
                   { label: 'View All Leads →',       icon: '',   action: () => navigate('/admin/estimates') },
                   { label: 'Manage Billing →',       icon: '',   action: () => navigate('/admin/billing')  },
                   { label: 'Go to Settings →',       icon: '',   action: () => navigate('/admin/settings') },

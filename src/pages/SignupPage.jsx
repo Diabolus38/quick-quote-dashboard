@@ -40,6 +40,7 @@ export default function SignupPage() {
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: { data: { full_name: fullName.trim() } },
     });
 
     console.log("SignUp response:", signUpData, signUpError);
@@ -55,6 +56,13 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
+
+    await supabase.from('profiles').insert({
+      id:        user.id,
+      full_name: fullName.trim(),
+      email:     email.trim(),
+      role:      'client',
+    });
 
     setEmailSent(true);
     setLoading(false);

@@ -25,6 +25,7 @@ function getInitials(name) {
 
 export default function ClientLayout({ title, subtitle, children }) {
   const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const initials = getInitials(profile?.full_name);
 
   return (
@@ -89,7 +90,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ fontSize: '13.5px', color: '#4b5563' }}>{profile?.full_name || 'Client'}</div>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: LIME, color: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
+            <div onClick={() => navigate('/client/settings')} style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: LIME, color: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0, cursor: 'pointer' }}>
               {initials}
             </div>
           </div>

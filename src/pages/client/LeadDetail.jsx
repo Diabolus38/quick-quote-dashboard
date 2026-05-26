@@ -40,8 +40,11 @@ export default function LeadDetail() {
   const [lead,     setLead]     = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [notes,    setNotes]    = useState('');
-  const [saveMsg,  setSaveMsg]  = useState('');
+  const [notes,        setNotes]        = useState('');
+  const [saveMsg,      setSaveMsg]      = useState('');
+  const [printing,     setPrinting]     = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailMsg,     setEmailMsg]     = useState('');
 
   useEffect(() => { fetchLead(); }, [id]);
 
@@ -63,6 +66,28 @@ export default function LeadDetail() {
     setTimeout(() => setSaveMsg(''), 2000);
   }
 
+  function handlePrint() {
+    setPrinting(true);
+    setTimeout(() => { window.print(); setPrinting(false); }, 300);
+  }
+
+  async function handleSendEmail() {
+    if (!lead?.email) return;
+    setSendingEmail(true);
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: lead.email, name: lead.name || '', pdfBase64: '' }),
+      });
+      setEmailMsg(res.ok ? 'Email sent!' : 'Failed to send email.');
+    } catch {
+      setEmailMsg('Failed to send email.');
+    }
+    setSendingEmail(false);
+    setTimeout(() => setEmailMsg(''), 3000);
+  }
+
   if (loading) return <ClientLayout title="Lead Detail"><div style={{ textAlign: 'center', padding: '80px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div></ClientLayout>;
   if (notFound) return <ClientLayout title="Lead Detail"><div style={{ textAlign: 'center', padding: '80px', color: '#dc2626', fontSize: '14px', fontFamily: FONT }}>Lead not found.</div></ClientLayout>;
 
@@ -72,6 +97,7 @@ export default function LeadDetail() {
 
   return (
     <ClientLayout title="Lead Detail">
+      <style>{`@media print { aside, header { display: none !important; } div[style*="marginLeft"] { margin-left: 0 !important; } button { display: none !important; } body { background: white !important; } }`}</style>
       <div style={{ fontFamily: FONT }}>
 
         {/* Back */}
@@ -151,12 +177,15 @@ export default function LeadDetail() {
 
             {/* Actions */}
             <div style={CARD}>
-              <button type="button" style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '600', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '8px', fontFamily: FONT }}>
-                Download PDF
+              <button type="button" onClick={handlePrint} disabled={printing}
+                style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '600', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', cursor: printing ? 'not-allowed' : 'pointer', marginBottom: '8px', fontFamily: FONT, opacity: printing ? 0.7 : 1 }}>
+                {printing ? 'Preparing…' : 'Download PDF'}
               </button>
-              <button type="button" style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '500', backgroundColor: '#fff', color: '#0d1117', border: '1px solid #e8ede8', borderRadius: '10px', cursor: 'pointer', fontFamily: FONT }}>
-                Send Email
+              <button type="button" onClick={handleSendEmail} disabled={sendingEmail}
+                style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '500', backgroundColor: '#fff', color: '#0d1117', border: '1px solid #e8ede8', borderRadius: '10px', cursor: sendingEmail ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: sendingEmail ? 0.7 : 1 }}>
+                {sendingEmail ? 'Sending…' : 'Send Email'}
               </button>
+              {emailMsg && <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: '600', color: emailMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT, textAlign: 'center' }}>{emailMsg}</p>}
             </div>
 
             {/* Status timeline */}

@@ -344,6 +344,21 @@ function EmailSection({ initialSettings }) {
   const [custBody,     setCustBody]     = useState(es.customer_body    || '');
   const [sendInternal, setSendInternal] = useState(es.send_internal    ?? true);
   const [saveMsg, flash] = useSaveMsg();
+  const [testEmailMsg, setTestEmailMsg] = useState('');
+
+  async function handleTestEmail() {
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: notifEmail || 'test@example.com', name: 'Test', pdfBase64: '' }),
+      });
+      setTestEmailMsg(res.ok ? 'Test email sent!' : 'Failed to send.');
+    } catch {
+      setTestEmailMsg('Failed to send.');
+    }
+    setTimeout(() => setTestEmailMsg(''), 3000);
+  }
 
   async function handleSave() {
     await supabase.from('client_settings').update({
@@ -384,10 +399,13 @@ function EmailSection({ initialSettings }) {
       </SettingsCard>
       <SettingsCard title="Test Email">
         <p style={{ margin: '0 0 14px', fontSize: '13.5px', color: '#6b7280', fontFamily: FONT }}>Send a test email to verify your settings.</p>
-        <button type="button"
-          style={{ border: `1px solid ${PRIMARY}`, color: PRIMARY, backgroundColor: '#fff', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>
-          Send Test Email
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button type="button" onClick={handleTestEmail}
+            style={{ border: `1px solid ${PRIMARY}`, color: PRIMARY, backgroundColor: '#fff', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>
+            Send Test Email
+          </button>
+          {testEmailMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: testEmailMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT }}>{testEmailMsg}</span>}
+        </div>
       </SettingsCard>
       <SaveButton onClick={handleSave} saveMsg={saveMsg} />
     </>
@@ -398,13 +416,25 @@ function EmailSection({ initialSettings }) {
 
 const ALL_MUNICIPALITIES = ['Stockholm','Göteborg','Malmö','Uppsala','Västerås','Örebro','Linköping','Helsingborg','Jönköping','Norrköping'];
 
-function MunicipalitiesSection({ initialMunicipalities }) {
+function MunicipalitiesSection({ initialMunicipalities, initialSettings }) {
   const { profile } = useAuth();
   const clientId = profile?.client_id;
 
   const [search,  setSearch]  = useState('');
   const [covered, setCovered] = useState(initialMunicipalities || []);
-  const [notCoveredMsg, setNotCoveredMsg] = useState('We currently do not cover your municipality.');
+  const ls = initialSettings?.language_settings || {};
+  const [notCoveredMsg, setNotCoveredMsg] = useState(ls.not_covered_message || 'We currently do not cover your municipality.');
+  const [notCoveredSaveMsg, setNotCoveredSaveMsg] = useState('');
+
+  async function handleSaveNotCovered() {
+    const { data: existing } = await supabase.from('client_settings').select('language_settings').eq('client_id', clientId).maybeSingle();
+    const current = existing?.language_settings || {};
+    await supabase.from('client_settings').update({
+      language_settings: { ...current, not_covered_message: notCoveredMsg },
+    }).eq('client_id', clientId);
+    setNotCoveredSaveMsg('Saved!');
+    setTimeout(() => setNotCoveredSaveMsg(''), 2000);
+  }
 
   const filtered = ALL_MUNICIPALITIES.filter(m =>
     m.toLowerCase().includes(search.toLowerCase()) && !covered.find(c => c.municipality === m)
@@ -473,6 +503,13 @@ function MunicipalitiesSection({ initialMunicipalities }) {
           </label>
           <input type="text" value={notCoveredMsg} onChange={e => setNotCoveredMsg(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+            <button type="button" onClick={handleSaveNotCovered}
+              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              Save Message
+            </button>
+            {notCoveredSaveMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', fontFamily: FONT }}>{notCoveredSaveMsg}</span>}
+          </div>
         </div>
       </SettingsCard>
     </>
@@ -641,7 +678,7 @@ export default function ClientSettingsPage() {
               {activeSection === 'Pricing'        && <PricingSection        key={clientId} initialPricing={pricingRow} />}
               {activeSection === 'PDF Content'    && <PDFSection            key={clientId} initialSettings={settingsRow} />}
               {activeSection === 'Email Settings' && <EmailSection          key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Municipalities' && <MunicipalitiesSection key={clientId} initialMunicipalities={municipalities} />}
+              {activeSection === 'Municipalities' && <MunicipalitiesSection key={clientId} initialMunicipalities={municipalities} initialSettings={settingsRow} />}
               {activeSection === 'Languages'      && <LanguagesSection      key={clientId} initialSettings={settingsRow} />}
               {activeSection === 'Embed Code'     && <EmbedCodeSection      clientId={clientId} />}
             </>

@@ -19,7 +19,7 @@ const MENU_ITEMS = [
 
 const GENERAL_ITEMS = [
   { icon: '✦', label: 'Settings',   route: '/admin/settings'  },
-  { icon: '?', label: 'Help',       route: null               },
+  { icon: '?', label: 'Help',       route: null, action: () => window.open('mailto:support@quickquote360.com') },
 ];
 
 const SUPER_ADMIN_ITEM = { icon: '◈', label: 'Super Admin', route: '/admin/super' };
@@ -33,9 +33,13 @@ function getInitials(name) {
 
 export default function Layout({ title, subtitle, children }) {
   const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const isSuperAdmin = profile?.role === 'super_admin';
   const menuItems = isSuperAdmin ? [...MENU_ITEMS, SUPER_ADMIN_ITEM] : MENU_ITEMS;
   const initials = getInitials(profile?.full_name);
+  const [search,     setSearch]     = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [showNotif,  setShowNotif]  = useState(false);
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: FONT, backgroundColor: '#f4f6f4' }}>
@@ -111,17 +115,25 @@ export default function Layout({ title, subtitle, children }) {
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', width: '280px', height: '38px', backgroundColor: '#ffffff' }}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"><circle cx="6" cy="6" r="4.5" /><line x1="9.5" y1="9.5" x2="13" y2="13" /></svg>
-              <input type="text" placeholder="Search..." style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#0d1117', width: '100%', fontFamily: FONT }} />
+              <input type="text" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#0d1117', width: '100%', fontFamily: FONT }} />
             </div>
           </div>
 
           {/* Right actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {['Today', 'This Week', 'This Month'].map(label => (
-              <button key={label} type="button" style={{ padding: '5px 12px', fontSize: '12px', border: '1px solid #e8ede8', borderRadius: '20px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>{label}</button>
+              <button key={label} type="button" onClick={() => setDateFilter(dateFilter === label ? '' : label)}
+                style={{ padding: '5px 12px', fontSize: '12px', border: '1px solid #e8ede8', borderRadius: '20px', backgroundColor: dateFilter === label ? '#0d1117' : '#fff', color: dateFilter === label ? '#fff' : '#4b5563', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>{label}</button>
             ))}
-            <div style={{ width: '36px', height: '36px', border: '1px solid #e8ede8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#4b5563', cursor: 'pointer' }}>◉</div>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: LIME, color: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>{initials}</div>
+            <div style={{ position: 'relative' }}>
+              <div onClick={() => setShowNotif(v => !v)} style={{ width: '36px', height: '36px', border: '1px solid #e8ede8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#4b5563', cursor: 'pointer' }}>◉</div>
+              {showNotif && (
+                <div style={{ position: 'absolute', right: 0, top: '44px', backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.10)', padding: '16px 20px', width: '220px', zIndex: 100, fontFamily: FONT }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', textAlign: 'center' }}>No new notifications</p>
+                </div>
+              )}
+            </div>
+            <div onClick={() => navigate('/admin/settings')} style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: LIME, color: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>{initials}</div>
           </div>
         </header>
 
@@ -148,7 +160,7 @@ function NavItem({ item }) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => item.route && navigate(item.route)}
+      onClick={() => { if (item.action) { item.action(); } else if (item.route) { navigate(item.route); } }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{

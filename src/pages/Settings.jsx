@@ -1,197 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../Layout';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
 
-const NAV_ITEMS = ['General', 'Profile', 'Pricing Defaults', 'Notifications', 'Integrations', 'Security', 'Danger Zone'];
+const CARD = {
+  backgroundColor: '#ffffff',
+  borderRadius: '16px',
+  border: '1px solid #e8ede8',
+  boxShadow: '0 2px 12px rgba(13,31,18,0.06)',
+  padding: '24px',
+  marginBottom: '16px',
+};
 
-const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e8ede8', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '24px' };
-
-export default function Settings() {
-  const [activeNav, setActiveNav] = useState('General');
-
-  return (
-    <Layout title="Settings">
-      <div style={{ margin: '-32px', height: 'calc(100% + 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: FONT }}>
-        <TopBar />
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <LeftPanel activeNav={activeNav} onNavChange={setActiveNav} />
-          <RightPanel />
-        </div>
-      </div>
-    </Layout>
-  );
-}
-
-function TopBar() {
-  return (
-    <div style={{ height: '56px', flexShrink: 0, backgroundColor: '#fff', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', gap: '16px', fontFamily: FONT }}>
-      <span style={{ fontSize: '15px', color: '#9ca3af' }}>⚙</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontSize: '14px', color: '#d97706' }}>ⓘ</span>
-        <span style={{ fontSize: '13px', color: '#d97706', fontWeight: '500' }}>Unsaved changes</span>
-      </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button type="button" style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '7px 18px', fontSize: '13px', cursor: 'pointer', fontFamily: FONT }}>Discard</button>
-        <button type="button" style={{ border: 'none', backgroundColor: PRIMARY, color: '#fff', borderRadius: '10px', padding: '7px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>Save</button>
-      </div>
-    </div>
-  );
-}
-
-function LeftPanel({ activeNav, onNavChange }) {
-  const [hovered, setHovered] = useState(null);
-  return (
-    <div style={{ width: '220px', flexShrink: 0, borderRight: '1px solid #e8ede8', padding: '20px 0', backgroundColor: '#fff', overflowY: 'auto', fontFamily: FONT }}>
-      <p style={{ margin: '0 0 10px', padding: '0 20px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Settings</p>
-      {NAV_ITEMS.map(item => {
-        const active = activeNav === item;
-        const isHov  = hovered === item;
-        return (
-          <div key={item} role="button" tabIndex={0}
-            onClick={() => onNavChange(item)}
-            onMouseEnter={() => setHovered(item)}
-            onMouseLeave={() => setHovered(null)}
-            style={{
-              padding: active ? '10px 17px' : '10px 20px',
-              fontSize: '13.5px', cursor: 'pointer',
-              borderLeft: active ? `3px solid ${PRIMARY}` : '3px solid transparent',
-              color: active ? PRIMARY : isHov ? '#0d1117' : '#6b7280',
-              fontWeight: active ? '600' : '400',
-              backgroundColor: active ? '#f0fdf4' : isHov ? '#f9fbf9' : 'transparent',
-              userSelect: 'none', transition: 'all 0.12s', fontFamily: FONT,
-            }}>
-            {item}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function RightPanel() {
-  const [toggles, setToggles] = useState({ estimates: true, invoice: false, client: true });
-  const flip = key => setToggles(prev => ({ ...prev, [key]: !prev[key] }));
-
-  return (
-    <div style={{ flex: 1, padding: '32px', backgroundColor: '#f4f6f4', overflowY: 'auto', fontFamily: FONT }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>General</h2>
-      <p style={{ margin: '0 0 28px', fontSize: '13.5px', color: '#9ca3af' }}>Manage your account settings and preferences.</p>
-
-      {/* Account details */}
-      <SubSection title="Account details" subtitle="Your basic account information." />
-      <AccountCard />
-
-      {/* Pricing defaults */}
-      <div style={{ marginTop: '28px' }}>
-        <SubSection title="Pricing Defaults" subtitle="Set default pricing for new clients." />
-        <DefaultsForm />
-      </div>
-
-      {/* Notifications */}
-      <div style={{ marginTop: '28px' }}>
-        <SubSection title="Notifications" subtitle="Control when and how you receive alerts." />
-        <NotificationsCard toggles={toggles} onFlip={flip} />
-      </div>
-
-      <DangerZone />
-    </div>
-  );
-}
-
-function SubSection({ title, subtitle }) {
-  return (
-    <div style={{ marginBottom: '14px' }}>
-      <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: '600', color: '#0d1117' }}>{title}</p>
-      <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>{subtitle}</p>
-    </div>
-  );
-}
-
-function AccountCard() {
-  const rows = [
-    { icon: '◉', title: 'Admin User',      sub: 'admin@quickquote360.com · Super Admin' },
-    { icon: '◎', title: 'Company Address', sub: 'Stockholm, Sweden'                     },
-  ];
-  return (
-    <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
-      {rows.map((row, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px 22px', borderBottom: i < rows.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#f4f6f4', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#6b7280' }}>{row.icon}</div>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: '600', color: '#0d1117' }}>{row.title}</p>
-            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>{row.sub}</p>
-          </div>
-          <span style={{ fontSize: '16px', color: '#9ca3af', cursor: 'pointer' }}>✎</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DefaultsForm() {
-  return (
-    <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <FormSelect label="Fixed Monthly Fee *">
-          <option>990 kr</option><option>1,490 kr</option><option>1,990 kr</option>
-        </FormSelect>
-        <FormSelect label="Fee Per Estimate *">
-          <option>12 kr</option><option>15 kr</option><option>20 kr</option>
-        </FormSelect>
-      </div>
-      <FormSelect label="Default Currency *">
-        <option>Swedish Krona (SEK kr)</option><option>Euro (EUR €)</option><option>US Dollar (USD $)</option>
-      </FormSelect>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div>
-          <label style={labelStyle}>Prefix</label>
-          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '10px', height: '42px', overflow: 'hidden', backgroundColor: '#fff' }}>
-            <span style={{ padding: '0 12px', fontSize: '13px', color: '#9ca3af', backgroundColor: '#f9fbf9', height: '100%', display: 'flex', alignItems: 'center', borderRight: '1px solid #d1d5db', flexShrink: 0 }}>#</span>
-            <input type="text" style={{ flex: 1, border: 'none', outline: 'none', padding: '0 12px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-          </div>
-        </div>
-        <div>
-          <label style={labelStyle}>Suffix</label>
-          <input type="text" style={{ width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117' }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FormSelect({ label, children }) {
-  return (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <select style={{ width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' }}>
-        {children}
-      </select>
-    </div>
-  );
-}
-
-function NotificationsCard({ toggles, onFlip }) {
-  const rows = [
-    { key: 'estimates', label: 'New estimate submitted', desc: 'Get notified when a client generates a new estimate' },
-    { key: 'invoice',   label: 'Invoice overdue',        desc: 'Alert when a client invoice becomes overdue' },
-    { key: 'client',    label: 'New client added',       desc: 'Notification when a new client is created' },
-  ];
-  return (
-    <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
-      {rows.map((row, i) => (
-        <div key={row.key} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 22px', borderBottom: i < rows.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117' }}>{row.label}</p>
-            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>{row.desc}</p>
-          </div>
-          <Toggle active={toggles[row.key]} onToggle={() => onFlip(row.key)} />
-        </div>
-      ))}
-    </div>
-  );
-}
+const NAV_ITEMS = ['Profile', 'Notifications', 'Danger Zone'];
 
 function Toggle({ active, onToggle }) {
   return (
@@ -201,22 +25,193 @@ function Toggle({ active, onToggle }) {
   );
 }
 
-function DangerZone() {
+function SaveButton({ onClick, saveMsg, label = 'Save' }) {
   return (
-    <div style={{ marginTop: '28px' }}>
-      <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>Danger Zone</p>
-      <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#9ca3af' }}>These actions are irreversible.</p>
-      <div style={{ ...CARD, border: '1px solid #fee2e2' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117' }}>Reset All Data</p>
-            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>Permanently delete all clients, estimates, and invoices.</p>
-          </div>
-          <button type="button" style={{ border: '1px solid #dc2626', color: '#dc2626', backgroundColor: '#fff', borderRadius: '10px', padding: '8px 18px', fontSize: '13px', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0 }}>Reset</button>
-        </div>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '20px' }}>
+      <button type="button" onClick={onClick}
+        style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+        {label}
+      </button>
+      {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{saveMsg}</span>}
     </div>
   );
 }
 
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' };
+/* ── 1. Profile ──────────────────────────────────────────────── */
+
+function ProfileSection() {
+  const { profile } = useAuth();
+  const [fullName, setFullName] = useState('');
+  const [saveMsg,  setSaveMsg]  = useState('');
+
+  useEffect(() => {
+    if (profile?.full_name) setFullName(profile.full_name);
+  }, [profile]);
+
+  async function handleSave() {
+    if (!profile?.id) return;
+    await supabase.from('profiles').update({ full_name: fullName.trim() }).eq('id', profile.id);
+    setSaveMsg('Saved!');
+    setTimeout(() => setSaveMsg(''), 2000);
+  }
+
+  const inp = {
+    width: '100%', boxSizing: 'border-box', height: '42px',
+    border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px',
+    fontSize: '13.5px', fontFamily: FONT, outline: 'none',
+    color: '#0d1117', backgroundColor: '#fff',
+  };
+  const lbl = { display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT };
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Profile</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Manage your account details.</p>
+      </div>
+
+      <div style={CARD}>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={lbl}>Full Name</label>
+          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your name" style={inp} />
+        </div>
+        <div>
+          <label style={lbl}>Email</label>
+          <input type="email" value={profile?.email || ''} readOnly
+            style={{ ...inp, backgroundColor: '#f9fbf9', color: '#9ca3af', cursor: 'not-allowed' }} />
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>
+            Contact support to change your email address.
+          </p>
+        </div>
+        <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      </div>
+    </>
+  );
+}
+
+/* ── 2. Notifications ────────────────────────────────────────── */
+
+function NotificationsSection() {
+  const [toggles, setToggles] = useState({ estimates: true, client: true, invoice: false });
+  const [saveMsg, setSaveMsg] = useState('');
+  const flip = key => setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+
+  function handleSave() {
+    setSaveMsg('Saved!');
+    setTimeout(() => setSaveMsg(''), 2000);
+  }
+
+  const rows = [
+    { key: 'estimates', label: 'New estimate submitted', desc: 'Get notified when a client generates a new estimate' },
+    { key: 'client',   label: 'New client added',       desc: 'Notification when a new client is created'          },
+    { key: 'invoice',  label: 'Invoice overdue',        desc: 'Alert when a client invoice becomes overdue'         },
+  ];
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Notifications</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Control when and how you receive alerts.</p>
+      </div>
+
+      <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+        {rows.map((row, i) => (
+          <div key={row.key} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 22px', borderBottom: i < rows.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{row.label}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{row.desc}</p>
+            </div>
+            <Toggle active={toggles[row.key]} onToggle={() => flip(row.key)} />
+          </div>
+        ))}
+      </div>
+
+      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+    </>
+  );
+}
+
+/* ── 3. Danger Zone ──────────────────────────────────────────── */
+
+function DangerZoneSection() {
+  function handleReset() {
+    if (window.confirm('Are you sure? This cannot be undone.')) {
+      alert('This feature is coming soon.');
+    }
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#dc2626', fontFamily: FONT }}>Danger Zone</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>These actions are irreversible.</p>
+      </div>
+
+      <div style={{ ...CARD, border: '1px solid #fee2e2' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Reset All Demo Data</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>
+              Permanently delete all clients, estimates, and invoices.
+            </p>
+          </div>
+          <button type="button" onClick={handleReset}
+            style={{ border: '1px solid #dc2626', color: '#dc2626', backgroundColor: '#fff', borderRadius: '10px', padding: '8px 18px', fontSize: '13px', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0, fontWeight: '500' }}>
+            Reset
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ── Root ────────────────────────────────────────────────────── */
+
+export default function Settings() {
+  const [activeNav, setActiveNav] = useState('Profile');
+  const [hovered,   setHovered]   = useState(null);
+
+  return (
+    <Layout title="Settings">
+      <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+
+        {/* Side nav */}
+        <div style={{ width: '200px', flexShrink: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '16px', boxShadow: '0 2px 12px rgba(13,31,18,0.06)', padding: '10px', position: 'sticky', top: '80px' }}>
+          <p style={{ margin: '0 0 8px', padding: '0 8px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT }}>Settings</p>
+          {NAV_ITEMS.map(item => {
+            const active = activeNav === item;
+            const isHov  = hovered === item;
+            return (
+              <button key={item} type="button"
+                onClick={() => setActiveNav(item)}
+                onMouseEnter={() => setHovered(item)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  width: '100%', textAlign: 'left',
+                  padding: active ? '9px 11px' : '9px 14px',
+                  marginBottom: '2px',
+                  fontSize: '13.5px', fontWeight: active ? '600' : '400',
+                  color: active ? PRIMARY : isHov ? '#0d1117' : '#6b7280',
+                  backgroundColor: active ? '#f0fdf4' : isHov ? '#f9fbf9' : 'transparent',
+                  border: 'none',
+                  borderLeft: active ? `3px solid ${PRIMARY}` : '3px solid transparent',
+                  borderRadius: active ? '0 8px 8px 0' : '8px',
+                  cursor: 'pointer', fontFamily: FONT,
+                }}>
+                {item}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {activeNav === 'Profile'       && <ProfileSection />}
+          {activeNav === 'Notifications' && <NotificationsSection />}
+          {activeNav === 'Danger Zone'   && <DangerZoneSection />}
+        </div>
+
+      </div>
+    </Layout>
+  );
+}
