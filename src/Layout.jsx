@@ -9,14 +9,20 @@ const INACTIVE      = '#6b7280';
 const SECTION_LABEL = '#9ca3af';
 const PRIMARY       = '#166534';
 
-const MENU_ITEMS = [
+const MGMT_ITEMS = [
   { icon: '⊞', label: 'Overview', route: '/admin'         },
   { icon: '◎', label: 'Clients',  route: '/admin/clients' },
   { icon: '▤', label: 'Leads',    route: '/admin/leads'   },
   { icon: '$', label: 'Billing',  route: '/admin/billing' },
 ];
 
-const SUPER_ADMIN_ITEM = { icon: '◈', label: 'Super Admin', route: '/admin/super' };
+const TOOLS_ITEMS = [
+  { icon: '◈', label: 'Super Admin', route: '/admin/super' },
+];
+
+const ADMIN_ACCOUNT_ITEMS = [
+  { icon: '⚙', label: 'Settings', route: '/admin/settings' },
+];
 
 function getInitials(name) {
   if (!name) return 'AD';
@@ -70,25 +76,33 @@ export default function Layout({ title, subtitle, children }) {
           </div>
         </div>
 
-        {/* 3. MENU Section */}
+        {/* MANAGEMENT Section */}
         <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Menu</span>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Management</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {MENU_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
+          {MGMT_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
         </nav>
 
-        {/* 4. OTHERS Section — super_admin only */}
+        {/* TOOLS Section — super_admin only */}
         {isSuperAdmin && (
           <>
             <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Others</span>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tools</span>
             </div>
             <nav style={{ flexShrink: 0 }}>
-              <NavItem item={SUPER_ADMIN_ITEM} isAdmin />
+              {TOOLS_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
             </nav>
           </>
         )}
+
+        {/* ACCOUNT Section */}
+        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account</span>
+        </div>
+        <nav style={{ flexShrink: 0 }}>
+          {ADMIN_ACCOUNT_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
+        </nav>
 
         {/* 5. Spacer */}
         <div style={{ flex: 1 }} />

@@ -12,14 +12,23 @@ const PRIMARY       = '#166534';
 
 const PLAN_LIMITS = { starter: 30, growth: 75, scale: 999 };
 
-const NAV_ITEMS = [
-  { icon: '⊞', label: 'Overview',       route: '/client'                },
-  { icon: '▤', label: 'Leads',          route: '/client/leads'          },
+const OVERVIEW_ITEMS = [
+  { icon: '⊞', label: 'Overview', route: '/client' },
+];
+
+const LEADS_ITEMS = [
+  { icon: '▤', label: 'Leads', route: '/client/leads' },
+];
+
+const CONFIG_ITEMS = [
   { icon: '✎', label: 'Questions',      route: '/client/questions'      },
   { icon: '$', label: 'Pricing',        route: '/client/pricing'        },
   { icon: '▦', label: 'PDF',           route: '/client/pdf'            },
   { icon: '◎', label: 'Municipalities', route: '/client/municipalities' },
-  { icon: '⚙', label: 'Settings',      route: '/client/settings'       },
+];
+
+const CLIENT_ACCOUNT_ITEMS = [
+  { icon: '⚙', label: 'Settings', route: '/client/settings' },
 ];
 
 function getInitials(name) {
@@ -100,12 +109,36 @@ export default function ClientLayout({ title, subtitle, children }) {
           </div>
         </div>
 
-        {/* 3. MENU Section */}
+        {/* OVERVIEW Section */}
         <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Menu</span>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overview</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {NAV_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+          {OVERVIEW_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+        </nav>
+
+        {/* LEADS Section */}
+        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Leads</span>
+        </div>
+        <nav style={{ flexShrink: 0 }}>
+          {LEADS_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+        </nav>
+
+        {/* CONFIGURATION Section */}
+        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
+        </div>
+        <nav style={{ flexShrink: 0 }}>
+          {CONFIG_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+        </nav>
+
+        {/* ACCOUNT Section */}
+        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account</span>
+        </div>
+        <nav style={{ flexShrink: 0 }}>
+          {CLIENT_ACCOUNT_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
         {/* 4. Spacer */}
