@@ -27,9 +27,6 @@ const CONFIG_ITEMS = [
   { icon: '◎', label: 'Municipalities', route: '/client/municipalities' },
 ];
 
-const CLIENT_ACCOUNT_ITEMS = [
-  { icon: '⚙', label: 'Settings', route: '/client/settings' },
-];
 
 function getInitials(name) {
   if (!name) return 'CL';
@@ -133,18 +130,17 @@ export default function ClientLayout({ title, subtitle, children }) {
           {CONFIG_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
-        {/* ACCOUNT Section */}
-        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account</span>
-        </div>
-        <nav style={{ flexShrink: 0 }}>
-          {CLIENT_ACCOUNT_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
-        </nav>
-
-        {/* 4. Spacer */}
+        {/* Spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* 5. Bottom Cards */}
+        {/* Bottom Nav */}
+        <div style={{ padding: '8px 10px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <BottomNavItem icon="💬" label="Get Help" onClick={() => window.open('mailto:support@quickquote360.com')} />
+          <BottomNavItem icon="⚙" label="Settings"  onClick={() => navigate('/client/settings')} />
+          <BottomNavItem icon="↩" label="Logout"    onClick={() => signOut()} />
+        </div>
+
+        {/* Bottom Cards */}
         <div style={{ padding: '0 10px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px', flexShrink: 0 }}>
 
           {/* Usage Card */}
@@ -187,13 +183,6 @@ export default function ClientLayout({ title, subtitle, children }) {
               </button>
             </div>
           )}
-        </div>
-
-        {/* 6. Bottom Nav */}
-        <div style={{ padding: '8px 10px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
-          <BottomNavItem icon="💬" label="Get Help" onClick={() => window.open('mailto:support@quickquote360.com')} />
-          <BottomNavItem icon="⚙" label="Settings"  onClick={() => navigate('/client/settings')} />
-          <BottomNavItem icon="↩" label="Logout"    onClick={() => signOut()} />
         </div>
       </aside>
 
