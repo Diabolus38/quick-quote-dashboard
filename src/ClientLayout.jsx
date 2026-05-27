@@ -79,6 +79,17 @@ export default function ClientLayout({ title, subtitle, children }) {
         zIndex: 20, overflowY: 'auto',
       }}>
 
+        {/* ── Logo ── */}
+        <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #166534, #14532d)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: '20px', fontWeight: '900', color: '#b8f5c8', fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1 }}>Q</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '800', color: '#111827', lineHeight: 1 }}>Quick Quote</span>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: '#a3e635', letterSpacing: '0.15em' }}>360</span>
+          </div>
+        </div>
+
         {/* 1. User Profile Block — TOP */}
         <div
           style={{ padding: '20px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, cursor: 'pointer' }}
