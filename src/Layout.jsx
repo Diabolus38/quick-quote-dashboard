@@ -36,11 +36,7 @@ export default function Layout({ title, subtitle, children }) {
   const navigate             = useNavigate();
   const isSuperAdmin         = profile?.role === 'super_admin';
   const initials             = getInitials(profile?.full_name);
-  const [showNotif,    setShowNotif]    = useState(false);
-  const [activePeriod, setActivePeriod] = useState('30D');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [fromDate,     setFromDate]     = useState('');
-  const [toDate,       setToDate]       = useState('');
+  const [showNotif, setShowNotif] = useState(false);
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: FONT, backgroundColor: '#f0f2f5' }}>
@@ -126,67 +122,14 @@ export default function Layout({ title, subtitle, children }) {
             {subtitle && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{subtitle}</div>}
           </div>
 
-          {/* Right: period pills + calendar + bell + avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-
-            {/* Period pills */}
-            {['7D', '30D', '3M', '6M', '1Y', 'All Time'].map(p => (
-              <button key={p} type="button"
-                onClick={() => { setActivePeriod(p); setShowCalendar(false); }}
-                style={{
-                  border: `1px solid ${activePeriod === p ? PRIMARY : '#e5e7eb'}`,
-                  borderRadius: '20px', padding: '6px 14px', fontSize: '12px',
-                  fontWeight: '500', backgroundColor: activePeriod === p ? PRIMARY : '#ffffff',
-                  color: activePeriod === p ? '#ffffff' : '#6b7280',
-                  cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
-                }}>
-                {p}
-              </button>
-            ))}
-
-            {/* Calendar button + dropdown */}
-            <div style={{ position: 'relative', marginLeft: '4px' }}>
-              <button type="button"
-                onClick={() => setShowCalendar(v => !v)}
-                style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 12px', fontSize: '12px', color: '#6b7280', cursor: 'pointer', backgroundColor: '#ffffff', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span>📅</span><span>▾</span>
-              </button>
-              {showCalendar && (
-                <div style={{ position: 'absolute', top: '52px', right: 0, backgroundColor: '#ffffff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', zIndex: 200, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '240px', fontFamily: FONT }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>From</label>
-                    <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-                      style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 10px', fontSize: '13px', color: '#111827', fontFamily: FONT, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>To</label>
-                    <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-                      style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 10px', fontSize: '13px', color: '#111827', fontFamily: FONT, outline: 'none', width: '100%', boxSizing: 'border-box' }} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '2px' }}>
-                    <button type="button"
-                      onClick={() => { setActivePeriod('custom'); setShowCalendar(false); }}
-                      style={{ backgroundColor: PRIMARY, color: '#ffffff', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-                      Apply
-                    </button>
-                    <button type="button"
-                      onClick={() => { setActivePeriod('30D'); setFromDate(''); setToDate(''); setShowCalendar(false); }}
-                      style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '12px', cursor: 'pointer', fontFamily: FONT, padding: '6px 4px' }}>
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb', margin: '0 2px' }} />
+          {/* Right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
             {/* Bell */}
             <div style={{ position: 'relative' }}>
               <button type="button" onClick={() => setShowNotif(v => !v)}
-                style={{ position: 'relative', background: 'transparent', border: 'none', padding: '6px', borderRadius: '8px', fontSize: '18px', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                🔔
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative', padding: '6px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '18px' }}>🔔</span>
                 <span style={{ position: 'absolute', top: '4px', right: '4px', width: '7px', height: '7px', backgroundColor: '#dc2626', borderRadius: '50%', border: '2px solid #ffffff' }} />
               </button>
               {showNotif && (
@@ -200,11 +143,11 @@ export default function Layout({ title, subtitle, children }) {
             <div onClick={() => navigate('/admin/settings')}
               style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
               {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                : <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>{initials}</div>
+                ? <img src={profile.avatar_url} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover' }} />
+                : <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#166534', color: '#ffffff', fontWeight: '700', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials}</div>
               }
-              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{profile?.full_name || 'Admin'}</span>
-              <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '2px' }}>▾</span>
+              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{profile?.full_name || 'Account'}</span>
+              <span style={{ fontSize: '11px', color: '#9ca3af' }}>▾</span>
             </div>
           </div>
         </header>

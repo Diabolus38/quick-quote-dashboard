@@ -228,7 +228,7 @@ export default function ClientLayout({ title, subtitle, children }) {
                 ? <img src={profile.avatar_url} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                 : <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>{initials}</div>
               }
-              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{profile?.full_name || 'Client'}</span>
+              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{profile?.full_name || 'Account'}</span>
               <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '2px' }}>▾</span>
             </div>
           </div>
