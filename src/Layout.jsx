@@ -50,13 +50,15 @@ export default function Layout({ title, subtitle, children }) {
       }}>
 
         {/* ── Logo ── */}
-        <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
-          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #166534, #14532d)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: '20px', fontWeight: '900', color: '#b8f5c8', fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1 }}>Q</span>
-          </div>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img
+            src="https://quickquote360.com/wp-content/uploads/2023/09/Quick-Quote-360-logos-5-300x300.png"
+            alt="QuickQuote360"
+            style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'contain' }}
+          />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '800', color: '#111827', lineHeight: 1 }}>Quick Quote</span>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: '#a3e635', letterSpacing: '0.15em' }}>360</span>
+            <span style={{ fontSize: '14px', fontWeight: '800', color: '#111827', lineHeight: 1, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Quick Quote</span>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: '#a3e635', letterSpacing: '0.15em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>360</span>
           </div>
         </div>
 
