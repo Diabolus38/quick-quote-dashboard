@@ -159,7 +159,7 @@ export default function Leads() {
                   <span>{lead.phone||'—'}</span>
                   <span>{lead.municipality||'—'}</span>
                   <span>{lead.answers?.wastewaterType||'—'}</span>
-                  <span style={{ fontWeight: '600', color: '#0d1117' }}>{lead.estimated_price!=null?`${Number(lead.estimated_price).toLocaleString()} kr`:'—'}</span>
+                  <span style={{ fontWeight: '600', color: '#0d1117' }}>{lead.estimated_price!=null&&!isNaN(Number(lead.estimated_price))?`${Number(lead.estimated_price).toLocaleString()} kr`:'—'}</span>
                   <span>
                     <select value={lead.status||'New'} onChange={e=>updateStatus(lead.id,e.target.value)}
                       style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: '600', color: STATUS_COLORS[lead.status]||'#374151', backgroundColor: '#fff', cursor: 'pointer', outline: 'none', fontFamily: FONT }}>

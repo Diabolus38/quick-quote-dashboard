@@ -97,8 +97,8 @@ export default function LeadDetail() {
 
   return (
     <ClientLayout title="Lead Detail">
-      <style>{`@media print { aside, header { display: none !important; } div[style*="marginLeft"] { margin-left: 0 !important; } button { display: none !important; } body { background: white !important; } }`}</style>
-      <div style={{ fontFamily: FONT }}>
+      <style>{`@media print { body * { visibility: hidden; } #lead-print-area, #lead-print-area * { visibility: visible; } #lead-print-area { position: absolute; left: 0; top: 0; } }`}</style>
+      <div id="lead-print-area" style={{ fontFamily: FONT }}>
 
         {/* Back */}
         <button type="button" onClick={() => navigate('/client/leads')}
@@ -168,7 +168,7 @@ export default function LeadDetail() {
             <div style={{ ...CARD, backgroundColor: '#0d1f12', border: 'none' }}>
               <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Estimated Price</p>
               <p style={{ margin: '0 0 8px', fontSize: '34px', fontWeight: '800', color: LIME, lineHeight: 1, letterSpacing: '-0.5px' }}>
-                {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                {lead.estimated_price != null && !isNaN(Number(lead.estimated_price)) ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
               </p>
               <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
                 Submitted on {formatDate(lead.created_at)}

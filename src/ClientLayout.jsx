@@ -13,9 +13,13 @@ const PRIMARY       = '#166534';
 const PLAN_LIMITS = { starter: 30, growth: 75, scale: 999 };
 
 const NAV_ITEMS = [
-  { icon: '⊞', label: 'Overview',  route: '/client'           },
-  { icon: '▤', label: 'Leads',     route: '/client/leads'     },
-  { icon: '✎', label: 'Questions', route: '/client/questions' },
+  { icon: '⊞', label: 'Overview',       route: '/client'                },
+  { icon: '▤', label: 'Leads',          route: '/client/leads'          },
+  { icon: '✎', label: 'Questions',      route: '/client/questions'      },
+  { icon: '$', label: 'Pricing',        route: '/client/pricing'        },
+  { icon: '▦', label: 'PDF',           route: '/client/pdf'            },
+  { icon: '◎', label: 'Municipalities', route: '/client/municipalities' },
+  { icon: '⚙', label: 'Settings',      route: '/client/settings'       },
 ];
 
 function getInitials(name) {

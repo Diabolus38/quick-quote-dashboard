@@ -72,13 +72,6 @@ function Textarea({ value, onChange, placeholder = '' }) {
   );
 }
 
-function PriceInput({ value, onChange }) {
-  return (
-    <input type="number" value={value} onChange={e => onChange(e.target.value)}
-      style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-  );
-}
-
 function useSaveMsg() {
   const [saveMsg, setSaveMsg] = useState('');
   function flash() { setSaveMsg('Saved!'); setTimeout(() => setSaveMsg(''), 2000); }
@@ -139,197 +132,7 @@ function BrandingSection({ initialSettings }) {
   );
 }
 
-/* ── 2. Pricing ──────────────────────────────────────────────── */
-
-function PricingSection({ initialPricing }) {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
-  const p = initialPricing || {};
-  const bp = p.base_prices || {};
-  const fc = p.fixed_costs || {};
-  const pm = p.per_meter_costs || {};
-  const ao = p.addons || {};
-
-  const hh = ['1','2','3','4','5'];
-  const [baseGrid, setBaseGrid] = useState([
-    { key: 'bdt',    label: 'BDT',     values: hh.map(h => String(bp.bdt?.[h]    ?? '')) },
-    { key: 'wc',     label: 'WC only', values: hh.map(h => String(bp.wc?.[h]     ?? '')) },
-    { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(h => String(bp.wc_bdt?.[h] ?? '')) },
-  ]);
-
-  function makeList(obj, entries) {
-    return entries.map(([key, label]) => ({ key, label, value: String(obj[key] ?? '') }));
-  }
-
-  const [fixedCosts, setFixedCosts] = useState(makeList(fc, [
-    ['planning','Planning/Municipality Application'],
-    ['establishment_zone1','Establishment Zone 1'],
-    ['establishment_zone2','Establishment Zone 2'],
-    ['de_establishment','De-establishment'],
-    ['admin','Admin Fee'],
-    ['inspection','Inspection of Existing Well'],
-  ]));
-  const [perMeter, setPerMeter] = useState(makeList(pm, [
-    ['gravity_pipe','Gravity Pipe per meter'],
-    ['pressure_pipe','Pressure Pipe per meter'],
-    ['protection_pipe','Protection Pipe per meter'],
-    ['cable','Electric Cable per meter'],
-    ['makadam','Makadam per ton'],
-    ['labor','Labor Rate per hour'],
-  ]));
-  const [addOns, setAddOns] = useState(makeList(ao, [
-    ['pump_well','Pump Well'],
-    ['double_pump','Double Pump'],
-    ['telescope_cover','Telescope + Well Cover'],
-    ['lawn_restoration_base','Lawn Restoration Base'],
-    ['mass_removal','Mass Removal'],
-    ['transport','Transport'],
-  ]));
-
-  const [rotEnabled, setRotEnabled] = useState(p.rot_enabled    ?? false);
-  const [rotPercent,  setRotPercent]  = useState(String(p.rot_percentage ?? 30));
-  const [currency,    setCurrency]    = useState(p.currency       || 'SEK');
-  const [saveMsg, flash] = useSaveMsg();
-
-  function updateGrid(ri, ci, val) {
-    setBaseGrid(prev => prev.map((row, r) => r === ri ? { ...row, values: row.values.map((v, c) => c === ci ? val : v) } : row));
-  }
-  function updateList(setter, idx, val) {
-    setter(prev => prev.map((item, i) => i === idx ? { ...item, value: val } : item));
-  }
-
-  async function handleSave() {
-    const base_prices = Object.fromEntries(baseGrid.map(row => [
-      row.key, Object.fromEntries(hh.map((h, i) => [h, Number(row.values[i] || 0)]))
-    ]));
-    const toObj = arr => Object.fromEntries(arr.map(item => [item.key, Number(item.value || 0)]));
-    await supabase.from('client_pricing').update({
-      base_prices,
-      fixed_costs:     toObj(fixedCosts),
-      per_meter_costs: toObj(perMeter),
-      addons:          toObj(addOns),
-      rot_enabled:     rotEnabled,
-      rot_percentage:  Number(rotPercent || 30),
-      currency,
-    }).eq('client_id', clientId);
-    flash();
-  }
-
-  function PriceRows({ items, setter }) {
-    return items.map((item, i) => (
-      <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
-        <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
-        <PriceInput value={item.value} onChange={val => updateList(setter, i, val)} />
-      </div>
-    ));
-  }
-
-  const selStyle = { width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' };
-
-  return (
-    <>
-      <SectionHeader title="Pricing" subtitle="Set your pricing for the estimator tool." />
-
-      <SettingsCard title="Base System Prices">
-        <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '100px repeat(5, 80px)', gap: '8px', alignItems: 'center' }}>
-            <div />
-            {hh.map(h => <div key={h} style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textAlign: 'center', fontFamily: FONT }}>{h} hh</div>)}
-            {baseGrid.map((row, ri) => (
-              <>
-                <div key={row.key} style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>{row.label}</div>
-                {hh.map((_, ci) => <PriceInput key={ci} value={row.values[ci]} onChange={val => updateGrid(ri, ci, val)} />)}
-              </>
-            ))}
-          </div>
-        </div>
-      </SettingsCard>
-
-      <SettingsCard title="Fixed Costs"><PriceRows items={fixedCosts} setter={setFixedCosts} /></SettingsCard>
-      <SettingsCard title="Per Meter Costs"><PriceRows items={perMeter} setter={setPerMeter} /></SettingsCard>
-      <SettingsCard title="Add-on Services"><PriceRows items={addOns} setter={setAddOns} /></SettingsCard>
-
-      <SettingsCard title="ROT Deduction">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: rotEnabled ? '14px' : 0 }}>
-          <Toggle value={rotEnabled} onChange={setRotEnabled} />
-          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>ROT Deduction {rotEnabled ? 'enabled' : 'disabled'}</span>
-        </div>
-        {rotEnabled && (
-          <FieldRow label="Deduction Percentage">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <PriceInput value={rotPercent} onChange={setRotPercent} />
-              <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>%</span>
-            </div>
-          </FieldRow>
-        )}
-      </SettingsCard>
-
-      <SettingsCard title="Currency">
-        <FieldRow label="Currency">
-          <select value={currency} onChange={e => setCurrency(e.target.value)} style={selStyle}>
-            {['SEK','EUR','GBP','NOK','DKK'].map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </FieldRow>
-      </SettingsCard>
-
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
-    </>
-  );
-}
-
-/* ── 3. PDF Content ──────────────────────────────────────────── */
-
-function PDFSection({ initialSettings }) {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
-  const pc = initialSettings?.pdf_content || {};
-
-  const [intro,      setIntro]      = useState(pc.introduction        || '');
-  const [systemDesc, setSystemDesc] = useState(pc.system_description  || '');
-  const [serviceAg,  setServiceAg]  = useState(pc.service_agreement   || '');
-  const [payTerms,   setPayTerms]   = useState(pc.payment_terms       || '');
-  const [legal,      setLegal]      = useState(pc.legal_reservations  || '');
-  const [sigName,    setSigName]    = useState(pc.signature_name      || '');
-  const [sigTitle,   setSigTitle]   = useState(pc.signature_title     || '');
-  const [sigPhone,   setSigPhone]   = useState(pc.signature_phone     || '');
-  const [sigEmail,   setSigEmail]   = useState(pc.signature_email     || '');
-  const [saveMsg, flash] = useSaveMsg();
-
-  async function handleSave() {
-    await supabase.from('client_settings').update({
-      pdf_content: { introduction: intro, system_description: systemDesc, service_agreement: serviceAg,
-        payment_terms: payTerms, legal_reservations: legal, signature_name: sigName,
-        signature_title: sigTitle, signature_phone: sigPhone, signature_email: sigEmail },
-    }).eq('client_id', clientId);
-    flash();
-  }
-
-  return (
-    <>
-      <SectionHeader title="PDF Content" subtitle="Edit the text sections of your generated PDF." />
-      {[
-        { label: 'Introduction Text',   value: intro,      onChange: setIntro      },
-        { label: 'System Description',  value: systemDesc, onChange: setSystemDesc },
-        { label: 'Service Agreement',   value: serviceAg,  onChange: setServiceAg  },
-        { label: 'Payment Terms',       value: payTerms,   onChange: setPayTerms   },
-        { label: 'Legal Reservations',  value: legal,      onChange: setLegal      },
-      ].map(s => (
-        <SettingsCard key={s.label} title={s.label}><Textarea value={s.value} onChange={s.onChange} /></SettingsCard>
-      ))}
-      <SettingsCard title="Signature Block">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <FieldRow label="Name"> <TextInput value={sigName}  onChange={setSigName}  /></FieldRow>
-          <FieldRow label="Title"><TextInput value={sigTitle} onChange={setSigTitle} /></FieldRow>
-          <FieldRow label="Phone"><TextInput value={sigPhone} onChange={setSigPhone} /></FieldRow>
-          <FieldRow label="Email"><TextInput value={sigEmail} onChange={setSigEmail} /></FieldRow>
-        </div>
-      </SettingsCard>
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
-    </>
-  );
-}
-
-/* ── 4. Email Settings ───────────────────────────────────────── */
+/* ── 2. Email Settings ───────────────────────────────────────── */
 
 function EmailSection({ initialSettings }) {
   const { profile } = useAuth();
@@ -412,111 +215,7 @@ function EmailSection({ initialSettings }) {
   );
 }
 
-/* ── 5. Municipalities ───────────────────────────────────────── */
-
-const ALL_MUNICIPALITIES = ['Stockholm','Göteborg','Malmö','Uppsala','Västerås','Örebro','Linköping','Helsingborg','Jönköping','Norrköping'];
-
-function MunicipalitiesSection({ initialMunicipalities, initialSettings }) {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
-
-  const [search,  setSearch]  = useState('');
-  const [covered, setCovered] = useState(initialMunicipalities || []);
-  const ls = initialSettings?.language_settings || {};
-  const [notCoveredMsg, setNotCoveredMsg] = useState(ls.not_covered_message || 'We currently do not cover your municipality.');
-  const [notCoveredSaveMsg, setNotCoveredSaveMsg] = useState('');
-
-  async function handleSaveNotCovered() {
-    const { data: existing } = await supabase.from('client_settings').select('language_settings').eq('client_id', clientId).maybeSingle();
-    const current = existing?.language_settings || {};
-    await supabase.from('client_settings').update({
-      language_settings: { ...current, not_covered_message: notCoveredMsg },
-    }).eq('client_id', clientId);
-    setNotCoveredSaveMsg('Saved!');
-    setTimeout(() => setNotCoveredSaveMsg(''), 2000);
-  }
-
-  const filtered = ALL_MUNICIPALITIES.filter(m =>
-    m.toLowerCase().includes(search.toLowerCase()) && !covered.find(c => c.municipality === m)
-  );
-  const showDropdown = search.length > 0 && filtered.length > 0;
-
-  async function addMunicipality(name) {
-    const { data } = await supabase.from('client_municipalities')
-      .insert({ client_id: clientId, municipality: name, zone: 1 })
-      .select().single();
-    if (data) setCovered(prev => [...prev, data]);
-    setSearch('');
-  }
-
-  async function removeRow(rowId) {
-    await supabase.from('client_municipalities').delete().eq('id', rowId);
-    setCovered(prev => prev.filter(c => c.id !== rowId));
-  }
-
-  async function changeZone(rowId, zone) {
-    await supabase.from('client_municipalities').update({ zone }).eq('id', rowId);
-    setCovered(prev => prev.map(c => c.id === rowId ? { ...c, zone } : c));
-  }
-
-  return (
-    <>
-      <SectionHeader title="Municipalities" subtitle="Select which Swedish municipalities you cover." />
-      <SettingsCard>
-        <div style={{ position: 'relative' }}>
-          <input type="text" placeholder="Search municipality..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box', height: '42px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 16px', fontSize: '13.5px', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-          {showDropdown && (
-            <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', boxShadow: '0 4px 16px rgba(13,31,18,0.10)', zIndex: 10, overflow: 'hidden' }}>
-              {filtered.map(m => (
-                <div key={m} onClick={() => addMunicipality(m)}
-                  style={{ padding: '10px 16px', fontSize: '13.5px', color: '#374151', cursor: 'pointer', fontFamily: FONT }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f6f4'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  {m}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginTop: '20px' }}>
-          {covered.length === 0 ? (
-            <p style={{ fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>No municipalities added yet.</p>
-          ) : covered.map(c => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
-              <span style={{ flex: 1, fontSize: '13.5px', color: '#0d1117', fontWeight: '500', fontFamily: FONT }}>{c.municipality}</span>
-              {[1, 2].map(z => (
-                <button key={z} type="button" onClick={() => changeZone(c.id, z)}
-                  style={{ padding: '4px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, border: c.zone === z ? 'none' : '1px solid #e8ede8', backgroundColor: c.zone === z ? (z === 1 ? PRIMARY : '#1d4ed8') : '#fff', color: c.zone === z ? '#fff' : '#6b7280' }}>
-                  Zone {z}
-                </button>
-              ))}
-              <button type="button" onClick={() => removeRow(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#dc2626', lineHeight: 1, padding: '0 4px' }}>×</button>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: '20px' }}>
-          <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px', fontFamily: FONT }}>
-            Message shown when municipality is not covered
-          </label>
-          <input type="text" value={notCoveredMsg} onChange={e => setNotCoveredMsg(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-            <button type="button" onClick={handleSaveNotCovered}
-              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-              Save Message
-            </button>
-            {notCoveredSaveMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', fontFamily: FONT }}>{notCoveredSaveMsg}</span>}
-          </div>
-        </div>
-      </SettingsCard>
-    </>
-  );
-}
-
-/* ── 6. Languages ────────────────────────────────────────────── */
+/* ── 3. Languages ────────────────────────────────────────────── */
 
 const LANGUAGES = ['English', 'Svenska', 'Deutsch', 'Français'];
 
@@ -569,7 +268,7 @@ function LanguagesSection({ initialSettings }) {
   );
 }
 
-/* ── 7. Embed Code ───────────────────────────────────────────── */
+/* ── 4. Embed Code ───────────────────────────────────────────── */
 
 const INSTALL_GUIDES = [
   { title: 'WordPress + Elementor', content: '1. Edit your page in Elementor.\n2. Add an HTML widget.\n3. Paste the script tag above and save.' },
@@ -622,7 +321,7 @@ function EmbedCodeSection({ clientId }) {
 
 /* ── Root component ──────────────────────────────────────────── */
 
-const NAV_ITEMS = ['Branding','Pricing','PDF Content','Email Settings','Municipalities','Languages','Embed Code'];
+const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code'];
 
 export default function ClientSettingsPage() {
   const { profile } = useAuth();
@@ -630,21 +329,13 @@ export default function ClientSettingsPage() {
 
   const [activeSection, setActiveSection] = useState('Branding');
   const [settingsRow,   setSettingsRow]   = useState(null);
-  const [pricingRow,    setPricingRow]    = useState(null);
-  const [municipalities, setMunicipalities] = useState([]);
   const [dataReady,     setDataReady]     = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
     async function load() {
-      const [{ data: settings }, { data: pricing }, { data: muns }] = await Promise.all([
-        supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle(),
-        supabase.from('client_pricing').select('*').eq('client_id', clientId).maybeSingle(),
-        supabase.from('client_municipalities').select('*').eq('client_id', clientId),
-      ]);
+      const { data: settings } = await supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle();
       setSettingsRow(settings);
-      setPricingRow(pricing);
-      setMunicipalities(muns || []);
       setDataReady(true);
     }
     load();
@@ -674,13 +365,10 @@ export default function ClientSettingsPage() {
             <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading settings…</div>
           ) : (
             <>
-              {activeSection === 'Branding'       && <BrandingSection       key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Pricing'        && <PricingSection        key={clientId} initialPricing={pricingRow} />}
-              {activeSection === 'PDF Content'    && <PDFSection            key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Email Settings' && <EmailSection          key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Municipalities' && <MunicipalitiesSection key={clientId} initialMunicipalities={municipalities} initialSettings={settingsRow} />}
-              {activeSection === 'Languages'      && <LanguagesSection      key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Embed Code'     && <EmbedCodeSection      clientId={clientId} />}
+              {activeSection === 'Branding'       && <BrandingSection key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Email Settings' && <EmailSection    key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Languages'      && <LanguagesSection key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
             </>
           )}
         </div>

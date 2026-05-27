@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
@@ -25,8 +26,10 @@ const COLUMNS = ['Name', 'Municipality', 'Estimated Price', 'Status', 'Date'];
 
 export default function ClientOverview() {
   const { profile } = useAuth();
-  const [leads,   setLeads]   = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [leads,      setLeads]      = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [hoveredRow, setHoveredRow] = useState(null);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -107,11 +110,15 @@ export default function ClientOverview() {
                 {recentLeads.map((lead, i) => {
                   const sc = STATUS_COLORS[lead.status] || { bg: '#f3f4f6', color: '#6b7280' };
                   return (
-                    <tr key={lead.id} style={{ borderBottom: i < recentLeads.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                    <tr key={lead.id}
+                      onClick={() => navigate('/client/leads/' + lead.id)}
+                      onMouseEnter={() => setHoveredRow(lead.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      style={{ borderBottom: i < recentLeads.length - 1 ? '1px solid #f4f6f4' : 'none', cursor: 'pointer', backgroundColor: hoveredRow === lead.id ? '#f9faf9' : 'transparent' }}>
                       <td style={{ padding: '14px 24px', fontWeight: '600', color: '#0d1117' }}>{lead.name || '—'}</td>
                       <td style={{ padding: '14px 24px', color: '#4b5563' }}>{lead.municipality || '—'}</td>
                       <td style={{ padding: '14px 24px', fontWeight: '600', color: '#0d1117' }}>
-                        {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                        {lead.estimated_price != null && !isNaN(Number(lead.estimated_price)) ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
                       </td>
                       <td style={{ padding: '14px 24px' }}>
                         <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: sc.bg, color: sc.color }}>

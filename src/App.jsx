@@ -25,6 +25,9 @@ import ClientEstimates from './pages/client/ClientEstimates';
 import ClientCustomers from './pages/client/ClientCustomers';
 import ClientSettings  from './pages/client/Settings';
 import QuestionEditor  from './pages/client/QuestionEditor';
+import Pricing         from './pages/client/Pricing';
+import PdfContent      from './pages/client/PdfContent';
+import Municipalities  from './pages/client/Municipalities';
 
 export default function App() {
   return (
@@ -55,7 +58,10 @@ export default function App() {
           <Route path="/client/estimates"   element={<ProtectedRoute requiredRole="client"><ClientEstimates /></ProtectedRoute>} />
           <Route path="/client/customers"   element={<ProtectedRoute requiredRole="client"><ClientCustomers /></ProtectedRoute>} />
           <Route path="/client/settings"    element={<ProtectedRoute requiredRole="client"><ClientSettings /></ProtectedRoute>} />
-          <Route path="/client/questions"   element={<ProtectedRoute requiredRole="client"><QuestionEditor /></ProtectedRoute>} />
+          <Route path="/client/questions"      element={<ProtectedRoute requiredRole="client"><QuestionEditor /></ProtectedRoute>} />
+          <Route path="/client/pricing"        element={<ProtectedRoute requiredRole="client"><Pricing /></ProtectedRoute>} />
+          <Route path="/client/pdf"            element={<ProtectedRoute requiredRole="client"><PdfContent /></ProtectedRoute>} />
+          <Route path="/client/municipalities" element={<ProtectedRoute requiredRole="client"><Municipalities /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
