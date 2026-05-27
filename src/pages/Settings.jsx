@@ -41,12 +41,33 @@ function SaveButton({ onClick, saveMsg, label = 'Save' }) {
 
 function ProfileSection() {
   const { profile } = useAuth();
-  const [fullName, setFullName] = useState('');
-  const [saveMsg,  setSaveMsg]  = useState('');
+  const [fullName,      setFullName]      = useState('');
+  const [saveMsg,       setSaveMsg]       = useState('');
+  const [avatarSaveMsg, setAvatarSaveMsg] = useState('');
+
+  const initials = (() => {
+    const name = profile?.full_name;
+    if (!name) return 'AD';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  })();
 
   useEffect(() => {
     if (profile?.full_name) setFullName(profile.full_name);
   }, [profile]);
+
+  async function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file || !profile?.id) return;
+    const path = `${profile.id}/${file.name}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (error) { setAvatarSaveMsg('Upload failed.'); setTimeout(() => setAvatarSaveMsg(''), 3000); return; }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile.id);
+    setAvatarSaveMsg('Photo saved!');
+    setTimeout(() => { window.location.reload(); }, 1000);
+  }
 
   async function handleSave() {
     if (!profile?.id) return;
@@ -68,6 +89,22 @@ function ProfileSection() {
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Profile</h2>
         <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Manage your account details.</p>
+      </div>
+
+      <div style={CARD}>
+        <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: '600', color: '#111827', fontFamily: FONT }}>Profile Photo</p>
+        <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>This photo appears in the top bar of your dashboard.</p>
+        {profile?.avatar_url
+          ? <img src={profile.avatar_url} alt="avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', marginBottom: '12px', display: 'block' }} />
+          : <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '700', marginBottom: '12px', fontFamily: FONT }}>{initials}</div>
+        }
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <label style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', backgroundColor: '#fff', fontFamily: FONT, color: '#374151' }}>
+            Choose photo
+            <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
+          </label>
+          {avatarSaveMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: avatarSaveMsg.includes('failed') || avatarSaveMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT }}>{avatarSaveMsg}</span>}
+        </div>
       </div>
 
       <div style={CARD}>

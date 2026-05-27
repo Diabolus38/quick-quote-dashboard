@@ -207,15 +207,16 @@ export default function ClientLayout({ title, subtitle, children }) {
             {subtitle && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{subtitle}</div>}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Bell */}
             <div style={{ position: 'relative' }}>
               <button type="button" onClick={() => setShowNotif(v => !v)}
-                style={{ width: '36px', height: '36px', border: '1px solid #e5e7eb', borderRadius: '10px', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', cursor: 'pointer', fontFamily: FONT }}>
+                style={{ position: 'relative', background: 'transparent', border: 'none', padding: '6px', borderRadius: '8px', fontSize: '18px', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 🔔
+                <span style={{ position: 'absolute', top: '4px', right: '4px', width: '7px', height: '7px', backgroundColor: '#dc2626', borderRadius: '50%', border: '2px solid #ffffff' }} />
               </button>
               {showNotif && (
-                <div style={{ position: 'absolute', top: '52px', right: 0, backgroundColor: '#ffffff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', zIndex: 100, minWidth: '200px', fontFamily: FONT }}>
+                <div style={{ position: 'absolute', top: '44px', right: 0, backgroundColor: '#ffffff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', zIndex: 100, minWidth: '200px', fontFamily: FONT }}>
                   <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', textAlign: 'center' }}>No new notifications 🔔</p>
                 </div>
               )}
@@ -223,14 +224,12 @@ export default function ClientLayout({ title, subtitle, children }) {
             {/* User Profile */}
             <div onClick={() => navigate('/client/settings')}
               style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
-                {initials}
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827', lineHeight: 1 }}>{profile?.full_name || 'Client'}</div>
-                <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>Client Account</div>
-              </div>
-              <span style={{ fontSize: '10px', color: '#9ca3af' }}>▾</span>
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                : <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>{initials}</div>
+              }
+              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{profile?.full_name || 'Client'}</span>
+              <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '2px' }}>▾</span>
             </div>
           </div>
         </header>

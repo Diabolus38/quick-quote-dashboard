@@ -78,6 +78,13 @@ function useSaveMsg() {
   return [saveMsg, flash];
 }
 
+function getInitials(name) {
+  if (!name) return 'CL';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
 function BrandingSection({ initialSettings }) {
