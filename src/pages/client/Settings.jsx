@@ -5,38 +5,45 @@ import ClientLayout from '../../ClientLayout';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
+const LIME    = '#a3e635';
 
-const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' };
+const CARD = {
+  backgroundColor: '#ffffff',
+  borderRadius: '16px',
+  border: 'none',
+  boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
+  padding: '24px',
+  marginBottom: '16px',
+};
 
-/* ── shared helpers ─────────────────────────────────────────── */
+/* ── Helpers ─────────────────────────────────────────────────── */
 
-function SectionHeader({ title, subtitle }) {
-  return (
-    <div style={{ marginBottom: '20px' }}>
-      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{title}</h1>
-      {subtitle && <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>{subtitle}</p>}
-    </div>
-  );
+function useSaveMsg() {
+  const [msg, setMsg] = useState('');
+  function flash() { setMsg('Saved!'); setTimeout(() => setMsg(''), 2000); }
+  return [msg, flash];
 }
 
-function SettingsCard({ title, children }) {
+function FieldRow({ label, children }) {
   return (
-    <div style={CARD}>
-      {title && <p style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{title}</p>}
+    <div style={{ marginBottom: '16px' }}>
+      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>{label}</label>
       {children}
     </div>
   );
 }
 
-function SaveButton({ onClick, saveMsg }) {
+function TextInput({ value, onChange, placeholder = '', type = 'text' }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
-      {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{saveMsg}</span>}
-      <button type="button" onClick={onClick}
-        style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-        Save
-      </button>
-    </div>
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }} />
+  );
+}
+
+function Textarea({ value, onChange, placeholder = '', rows = 4 }) {
+  return (
+    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+      style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '12px 14px', fontSize: '13.5px', color: '#0d1117', fontFamily: FONT, resize: 'vertical', outline: 'none', backgroundColor: '#fff' }} />
   );
 }
 
@@ -49,284 +56,220 @@ function Toggle({ value, onChange }) {
   );
 }
 
-function FieldRow({ label, children }) {
+function SaveRow({ onClick, msg }) {
   return (
-    <div style={{ marginBottom: '14px' }}>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>{label}</label>
-      {children}
+    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+      {msg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{msg}</span>}
+      <button type="button" onClick={onClick}
+        style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+        Save
+      </button>
     </div>
   );
 }
 
-function TextInput({ value, onChange, placeholder = '' }) {
-  return (
-    <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }} />
-  );
-}
-
-function Textarea({ value, onChange, placeholder = '' }) {
-  return (
-    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={5}
-      style={{ width: '100%', boxSizing: 'border-box', minHeight: '100px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '12px 14px', fontSize: '13.5px', color: '#0d1117', fontFamily: FONT, resize: 'vertical', outline: 'none', backgroundColor: '#fff' }} />
-  );
-}
-
-function useSaveMsg() {
-  const [saveMsg, setSaveMsg] = useState('');
-  function flash() { setSaveMsg('Saved!'); setTimeout(() => setSaveMsg(''), 2000); }
-  return [saveMsg, flash];
-}
-
-function getInitials(name) {
-  if (!name) return 'CL';
-  const parts = name.trim().split(' ').filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
+function isValidUrl(str) {
+  try { return Boolean(new URL(str)); } catch { return false; }
 }
 
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
-function BrandingSection({ initialSettings }) {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
+function BrandingSection({ clientId, initialSettings }) {
   const b = initialSettings?.branding || {};
-
-  const [primaryColor, setPrimaryColor] = useState(b.primary_color || '#166534');
-  const [colorHex,     setColorHex]     = useState(b.primary_color || '#166534');
-  const [launcherText, setLauncherText] = useState(b.launcher_text || 'Get an instant estimate');
-  const [companyName,  setCompanyName]  = useState(b.company_name  || '');
+  const [companyName,  setCompanyName]  = useState(b.company_name   || '');
+  const [primaryColor, setPrimaryColor] = useState(b.primary_color  || '#166534');
+  const [colorHex,     setColorHex]     = useState(b.primary_color  || '#166534');
+  const [logoUrl,      setLogoUrl]      = useState(b.logo_url       || '');
   const [saveMsg, flash] = useSaveMsg();
 
   async function handleSave() {
-    await supabase.from('client_settings')
-      .update({ branding: { primary_color: primaryColor, launcher_text: launcherText, company_name: companyName } })
-      .eq('client_id', clientId);
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, branding: { company_name: companyName, primary_color: primaryColor, logo_url: logoUrl } },
+      { onConflict: 'client_id' }
+    );
     flash();
   }
 
   return (
     <>
-      <SectionHeader title="Branding" subtitle="Customize how your tool looks." />
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Branding</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Customize how your estimator tool looks.</p>
+      </div>
 
-      <SettingsCard title="Company Logo">
-        <FieldRow label="Company Logo">
-          <input type="file" accept="image/*" style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }} />
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Recommended: PNG or SVG, max 2MB</p>
+      <div style={CARD}>
+        <FieldRow label="Company Name">
+          <TextInput value={companyName} onChange={setCompanyName} placeholder="Your company name" />
         </FieldRow>
-      </SettingsCard>
 
-      <SettingsCard title="Colors">
         <FieldRow label="Primary Color">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <input type="color" value={primaryColor}
               onChange={e => { setPrimaryColor(e.target.value); setColorHex(e.target.value); }}
-              style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
+              style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px', backgroundColor: '#fff' }} />
             <input type="text" value={colorHex}
-              onChange={e => { setColorHex(e.target.value); if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setPrimaryColor(e.target.value); }}
+              onChange={e => { setColorHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setPrimaryColor(e.target.value); }}
               style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
           </div>
         </FieldRow>
-      </SettingsCard>
 
-      <SettingsCard title="Tool Text">
-        <FieldRow label="Launcher Button Text"><TextInput value={launcherText} onChange={setLauncherText} /></FieldRow>
-        <FieldRow label="Company Name in Tool"><TextInput value={companyName}  onChange={setCompanyName}  /></FieldRow>
-      </SettingsCard>
+        <FieldRow label="Logo URL">
+          <TextInput value={logoUrl} onChange={setLogoUrl} placeholder="https://example.com/logo.png" />
+          {logoUrl && isValidUrl(logoUrl) && (
+            <img src={logoUrl} alt="Logo preview"
+              style={{ marginTop: '10px', maxHeight: '60px', maxWidth: '200px', borderRadius: '8px', border: '1px solid #e8ede8', objectFit: 'contain', display: 'block' }}
+              onError={e => { e.target.style.display = 'none'; }} />
+          )}
+        </FieldRow>
+      </div>
 
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      <SaveRow onClick={handleSave} msg={saveMsg} />
     </>
   );
 }
 
 /* ── 2. Email Settings ───────────────────────────────────────── */
 
-function EmailSection({ initialSettings }) {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
+function EmailSection({ clientId, initialSettings }) {
   const es = initialSettings?.email_settings || {};
-
-  const [senderName,   setSenderName]   = useState(es.sender_name      || '');
-  const [replyTo,      setReplyTo]      = useState(es.reply_to         || '');
-  const [notifEmail,   setNotifEmail]   = useState(es.internal_email   || '');
-  const [sendCustomer, setSendCustomer] = useState(es.send_customer    ?? true);
-  const [custSubject,  setCustSubject]  = useState(es.customer_subject || 'Your estimate from {company}');
-  const [custBody,     setCustBody]     = useState(es.customer_body    || '');
-  const [sendInternal, setSendInternal] = useState(es.send_internal    ?? true);
+  const [fromName,     setFromName]     = useState(es.from_name     || '');
+  const [replyTo,      setReplyTo]      = useState(es.reply_to      || '');
+  const [subject,      setSubject]      = useState(es.subject        || '');
+  const [footerText,   setFooterText]   = useState(es.footer_text   || '');
   const [saveMsg, flash] = useSaveMsg();
-  const [testEmailMsg, setTestEmailMsg] = useState('');
-
-  async function handleTestEmail() {
-    try {
-      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: notifEmail || 'test@example.com', name: 'Test', pdfBase64: '' }),
-      });
-      setTestEmailMsg(res.ok ? 'Test email sent!' : 'Failed to send.');
-    } catch {
-      setTestEmailMsg('Failed to send.');
-    }
-    setTimeout(() => setTestEmailMsg(''), 3000);
-  }
 
   async function handleSave() {
-    await supabase.from('client_settings').update({
-      email_settings: { sender_name: senderName, reply_to: replyTo, internal_email: notifEmail,
-        customer_subject: custSubject, customer_body: custBody, send_customer: sendCustomer, send_internal: sendInternal },
-    }).eq('client_id', clientId);
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, email_settings: { from_name: fromName, reply_to: replyTo, subject, footer_text: footerText } },
+      { onConflict: 'client_id' }
+    );
     flash();
   }
 
   return (
     <>
-      <SectionHeader title="Email Settings" subtitle="Control how emails are sent to you and your customers." />
-      <SettingsCard title="Sender Info">
-        <FieldRow label="Sender Name">                  <TextInput value={senderName}  onChange={setSenderName}  /></FieldRow>
-        <FieldRow label="Reply-to Email">               <TextInput value={replyTo}     onChange={setReplyTo}     /></FieldRow>
-        <FieldRow label="Internal Notification Email">  <TextInput value={notifEmail}  onChange={setNotifEmail}  /></FieldRow>
-      </SettingsCard>
-      <SettingsCard title="Customer Email">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <Toggle value={sendCustomer} onChange={setSendCustomer} />
-          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>Send customer email after estimate</span>
-        </div>
-        {sendCustomer && (
-          <>
-            <FieldRow label="Subject Line"><TextInput value={custSubject} onChange={setCustSubject} /></FieldRow>
-            <FieldRow label="Body">
-              <Textarea value={custBody} onChange={setCustBody} placeholder="Write your customer email body here..." />
-              <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Available variables: {'{name}'}, {'{price}'}, {'{municipality}'}</p>
-            </FieldRow>
-          </>
-        )}
-      </SettingsCard>
-      <SettingsCard title="Internal Notification">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Toggle value={sendInternal} onChange={setSendInternal} />
-          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>Send internal notification on new lead</span>
-        </div>
-      </SettingsCard>
-      <SettingsCard title="Test Email">
-        <p style={{ margin: '0 0 14px', fontSize: '13.5px', color: '#6b7280', fontFamily: FONT }}>Send a test email to verify your settings.</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button type="button" onClick={handleTestEmail}
-            style={{ border: `1px solid ${PRIMARY}`, color: PRIMARY, backgroundColor: '#fff', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>
-            Send Test Email
-          </button>
-          {testEmailMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: testEmailMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT }}>{testEmailMsg}</span>}
-        </div>
-      </SettingsCard>
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Email Settings</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Control how emails are sent to your customers.</p>
+      </div>
+
+      <div style={CARD}>
+        <FieldRow label="From Name">
+          <TextInput value={fromName} onChange={setFromName} placeholder="e.g. Acme Estimator" />
+        </FieldRow>
+        <FieldRow label="Reply-To Email">
+          <TextInput type="email" value={replyTo} onChange={setReplyTo} placeholder="reply@yourcompany.com" />
+        </FieldRow>
+        <FieldRow label="Custom Email Subject">
+          <TextInput value={subject} onChange={setSubject} placeholder="Your estimate from {company}" />
+        </FieldRow>
+        <FieldRow label="Email Footer Text">
+          <Textarea value={footerText} onChange={setFooterText} placeholder="Your company address, legal disclaimer, etc." rows={4} />
+        </FieldRow>
+      </div>
+
+      <SaveRow onClick={handleSave} msg={saveMsg} />
     </>
   );
 }
 
 /* ── 3. Languages ────────────────────────────────────────────── */
 
-const LANGUAGES = ['English', 'Svenska', 'Deutsch', 'Français'];
+const LANG_OPTIONS = [
+  { code: 'EN', label: 'English' },
+  { code: 'SV', label: 'Svenska' },
+  { code: 'DE', label: 'Deutsch' },
+  { code: 'FR', label: 'Français' },
+];
 
-function LanguagesSection({ initialSettings }) {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
+function LanguagesSection({ clientId, initialSettings }) {
   const ls = initialSettings?.language_settings || {};
-
-  const [toolLang,  setToolLang]  = useState(ls.tool_default_language || 'English');
-  const [enabled,   setEnabled]   = useState(ls.enabled_languages     || { English: true, Svenska: true, Deutsch: false, Français: false });
-  const [dashLang,  setDashLang]  = useState(ls.dashboard_language    || 'English');
+  const [enabled, setEnabled] = useState(ls.enabled || { EN: true, SV: false, DE: false, FR: false });
   const [saveMsg, flash] = useSaveMsg();
 
+  function handleToggle(code) {
+    setEnabled(prev => {
+      const next = { ...prev, [code]: !prev[code] };
+      const anyOn = Object.values(next).some(Boolean);
+      if (!anyOn) return prev;
+      return next;
+    });
+  }
+
   async function handleSave() {
-    await supabase.from('client_settings').update({
-      language_settings: { tool_default_language: toolLang, enabled_languages: enabled, dashboard_language: dashLang },
-    }).eq('client_id', clientId);
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, language_settings: { enabled } },
+      { onConflict: 'client_id' }
+    );
     flash();
   }
 
-  const selStyle = { width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' };
-
   return (
     <>
-      <SectionHeader title="Language Settings" />
-      <SettingsCard title="Tool Default Language">
-        <FieldRow label="Default Language">
-          <select value={toolLang} onChange={e => setToolLang(e.target.value)} style={selStyle}>
-            {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-        </FieldRow>
-      </SettingsCard>
-      <SettingsCard title="Available Languages">
-        {LANGUAGES.map(lang => (
-          <div key={lang} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
-            <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>{lang}</span>
-            <Toggle value={!!enabled[lang]} onChange={() => setEnabled(prev => ({ ...prev, [lang]: !prev[lang] }))} />
-          </div>
-        ))}
-      </SettingsCard>
-      <SettingsCard title="Dashboard Language">
-        <FieldRow label="Language">
-          <select value={dashLang} onChange={e => setDashLang(e.target.value)} style={selStyle}>
-            {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-        </FieldRow>
-      </SettingsCard>
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Languages</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Choose which languages your estimator tool supports.</p>
+      </div>
+
+      <div style={CARD}>
+        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>At least one language must always be enabled.</p>
+        <div style={{ marginTop: '12px' }}>
+          {LANG_OPTIONS.map(({ code, label }, i) => (
+            <div key={code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < LANG_OPTIONS.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+              <div>
+                <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{code}</span>
+                <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '8px', fontFamily: FONT }}>{label}</span>
+              </div>
+              <Toggle value={!!enabled[code]} onChange={() => handleToggle(code)} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <SaveRow onClick={handleSave} msg={saveMsg} />
     </>
   );
 }
 
 /* ── 4. Embed Code ───────────────────────────────────────────── */
 
-const INSTALL_GUIDES = [
-  { title: 'WordPress + Elementor', content: '1. Edit your page in Elementor.\n2. Add an HTML widget.\n3. Paste the script tag above and save.' },
-  { title: 'Plain HTML',            content: '1. Open your HTML file.\n2. Find the closing </body> tag.\n3. Paste the script tag just before </body>.' },
-  { title: 'Shopify',               content: '1. Go to Online Store → Themes → Edit Code.\n2. Open theme.liquid.\n3. Paste the script tag before </body> and save.' },
-  { title: 'Webflow',               content: '1. Go to Project Settings → Custom Code.\n2. Paste in Footer Code.\n3. Save and publish.' },
-];
-
 function EmbedCodeSection({ clientId }) {
-  const [copied,   setCopied]   = useState(false);
-  const [expanded, setExpanded] = useState({});
-  const scriptTag = `<script src="https://estimator.quickquote360.com/embed.js?clientId=${clientId || 'CLIENT_ID_HERE'}"></script>`;
+  const [copied, setCopied] = useState(false);
+  const scriptTag = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
 
   function handleCopy() {
-    navigator.clipboard.writeText(scriptTag).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    navigator.clipboard.writeText(scriptTag).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
   return (
     <>
-      <SectionHeader title="Embed Code" subtitle="Copy this code and paste it into your website." />
-      <SettingsCard>
-        <pre style={{ backgroundColor: '#0d1f12', color: '#a3e635', fontFamily: 'monospace', borderRadius: '12px', padding: '20px', fontSize: '13px', wordBreak: 'break-all', whiteSpace: 'pre-wrap', margin: 0 }}>
-          {scriptTag}
-        </pre>
-        <div style={{ marginTop: '12px' }}>
-          <button type="button" onClick={handleCopy}
-            style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            {copied ? 'Copied!' : 'Copy Code'}
-          </button>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Embed Code</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Add the estimator tool to your website.</p>
+      </div>
+
+      <div style={CARD}>
+        <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '20px', marginBottom: '14px', overflowX: 'auto' }}>
+          <code style={{ fontSize: '13px', color: LIME, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.6' }}>
+            {scriptTag}
+          </code>
         </div>
-      </SettingsCard>
-      <SettingsCard>
-        <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>How to install</p>
-        {INSTALL_GUIDES.map(guide => (
-          <div key={guide.title} style={{ borderBottom: '1px solid #f4f6f4' }}>
-            <button type="button" onClick={() => setExpanded(prev => ({ ...prev, [guide.title]: !prev[guide.title] }))}
-              style={{ width: '100%', textAlign: 'left', padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: FONT }}>
-              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#374151' }}>{guide.title}</span>
-              <span style={{ fontSize: '16px', color: '#9ca3af', display: 'inline-block', transform: expanded[guide.title] ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
-            </button>
-            {expanded[guide.title] && (
-              <p style={{ margin: '0 0 12px', fontSize: '13.5px', color: '#6b7280', lineHeight: '1.7', whiteSpace: 'pre-line', fontFamily: FONT }}>{guide.content}</p>
-            )}
-          </div>
-        ))}
-      </SettingsCard>
+        <button type="button" onClick={handleCopy}
+          style={{ backgroundColor: copied ? '#ecfccb' : PRIMARY, color: copied ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '12px' }}>
+          {copied ? 'Copied!' : 'Copy Code'}
+        </button>
+        <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
+          Paste this before the closing <code style={{ backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}>&lt;/body&gt;</code> tag on your website.
+        </p>
+      </div>
     </>
   );
 }
 
-/* ── Root component ──────────────────────────────────────────── */
+/* ── Root ────────────────────────────────────────────────────── */
 
 const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code'];
 
@@ -340,12 +283,8 @@ export default function ClientSettingsPage() {
 
   useEffect(() => {
     if (!clientId) return;
-    async function load() {
-      const { data: settings } = await supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle();
-      setSettingsRow(settings);
-      setDataReady(true);
-    }
-    load();
+    supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => { setSettingsRow(data); setDataReady(true); });
   }, [clientId]);
 
   return (
@@ -353,7 +292,7 @@ export default function ClientSettingsPage() {
       <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
 
         {/* Side nav */}
-        <div style={{ width: '190px', flexShrink: 0, backgroundColor: '#fff', border: 'none', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '10px', position: 'sticky', top: '80px' }}>
+        <div style={{ width: '190px', flexShrink: 0, backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '10px', position: 'sticky', top: '80px' }}>
           <p style={{ margin: '0 0 8px', padding: '0 8px', fontSize: '10px', fontWeight: '700', color: '#9ca3af', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: FONT }}>Settings</p>
           {NAV_ITEMS.map(item => {
             const active = activeSection === item;
@@ -372,9 +311,9 @@ export default function ClientSettingsPage() {
             <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading settings…</div>
           ) : (
             <>
-              {activeSection === 'Branding'       && <BrandingSection key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Email Settings' && <EmailSection    key={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Languages'      && <LanguagesSection key={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} initialSettings={settingsRow} />}
+              {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} initialSettings={settingsRow} />}
               {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
             </>
           )}
