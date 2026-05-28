@@ -109,6 +109,18 @@ export default function LoginPage() {
             </button>
           </p>
 
+          <p style={{ marginTop: '20px', marginBottom: 0, textAlign: 'center', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
+            <button type="button" onClick={() => window.open('/terms', '_blank')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '11px', fontFamily: FONT, padding: 0 }}>
+              Terms of Service
+            </button>
+            {' · '}
+            <button type="button" onClick={() => window.open('/privacy', '_blank')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '11px', fontFamily: FONT, padding: 0 }}>
+              Privacy Policy
+            </button>
+          </p>
+
         </div>
       </div>
     </div>

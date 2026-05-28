@@ -6,6 +6,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage      from './LoginPage';
 import SignupPage     from './pages/SignupPage';
 import ForgotPassword from './pages/ForgotPassword';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy  from './pages/PrivacyPolicy';
+import CookieBanner   from './components/CookieBanner';
 
 // Admin pages
 import AdminOverview from './pages/AdminOverview';
@@ -40,6 +43,8 @@ export default function App() {
           <Route path="/login"           element={<LoginPage />} />
           <Route path="/signup"          element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/terms"           element={<TermsOfService />} />
+          <Route path="/privacy"         element={<PrivacyPolicy />} />
 
           {/* ── Super-admin protected ── */}
           <Route path="/admin"             element={<ProtectedRoute requiredRole="super_admin"><AdminOverview /></ProtectedRoute>} />
@@ -65,6 +70,7 @@ export default function App() {
           <Route path="/client/municipalities" element={<ProtectedRoute requiredRole="client"><Municipalities /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
+      <CookieBanner />
     </BrowserRouter>
   );
 }

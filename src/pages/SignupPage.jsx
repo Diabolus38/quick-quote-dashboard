@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [email,            setEmail]            = useState('');
   const [password,         setPassword]         = useState('');
   const [confirmPassword,  setConfirmPassword]  = useState('');
+  const [agreedToTerms,    setAgreedToTerms]    = useState(false);
   const [error,            setError]            = useState('');
   const [loading,          setLoading]          = useState(false);
   const [emailSent,        setEmailSent]        = useState(false);
@@ -21,6 +22,10 @@ export default function SignupPage() {
     console.log("SUBMIT TRIGGERED");
     setError('');
 
+    if (!agreedToTerms) {
+      setError('You must agree to the terms to create an account.');
+      return;
+    }
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       setError('All fields are required.');
       return;
@@ -116,6 +121,24 @@ export default function SignupPage() {
                 <label style={labelStyle}>Confirm password</label>
                 <input type="password" placeholder="••••••••" autoComplete="new-password" value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '16px' }}>
+                <input type="checkbox" id="agreeTerms" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+                  style={{ marginTop: '3px', cursor: 'pointer', accentColor: PRIMARY, flexShrink: 0 }} />
+                <label htmlFor="agreeTerms" style={{ fontSize: '13px', color: '#4b5563', fontFamily: FONT, lineHeight: '1.5', cursor: 'pointer' }}>
+                  By creating an account you agree to our{' '}
+                  <button type="button" onClick={() => window.open('/terms', '_blank')}
+                    style={{ background: 'none', border: 'none', color: PRIMARY, fontWeight: '600', cursor: 'pointer', fontFamily: FONT, fontSize: '13px', padding: 0 }}>
+                    Terms of Service
+                  </button>
+                  {' '}and{' '}
+                  <button type="button" onClick={() => window.open('/privacy', '_blank')}
+                    style={{ background: 'none', border: 'none', color: PRIMARY, fontWeight: '600', cursor: 'pointer', fontFamily: FONT, fontSize: '13px', padding: 0 }}>
+                    Privacy Policy
+                  </button>
+                  .
+                </label>
               </div>
 
               <button type="button" disabled={loading} onClick={handleSubmit}
