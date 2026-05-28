@@ -154,7 +154,7 @@ export default function AllLeads() {
     { label: 'Total Leads',  value: totalLeads, bg: '#ecfccb', color: '#3f6212' },
     { label: 'Today',        value: today,       bg: '#dbeafe', color: '#1d4ed8' },
     { label: 'This Month',   value: thisMonth,   bg: '#ede9fe', color: '#7c3aed' },
-    { label: 'Avg Value',    value: avgValue > 0 ? `$${avgValue.toLocaleString()}` : '—', bg: '#fef9c3', color: '#854d0e' },
+    { label: 'Avg Value',    value: avgValue > 0 ? `${avgValue.toLocaleString()} kr` : '—', bg: '#fef9c3', color: '#854d0e' },
   ];
 
   if (loading) return (
@@ -288,7 +288,7 @@ export default function AllLeads() {
                         <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.answers?.wastewaterType || '—'}</td>
 
                         <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>
-                          {lead.estimated_price != null ? `$${Number(lead.estimated_price).toLocaleString()}` : '—'}
+                          {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
                         </td>
 
                         <td style={{ padding: '12px 16px' }}>

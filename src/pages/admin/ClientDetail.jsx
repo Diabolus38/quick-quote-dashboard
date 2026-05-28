@@ -326,7 +326,7 @@ export default function ClientDetail() {
                           <td style={{ padding: '12px 20px', fontWeight: '600', color: '#0d1117', fontSize: '13px' }}>{lead.name || '—'}</td>
                           <td style={{ padding: '12px 20px', color: '#9ca3af', fontSize: '13px' }}>{lead.email || '—'}</td>
                           <td style={{ padding: '12px 20px', fontWeight: '600', color: '#0d1117', fontSize: '13px' }}>
-                            {lead.estimated_price != null ? `$${Number(lead.estimated_price).toLocaleString()}` : '—'}
+                            {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
                           </td>
                           <td style={{ padding: '12px 20px', color: '#9ca3af', fontSize: '13px' }}>{formatDate(lead.created_at)}</td>
                           <td style={{ padding: '12px 20px', fontSize: '13px' }}>
@@ -352,7 +352,7 @@ export default function ClientDetail() {
               {[
                 { label: 'Total Leads',       value: leads.length },
                 { label: 'Leads This Month',  value: thisMonthLeads.length },
-                { label: 'Avg Estimate Value', value: avgPrice != null ? `$${avgPrice.toLocaleString()}` : '—' },
+                { label: 'Avg Estimate Value', value: avgPrice != null ? `${avgPrice.toLocaleString()} kr` : '—' },
                 { label: 'Plan Limit',         value: typeof limit === 'number' ? limit : limit },
               ].map(({ label, value }, idx, arr) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: idx < arr.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
@@ -404,8 +404,8 @@ export default function ClientDetail() {
                 </button>
               </div>
 
-              <button type="button" onClick={() => navigate('/client')} style={BTN_PRIMARY}>
-                Go to Client View
+              <button type="button" onClick={() => window.open('/client', '_blank')} style={BTN_PRIMARY}>
+                Open Client Dashboard →
               </button>
 
               <button type="button" onClick={handleDeactivate} style={BTN_DANGER}>

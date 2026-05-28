@@ -82,10 +82,13 @@ export default function Leads() {
     return matchSearch && matchFilter;
   });
 
+  const wonLeads = leads.filter(l => l.status === 'Closed Won').length;
+  const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0;
+
   const statCards = [
     { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '▤' },
     { label: 'This Month',         value: loading ? '—' : String(thisMonthCount),  color: '#dbeafe', textColor: '#1d4ed8', icon: '◎' },
-    { label: 'Conversion Rate',    value: '—',                                      color: '#dcfce7', textColor: '#166534', icon: '▤' },
+    { label: 'Conversion Rate',    value: `${conversionRate}%`,                     color: '#dcfce7', textColor: '#166534', icon: '▤' },
     { label: 'Avg Estimate Value', value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '⊞' },
   ];
 

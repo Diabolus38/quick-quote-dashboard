@@ -12,7 +12,8 @@ import AdminOverview from './pages/AdminOverview';
 import Clients       from './pages/Clients';
 import ClientDetail  from './pages/admin/ClientDetail';
 import SuperAdmin    from './pages/admin/SuperAdmin';
-import AllLeads      from './pages/admin/AllLeads';
+import AllLeads        from './pages/admin/AllLeads';
+import AdminLeadDetail from './pages/admin/AdminLeadDetail';
 import Estimates     from './pages/Estimates';
 import Billing       from './pages/Billing';
 import Settings      from './pages/Settings';
@@ -46,7 +47,7 @@ export default function App() {
           <Route path="/admin/clients/:id" element={<ProtectedRoute requiredRole="super_admin"><ClientDetail /></ProtectedRoute>} />
           <Route path="/admin/super"       element={<ProtectedRoute requiredRole="super_admin"><SuperAdmin /></ProtectedRoute>} />
           <Route path="/admin/leads"       element={<ProtectedRoute requiredRole="super_admin"><AllLeads /></ProtectedRoute>} />
-          <Route path="/admin/leads/:id"   element={<ProtectedRoute requiredRole="super_admin"><AllLeads /></ProtectedRoute>} />
+          <Route path="/admin/leads/:id"   element={<ProtectedRoute requiredRole="super_admin"><AdminLeadDetail /></ProtectedRoute>} />
           <Route path="/admin/estimates"   element={<ProtectedRoute requiredRole="super_admin"><Estimates /></ProtectedRoute>} />
           <Route path="/admin/billing"     element={<ProtectedRoute requiredRole="super_admin"><Billing /></ProtectedRoute>} />
           <Route path="/admin/settings"    element={<ProtectedRoute requiredRole="super_admin"><Settings /></ProtectedRoute>} />

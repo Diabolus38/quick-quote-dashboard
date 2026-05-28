@@ -130,7 +130,6 @@ export default function Layout({ title, subtitle, children }) {
               <button type="button" onClick={() => setShowNotif(v => !v)}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative', padding: '6px', borderRadius: '8px' }}>
                 <span style={{ fontSize: '18px' }}>🔔</span>
-                <span style={{ position: 'absolute', top: '4px', right: '4px', width: '7px', height: '7px', backgroundColor: '#dc2626', borderRadius: '50%', border: '2px solid #ffffff' }} />
               </button>
               {showNotif && (
                 <div style={{ position: 'absolute', top: '44px', right: 0, backgroundColor: '#ffffff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', zIndex: 100, minWidth: '200px', fontFamily: FONT }}>

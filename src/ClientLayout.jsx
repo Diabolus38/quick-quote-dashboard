@@ -202,7 +202,6 @@ export default function ClientLayout({ title, subtitle, children }) {
               <button type="button" onClick={() => setShowNotif(v => !v)}
                 style={{ position: 'relative', background: 'transparent', border: 'none', padding: '6px', borderRadius: '8px', fontSize: '18px', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 🔔
-                <span style={{ position: 'absolute', top: '4px', right: '4px', width: '7px', height: '7px', backgroundColor: '#dc2626', borderRadius: '50%', border: '2px solid #ffffff' }} />
               </button>
               {showNotif && (
                 <div style={{ position: 'absolute', top: '44px', right: 0, backgroundColor: '#ffffff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', zIndex: 100, minWidth: '200px', fontFamily: FONT }}>

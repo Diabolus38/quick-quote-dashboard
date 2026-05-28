@@ -282,7 +282,7 @@ export default function AdminOverview() {
                       </td>
                       <td style={{ padding: '12px 20px', color: '#4b5563' }}>{lead.name || '—'}</td>
                       <td style={{ padding: '12px 20px', fontWeight: '600', color: '#0d1117' }}>
-                        {lead.estimated_price != null ? `$${Number(lead.estimated_price).toLocaleString()}` : '—'}
+                        {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
                       </td>
                       <td style={{ padding: '12px 20px', color: '#9ca3af' }}>{formatShortDate(lead.created_at)}</td>
                       <td style={{ padding: '12px 20px' }}>
