@@ -43,6 +43,7 @@ export default function ClientLayout({ title, subtitle, children }) {
   const [showNotif,      setShowNotif]      = useState(false);
   const [leadsThisMonth, setLeadsThisMonth] = useState(0);
   const [planLimit,      setPlanLimit]      = useState(30);
+  const [sidebarSearch,  setSidebarSearch]  = useState('');
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -102,7 +103,7 @@ export default function ClientLayout({ title, subtitle, children }) {
         <div style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '8px 12px', backgroundColor: '#f9faf9' }}>
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round"><circle cx="6" cy="6" r="4.5" /><line x1="9.5" y1="9.5" x2="13" y2="13" /></svg>
-            <input type="text" placeholder="Search..." style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#374151', width: '100%', fontFamily: FONT }} />
+            <input type="text" placeholder="Search..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#374151', width: '100%', fontFamily: FONT }} />
           </div>
         </div>
 
@@ -111,7 +112,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overview</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {OVERVIEW_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+          {OVERVIEW_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
         {/* LEADS Section */}
@@ -119,7 +120,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Leads</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {LEADS_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+          {LEADS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
         {/* CONFIGURATION Section */}
@@ -127,7 +128,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {CONFIG_ITEMS.map(item => <NavItem key={item.label} item={item} />)}
+          {CONFIG_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
         {/* Spacer */}

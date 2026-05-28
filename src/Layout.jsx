@@ -36,7 +36,8 @@ export default function Layout({ title, subtitle, children }) {
   const navigate             = useNavigate();
   const isSuperAdmin         = profile?.role === 'super_admin';
   const initials             = getInitials(profile?.full_name);
-  const [showNotif, setShowNotif] = useState(false);
+  const [showNotif,     setShowNotif]     = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState('');
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: FONT, backgroundColor: '#f0f2f5' }}>
@@ -68,7 +69,7 @@ export default function Layout({ title, subtitle, children }) {
         <div style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '8px 12px', backgroundColor: '#f9faf9' }}>
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round"><circle cx="6" cy="6" r="4.5" /><line x1="9.5" y1="9.5" x2="13" y2="13" /></svg>
-            <input type="text" placeholder="Search..." style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#374151', width: '100%', fontFamily: FONT }} />
+            <input type="text" placeholder="Search..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#374151', width: '100%', fontFamily: FONT }} />
           </div>
         </div>
 
@@ -77,7 +78,7 @@ export default function Layout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Management</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {MGMT_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
+          {MGMT_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} isAdmin />)}
         </nav>
 
         {/* TOOLS Section — super_admin only */}
@@ -87,7 +88,7 @@ export default function Layout({ title, subtitle, children }) {
               <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tools</span>
             </div>
             <nav style={{ flexShrink: 0 }}>
-              {TOOLS_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
+              {TOOLS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} isAdmin />)}
             </nav>
           </>
         )}
@@ -97,7 +98,7 @@ export default function Layout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {ADMIN_ACCOUNT_ITEMS.map(item => <NavItem key={item.label} item={item} isAdmin />)}
+          {ADMIN_ACCOUNT_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} isAdmin />)}
         </nav>
 
         {/* 5. Spacer */}

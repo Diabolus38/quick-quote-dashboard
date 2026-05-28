@@ -43,10 +43,22 @@ export default function Leads() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [hoveredRow,   setHoveredRow]   = useState(null);
   const [currentPage,  setCurrentPage]  = useState(1);
+  const [showToast,    setShowToast]    = useState(false);
 
   useEffect(() => {
     if (!profile?.client_id) return;
     fetchLeads();
+
+    const channel = supabase
+      .channel(`leads-page-${profile.client_id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
+        setLeads(prev => [payload.new, ...prev]);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 4000);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [profile]);
 
   useEffect(() => { setCurrentPage(1); }, [search, activeFilter]);
@@ -107,6 +119,11 @@ export default function Leads() {
 
   return (
     <ClientLayout title="Leads">
+      {showToast && (
+        <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '12px', padding: '14px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          New lead just came in!
+        </div>
+      )}
       <div style={{ fontFamily: FONT }}>
 
         {/* Top row */}

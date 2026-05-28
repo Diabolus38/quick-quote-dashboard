@@ -160,8 +160,34 @@ export default function SuperAdmin() {
   const [copiedId,     setCopiedId]     = useState(null);
   const [copiedGlobal, setCopiedGlobal] = useState(false);
   const [hoveredRow,   setHoveredRow]   = useState(null);
+  const [healthStatus, setHealthStatus] = useState({ api: 'checking', frontend: 'checking', dashboard: 'checking' });
+  const [lastChecked,  setLastChecked]  = useState(null);
 
   useEffect(() => { fetchAll(); }, []);
+
+  async function checkHealth() {
+    setHealthStatus({ api: 'checking', frontend: 'checking', dashboard: 'checking' });
+    const services = [
+      { key: 'api',       url: 'https://estimator-widget-production.up.railway.app/health' },
+      { key: 'frontend',  url: 'https://estimator.quickquote360.com'                       },
+      { key: 'dashboard', url: 'https://dashboard.quickquote360.com'                       },
+    ];
+    await Promise.all(services.map(async ({ key, url }) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        await fetch(url, { signal: controller.signal, mode: 'no-cors' });
+        setHealthStatus(prev => ({ ...prev, [key]: 'up' }));
+      } catch {
+        setHealthStatus(prev => ({ ...prev, [key]: 'down' }));
+      } finally {
+        clearTimeout(timer);
+      }
+    }));
+    setLastChecked(new Date());
+  }
+
+  useEffect(() => { checkHealth(); }, []);
 
   async function fetchAll() {
     setLoading(true);
@@ -474,22 +500,38 @@ export default function SuperAdmin() {
 
               {/* System Status */}
               <div style={{ ...CARD, flex: 1 }}>
-                <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>System Health</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>System Health</p>
+                  <button type="button" onClick={checkHealth}
+                    style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+                    Refresh
+                  </button>
+                </div>
                 {[
-                  { label: 'API Endpoint', url: 'estimator-widget-production.up.railway.app' },
-                  { label: 'Frontend',     url: 'estimator.quickquote360.com'                },
-                  { label: 'Dashboard',    url: 'dashboard.quickquote360.com'                },
-                ].map(row => (
-                  <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 0', borderBottom: '1px solid #f4f6f4' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#0d1117', flex: '0 0 130px' }}>{row.label}</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 10px', borderRadius: '20px', backgroundColor: '#dcfce7', fontSize: '11px', fontWeight: '600', color: '#166534', flexShrink: 0 }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
-                      Operational
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.url}</span>
-                  </div>
-                ))}
-                <p style={{ margin: '14px 0 0', fontSize: '11px', color: '#9ca3af' }}>Last checked: just now</p>
+                  { label: 'API Endpoint', key: 'api',       url: 'estimator-widget-production.up.railway.app' },
+                  { label: 'Frontend',     key: 'frontend',  url: 'estimator.quickquote360.com'                },
+                  { label: 'Dashboard',    key: 'dashboard', url: 'dashboard.quickquote360.com'                },
+                ].map(row => {
+                  const status = healthStatus[row.key];
+                  const badge = status === 'up'
+                    ? { bg: '#dcfce7', color: '#166534', dot: '#16a34a', label: 'Operational' }
+                    : status === 'down'
+                      ? { bg: '#fee2e2', color: '#991b1b', dot: '#dc2626', label: 'Down' }
+                      : { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af', label: 'Checking...' };
+                  return (
+                    <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 0', borderBottom: '1px solid #f4f6f4' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#0d1117', flex: '0 0 130px' }}>{row.label}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 10px', borderRadius: '20px', backgroundColor: badge.bg, fontSize: '11px', fontWeight: '600', color: badge.color, flexShrink: 0 }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: badge.dot, display: 'inline-block' }} />
+                        {badge.label}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.url}</span>
+                    </div>
+                  );
+                })}
+                <p style={{ margin: '14px 0 0', fontSize: '11px', color: '#9ca3af' }}>
+                  {lastChecked ? `Last checked: ${lastChecked.toTimeString().slice(0, 8)}` : 'Last checked: —'}
+                </p>
               </div>
 
               {/* Quick Actions */}
@@ -497,7 +539,7 @@ export default function SuperAdmin() {
                 <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Quick Actions</p>
                 {[
                   { label: copiedGlobal ? '✓ Copied!' : 'Copy Global Embed Code', icon: '⊞', action: copyGlobalEmbed },
-                  { label: 'View All Leads →',       icon: '',   action: () => navigate('/admin/estimates') },
+                  { label: 'View All Leads →',       icon: '',   action: () => navigate('/admin/leads') },
                   { label: 'Manage Billing →',       icon: '',   action: () => navigate('/admin/billing')  },
                   { label: 'Go to Settings →',       icon: '',   action: () => navigate('/admin/settings') },
                 ].map((btn, i) => (

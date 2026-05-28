@@ -30,11 +30,23 @@ export default function ClientOverview() {
   const [leads,      setLeads]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [hoveredRow, setHoveredRow] = useState(null);
+  const [showToast,  setShowToast]  = useState(false);
 
   useEffect(() => {
     if (!profile?.client_id) return;
     supabase.from('leads').select('*').eq('client_id', profile.client_id).order('created_at', { ascending: false })
       .then(({ data }) => { setLeads(data || []); setLoading(false); });
+
+    const channel = supabase
+      .channel(`overview-leads-${profile.client_id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
+        setLeads(prev => [payload.new, ...prev]);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 4000);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [profile]);
 
   const now = new Date();
@@ -63,6 +75,11 @@ export default function ClientOverview() {
 
   return (
     <ClientLayout title="Overview">
+      {showToast && (
+        <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '12px', padding: '14px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          New lead just came in!
+        </div>
+      )}
       <div style={{ fontFamily: FONT }}>
 
         {/* Page header */}

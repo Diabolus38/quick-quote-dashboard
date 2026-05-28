@@ -54,10 +54,11 @@ function exportBillingCSV(rows) {
 }
 
 export default function Billing() {
-  const [clients,  setClients]  = useState([]);
-  const [leads,    setLeads]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [hovRow,   setHovRow]   = useState(null);
+  const [clients,    setClients]    = useState([]);
+  const [leads,      setLeads]      = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [hovRow,     setHovRow]     = useState(null);
+  const [chartLeads, setChartLeads] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -73,6 +74,15 @@ export default function Billing() {
       setLoading(false);
     }
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+    supabase.from('leads').select('id, client_id, created_at').gte('created_at', sixMonthsAgo.toISOString())
+      .then(({ data }) => setChartLeads(data || []));
   }, []);
 
   /* ── Build billing rows ── */
@@ -106,6 +116,35 @@ export default function Billing() {
       status:        'Paid',
     };
   });
+
+  /* ── Revenue chart data (last 6 months) ── */
+  const now2 = new Date();
+  const chartMonths = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now2.getFullYear(), now2.getMonth() - (5 - i), 1);
+    return { year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString('default', { month: 'short' }) };
+  });
+
+  const chartData = chartMonths.map(({ year, month, label }) => {
+    const leadsInMonth = {};
+    chartLeads.forEach(l => {
+      const d = new Date(l.created_at);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        leadsInMonth[l.client_id] = (leadsInMonth[l.client_id] || 0) + 1;
+      }
+    });
+    const total = clients.reduce((sum, c) => {
+      const plan    = c.plan || 'starter';
+      const fee     = PLAN_FEE[plan]     || 300;
+      const limit   = PLAN_LIMIT[plan]   ?? 30;
+      const rate    = OVERAGE_RATE[plan] ?? 25;
+      const used    = leadsInMonth[c.id] || 0;
+      const overage = limit === Infinity ? 0 : Math.max(0, used - limit);
+      return sum + fee + overage * rate;
+    }, 0);
+    return { label, total };
+  });
+
+  const maxChartTotal = Math.max(...chartData.map(d => d.total), 1);
 
   /* ── Computed totals ── */
   const totalMRR      = billingRows.reduce((s, r) => s + r.fee, 0);
@@ -163,6 +202,29 @@ export default function Billing() {
               <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{card.value}</p>
             </div>
           ))}
+        </div>
+
+        {/* ── Revenue Chart ── */}
+        <div style={{ ...CARD, marginBottom: '28px' }}>
+          <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Revenue Last 6 Months</p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', height: '140px', gap: '8px' }}>
+            {chartData.map(({ label, total }) => {
+              const heightPct = total > 0 ? Math.max(Math.round((total / maxChartTotal) * 100), 4) : 0;
+              return (
+                <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '700', color: '#374151', marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                    {total > 0 ? `$${total.toLocaleString()}` : ''}
+                  </span>
+                  <div style={{ width: '100%', height: `${heightPct}%`, backgroundColor: PRIMARY, borderRadius: '6px 6px 2px 2px', minHeight: heightPct > 0 ? '4px' : '0' }} />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            {chartData.map(({ label }) => (
+              <div key={label} style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: '#9ca3af', fontWeight: '500' }}>{label}</div>
+            ))}
+          </div>
         </div>
 
         {/* ── Billing Table ── */}
