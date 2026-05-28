@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
+import { useAuth } from '../../context/AuthContext';
+import generateQuotePDF from '../../utils/generateQuotePDF';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -36,15 +38,17 @@ function DetailRow({ label, value }) {
 export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { profile } = useAuth();
 
-  const [lead,     setLead]     = useState(null);
-  const [loading,  setLoading]  = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [notes,        setNotes]        = useState('');
-  const [saveMsg,      setSaveMsg]      = useState('');
-  const [printing,     setPrinting]     = useState(false);
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailMsg,     setEmailMsg]     = useState('');
+  const [lead,           setLead]           = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [notFound,       setNotFound]       = useState(false);
+  const [notes,          setNotes]          = useState('');
+  const [saveMsg,        setSaveMsg]        = useState('');
+  const [printing,       setPrinting]       = useState(false);
+  const [sendingEmail,   setSendingEmail]   = useState(false);
+  const [emailMsg,       setEmailMsg]       = useState('');
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   useEffect(() => { fetchLead(); }, [id]);
 
@@ -69,6 +73,30 @@ export default function LeadDetail() {
   function handlePrint() {
     setPrinting(true);
     setTimeout(() => { window.print(); setPrinting(false); }, 300);
+  }
+
+  async function handleDownloadPDF() {
+    setDownloadingPDF(true);
+    try {
+      const [{ data: settingsData }, { data: pricingData }, { data: clientData }] = await Promise.all([
+        supabase.from('client_settings').select('*').eq('client_id', profile.client_id).single(),
+        supabase.from('client_pricing').select('*').eq('client_id', profile.client_id).single(),
+        supabase.from('clients').select('*').eq('id', profile.client_id).single(),
+      ]);
+      generateQuotePDF({
+        lead,
+        client: clientData || {},
+        settings: {
+          pdf_content: settingsData?.pdf_content || {},
+          pricing: pricingData || {},
+          branding: settingsData?.branding || {},
+        },
+      });
+    } catch (err) {
+      console.error('PDF error:', err);
+      alert('Failed to generate PDF');
+    }
+    setDownloadingPDF(false);
   }
 
   async function handleSendEmail() {
@@ -177,9 +205,9 @@ export default function LeadDetail() {
 
             {/* Actions */}
             <div style={CARD}>
-              <button type="button" onClick={handlePrint} disabled={printing}
-                style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '600', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', cursor: printing ? 'not-allowed' : 'pointer', marginBottom: '8px', fontFamily: FONT, opacity: printing ? 0.7 : 1 }}>
-                {printing ? 'Preparing…' : 'Download PDF'}
+              <button type="button" onClick={handleDownloadPDF} disabled={downloadingPDF}
+                style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '600', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', cursor: downloadingPDF ? 'not-allowed' : 'pointer', marginBottom: '8px', fontFamily: FONT, opacity: downloadingPDF ? 0.7 : 1 }}>
+                {downloadingPDF ? 'Generating...' : 'Download PDF'}
               </button>
               <button type="button" onClick={handleSendEmail} disabled={sendingEmail}
                 style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '500', backgroundColor: '#fff', color: '#0d1117', border: '1px solid #e8ede8', borderRadius: '10px', cursor: sendingEmail ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: sendingEmail ? 0.7 : 1 }}>
