@@ -142,6 +142,12 @@ export default function ClientDetail() {
     setTimeout(() => setPlanSaved(false), 2000);
   }
 
+  async function handleDeleteClient() {
+    if (!window.confirm('Permanently delete this client and all their data? This cannot be undone.')) return;
+    await supabase.from('clients').delete().eq('id', id);
+    navigate('/admin/clients');
+  }
+
   function copyEmbed() {
     const code = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${id}"></script>`;
     navigator.clipboard.writeText(code).then(() => {
@@ -410,6 +416,11 @@ export default function ClientDetail() {
 
               <button type="button" onClick={handleDeactivate} style={BTN_DANGER}>
                 {isActive ? 'Deactivate Account' : 'Reactivate Account'}
+              </button>
+
+              <button type="button" onClick={handleDeleteClient}
+                style={{ backgroundColor: '#fff', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, width: '100%', marginBottom: '8px' }}>
+                Delete Client
               </button>
             </div>
 

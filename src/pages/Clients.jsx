@@ -135,6 +135,7 @@ export default function Clients() {
   const [search,       setSearch]       = useState('');
   const [planFilter,   setPlanFilter]   = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [currentPage,  setCurrentPage]  = useState(1);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -191,6 +192,13 @@ export default function Clients() {
     const matchStatus = statusFilter === 'All' || (statusFilter === 'Active' ? c.active !== false : c.active === false);
     return matchSearch && matchPlan && matchStatus;
   });
+
+  useEffect(() => { setCurrentPage(1); }, [search, planFilter, statusFilter]);
+
+  /* ── Pagination ── */
+  const PAGE_SIZE      = 20;
+  const totalPages     = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedClients = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const statCards = [
     { label: 'Total Clients',  value: totalClients,              bg: '#ecfccb', color: '#3f6212' },
@@ -284,9 +292,9 @@ export default function Clients() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {paginatedClients.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
-              ) : filtered.map((client, i) => {
+              ) : paginatedClients.map((client, i) => {
                 const av      = avatarPalette[i % avatarPalette.length];
                 const pb      = PLAN_BADGE[client.plan] || PLAN_BADGE.starter;
                 const isActive = client.active !== false;
@@ -371,6 +379,25 @@ export default function Clients() {
             </tbody>
           </table>
         </div>
+
+        {/* ── Pagination ── */}
+        {filtered.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
+              Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} clients
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: currentPage === 1 ? 0.4 : 1 }}>
+                Previous
+              </button>
+              <button type="button" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: (currentPage === totalPages || totalPages === 0) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: (currentPage === totalPages || totalPages === 0) ? 0.4 : 1 }}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Add Client Modal ── */}
         {showAdd && (

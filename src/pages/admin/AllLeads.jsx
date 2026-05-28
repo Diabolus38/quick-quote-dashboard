@@ -99,6 +99,9 @@ export default function AllLeads() {
   });
   const [statusFilter,  setStatusFilter]  = useState('All');
   const [dateFilter,    setDateFilter]    = useState('All Time');
+  const [currentPage,   setCurrentPage]   = useState(1);
+  const [selectedLeads, setSelectedLeads] = useState(new Set());
+  const [bulkStatus,    setBulkStatus]    = useState('new');
 
   useEffect(() => {
     async function fetchData() {
@@ -118,6 +121,35 @@ export default function AllLeads() {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
   }
 
+  function toggleSelect(leadId) {
+    setSelectedLeads(prev => {
+      const next = new Set(prev);
+      if (next.has(leadId)) next.delete(leadId); else next.add(leadId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (paginatedLeads.every(l => selectedLeads.has(l.id))) {
+      setSelectedLeads(new Set());
+    } else {
+      setSelectedLeads(new Set(paginatedLeads.map(l => l.id)));
+    }
+  }
+
+  async function handleBulkUpdateStatus() {
+    const ids = [...selectedLeads];
+    await Promise.all(ids.map(id => supabase.from('leads').update({ status: bulkStatus }).eq('id', id)));
+    setLeads(prev => prev.map(l => selectedLeads.has(l.id) ? { ...l, status: bulkStatus } : l));
+    setSelectedLeads(new Set());
+  }
+
+  function handleExportSelected() {
+    exportCSV(leads.filter(l => selectedLeads.has(l.id)), clientMap);
+  }
+
+  useEffect(() => { setCurrentPage(1); setSelectedLeads(new Set()); }, [search, clientFilter, statusFilter, dateFilter]);
+
   /* ── Client map ── */
   const clientMap = {};
   clients.forEach((c, i) => { clientMap[c.id] = { name: c.name, paletteIdx: i % avatarPalette.length }; });
@@ -136,6 +168,11 @@ export default function AllLeads() {
     const matchDate    = dateFilter === 'All Time' || (dateFilter === 'This Week' && created >= weekStart) || (dateFilter === 'This Month' && created >= monthStart);
     return matchSearch && matchClient && matchStatus && matchDate;
   });
+
+  /* ── Pagination ── */
+  const PAGE_SIZE    = 25;
+  const totalPages   = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedLeads = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   /* ── Stats ── */
   const now        = new Date();
@@ -240,6 +277,34 @@ export default function AllLeads() {
           </div>
         </div>
 
+        {/* ── Bulk Action Bar ── */}
+        {selectedLeads.size > 0 && (
+          <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '12px 20px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ color: '#fff', fontSize: '13px', fontWeight: '600' }}>{selectedLeads.size} selected</span>
+            <div style={{ flex: 1 }} />
+            <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
+              style={{ border: '1px solid #374151', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', backgroundColor: '#1f2937', color: '#fff', fontFamily: FONT, outline: 'none', cursor: 'pointer' }}>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="in_progress">In Progress</option>
+              <option value="closed_won">Closed Won</option>
+              <option value="closed_lost">Closed Lost</option>
+            </select>
+            <button type="button" onClick={handleBulkUpdateStatus}
+              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              Update Status
+            </button>
+            <button type="button" onClick={handleExportSelected}
+              style={{ backgroundColor: '#374151', color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              Export Selected
+            </button>
+            <button type="button" onClick={() => setSelectedLeads(new Set())}
+              style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '12px', fontFamily: FONT, padding: 0 }}>
+              Clear
+            </button>
+          </div>
+        )}
+
         {/* ── Table ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
           {filtered.length === 0 ? (
@@ -251,13 +316,19 @@ export default function AllLeads() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#fafafa' }}>
+                    <th style={{ padding: '12px 16px', borderBottom: '1px solid #e8ede8', width: '40px' }}>
+                      <input type="checkbox"
+                        checked={paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeads.has(l.id))}
+                        onChange={toggleSelectAll}
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
+                    </th>
                     {['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Price','Status','Actions'].map(col => (
                       <th key={col} style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((lead, i) => {
+                  {paginatedLeads.map((lead, i) => {
                     const clientEntry = clientMap[lead.client_id];
                     const clientName  = clientEntry?.name || '—';
                     const av          = clientEntry ? avatarPalette[clientEntry.paletteIdx] : { bg: '#f3f4f6', color: '#374151' };
@@ -270,6 +341,12 @@ export default function AllLeads() {
                         onMouseLeave={() => setHovRow(null)}
                         style={{ backgroundColor: hovRow === lead.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
 
+                        <td style={{ padding: '12px 16px' }}>
+                          <input type="checkbox"
+                            checked={selectedLeads.has(lead.id)}
+                            onChange={() => toggleSelect(lead.id)}
+                            style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
+                        </td>
                         <td style={{ padding: '12px 16px', color: '#9ca3af', whiteSpace: 'nowrap' }}>{formatDate(lead.created_at)}</td>
 
                         <td style={{ padding: '12px 16px' }}>
@@ -316,6 +393,25 @@ export default function AllLeads() {
             </div>
           )}
         </div>
+
+        {/* ── Pagination ── */}
+        {filtered.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
+              Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} leads
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: currentPage === 1 ? 0.4 : 1 }}>
+                Previous
+              </button>
+              <button type="button" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: (currentPage === totalPages || totalPages === 0) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: (currentPage === totalPages || totalPages === 0) ? 0.4 : 1 }}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </Layout>

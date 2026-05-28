@@ -42,11 +42,14 @@ export default function Leads() {
   const [search,       setSearch]       = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [hoveredRow,   setHoveredRow]   = useState(null);
+  const [currentPage,  setCurrentPage]  = useState(1);
 
   useEffect(() => {
     if (!profile?.client_id) return;
     fetchLeads();
   }, [profile]);
+
+  useEffect(() => { setCurrentPage(1); }, [search, activeFilter]);
 
   async function fetchLeads() {
     setLoading(true);
@@ -59,6 +62,12 @@ export default function Leads() {
   async function updateStatus(leadId, newStatus) {
     await supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+  }
+
+  async function handleDeleteLead(leadId) {
+    if (!window.confirm('Delete this lead? This cannot be undone.')) return;
+    await supabase.from('leads').delete().eq('id', leadId);
+    setLeads(prev => prev.filter(l => l.id !== leadId));
   }
 
   function handleExportCSV() {
@@ -81,6 +90,10 @@ export default function Leads() {
     const matchFilter = activeFilter==='All'||l.status===activeFilter;
     return matchSearch && matchFilter;
   });
+
+  const PAGE_SIZE = 20;
+  const totalPages = Math.ceil(filteredLeads.length / PAGE_SIZE);
+  const paginatedLeads = filteredLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const wonLeads = leads.filter(l => l.status === 'Closed Won').length;
   const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0;
@@ -150,7 +163,7 @@ export default function Leads() {
               {leads.length === 0 ? 'No leads yet. Your leads will appear here once customers use your estimator tool.' : 'No leads match your filter.'}
             </div>
           ) : (
-            filteredLeads.map(lead => {
+            paginatedLeads.map(lead => {
               const sb = STATUS_BADGE[lead.status] || { bg: '#f3f4f6', color: '#6b7280' };
               return (
                 <div key={lead.id}
@@ -169,10 +182,14 @@ export default function Leads() {
                       {['New','Contacted','In Progress','Closed Won','Closed Lost'].map(s=><option key={s} value={s}>{s}</option>)}
                     </select>
                   </span>
-                  <span>
+                  <span style={{ display: 'flex', gap: '6px' }}>
                     <button type="button" onClick={()=>navigate(`/client/leads/${lead.id}`)}
                       style={{ fontSize: '12px', color: PRIMARY, backgroundColor: '#ecfccb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>
                       View
+                    </button>
+                    <button type="button" onClick={()=>handleDeleteLead(lead.id)}
+                      style={{ fontSize: '12px', color: '#dc2626', backgroundColor: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>
+                      Delete
                     </button>
                   </span>
                 </div>
@@ -180,6 +197,25 @@ export default function Leads() {
             })
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px' }}>
+            <span style={{ fontSize: '13px', color: '#9ca3af' }}>
+              Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredLeads.length)} of {filteredLeads.length} leads
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.4 : 1, fontFamily: FONT }}>
+                Previous
+              </button>
+              <button type="button" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.4 : 1, fontFamily: FONT }}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </ClientLayout>
