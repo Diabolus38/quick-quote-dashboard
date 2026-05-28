@@ -139,8 +139,8 @@ export default function AdminOverview() {
   const maxPlan     = Math.max(starterCount, growthCount, scaleCount, 1);
 
   const events = [
-    ...leads.map(l   => ({ type: 'lead',   date: new Date(l.created_at), name: l.name || 'Anonymous', clientName: clientMap[l.client_id]?.name || '—', plan: null })),
-    ...clients.map(c => ({ type: 'signup', date: new Date(c.created_at), name: c.name, clientName: null, plan: c.plan })),
+    ...leads.map(l   => ({ type: 'lead',   id: l.id, date: new Date(l.created_at), name: l.name || 'Anonymous', clientName: clientMap[l.client_id]?.name || '—', plan: null })),
+    ...clients.map(c => ({ type: 'signup', id: c.id, date: new Date(c.created_at), name: c.name, clientName: null, plan: c.plan })),
   ].sort((a, b) => b.date - a.date).slice(0, 20);
 
   const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Admin';
@@ -352,7 +352,11 @@ export default function AdminOverview() {
           ) : (
             <div>
               {events.map((ev, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderBottom: i < events.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                <div key={i}
+                  onClick={() => ev.type === 'lead' ? navigate(`/admin/leads/${ev.id}`) : navigate(`/admin/clients/${ev.id}`)}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9faf9'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = ''}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderBottom: i < events.length - 1 ? '1px solid #f0f0f0' : 'none', cursor: 'pointer' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, backgroundColor: ev.type === 'lead' ? LIME : DARK }} />
                   <span style={{ flex: 1, fontSize: '13px', color: '#0d1117' }}>
                     {ev.type === 'lead'

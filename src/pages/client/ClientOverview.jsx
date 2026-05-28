@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
+import OnboardingBanner from '../../components/OnboardingBanner';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -81,6 +82,8 @@ export default function ClientOverview() {
         </div>
       )}
       <div style={{ fontFamily: FONT }}>
+
+        <OnboardingBanner />
 
         {/* Page header */}
         <div style={{ marginBottom: '28px' }}>

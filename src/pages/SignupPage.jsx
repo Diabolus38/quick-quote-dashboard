@@ -69,6 +69,17 @@ export default function SignupPage() {
       role:      'client',
     });
 
+    const { data: clientData } = await supabase.from('clients').insert({
+      name:   fullName.trim(),
+      email:  email.trim(),
+      plan:   'starter',
+      active: true,
+    }).select('id').single();
+
+    if (clientData?.id) {
+      await supabase.from('profiles').update({ client_id: clientData.id }).eq('id', user.id);
+    }
+
     setEmailSent(true);
     setLoading(false);
   }

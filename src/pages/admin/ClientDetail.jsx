@@ -326,7 +326,8 @@ export default function ClientDetail() {
                       const sb        = STATUS_BADGE[rawStatus] || { bg: '#f3f4f6', color: '#6b7280' };
                       return (
                         <tr key={lead.id}
-                          style={{ borderBottom: i < recentLeads.length - 1 ? '1px solid #f4f6f4' : 'none', cursor: 'default' }}
+                          onClick={() => navigate(`/admin/leads/${lead.id}`)}
+                          style={{ borderBottom: i < recentLeads.length - 1 ? '1px solid #f4f6f4' : 'none', cursor: 'pointer' }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9faf9'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = ''}>
                           <td style={{ padding: '12px 20px', fontWeight: '600', color: '#0d1117', fontSize: '13px' }}>{lead.name || '—'}</td>
