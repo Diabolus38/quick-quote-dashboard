@@ -50,11 +50,12 @@ export default function QuestionEditor() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
 
-  const [questions, setQuestions] = useState({});
-  const [loading,   setLoading]   = useState(true);
-  const [saving,    setSaving]    = useState(false);
-  const [saveMsg,   flashSave]    = useSaveMsg();
-  const [error,     setError]     = useState('');
+  const [questions,   setQuestions]   = useState({});
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [saveMsg,     flashSave]      = useSaveMsg();
+  const [error,       setError]       = useState('');
+  const [hasChanges,  setHasChanges]  = useState(false);
 
   /* ── Load ── */
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function QuestionEditor() {
   /* ── Update a single field ── */
   function update(key, field, value) {
     setQuestions(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    setHasChanges(true);
   }
 
   /* ── Save all 14 rows via upsert ── */
@@ -99,7 +101,7 @@ export default function QuestionEditor() {
     const { error: upsertErr } = await supabase
       .from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
     setSaving(false);
-    if (upsertErr) { setError('Failed to save. Please try again.'); } else { flashSave(); }
+    if (upsertErr) { setError('Failed to save. Please try again.'); } else { flashSave(); setHasChanges(false); }
   }
 
   const inputStyle = { width: '100%', padding: '8px 12px', fontSize: '13px', color: '#0d1117', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff', fontFamily: FONT };
@@ -117,6 +119,15 @@ export default function QuestionEditor() {
 
   return (
     <ClientLayout title="Question Editor">
+      {hasChanges && (
+        <div style={{ position: 'fixed', bottom: 0, left: '240px', right: 0, backgroundColor: '#fff', borderTop: '1px solid #e8ede8', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -2px 12px rgba(0,0,0,0.06)' }}>
+          <span style={{ fontSize: '13.5px', color: '#9ca3af', fontFamily: FONT }}>You have unsaved changes</span>
+          <button type="button" onClick={handleSave} disabled={saving}
+            style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
+            {saving ? 'Saving…' : 'Save All Questions'}
+          </button>
+        </div>
+      )}
       <div style={{ fontFamily: FONT }}>
 
         {/* Page header */}

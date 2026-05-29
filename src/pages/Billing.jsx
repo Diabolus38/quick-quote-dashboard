@@ -54,11 +54,12 @@ function exportBillingCSV(rows) {
 }
 
 export default function Billing() {
-  const [clients,    setClients]    = useState([]);
-  const [leads,      setLeads]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [hovRow,     setHovRow]     = useState(null);
-  const [chartLeads, setChartLeads] = useState([]);
+  const [clients,       setClients]       = useState([]);
+  const [leads,         setLeads]         = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [hovRow,        setHovRow]        = useState(null);
+  const [chartLeads,    setChartLeads]    = useState([]);
+  const [invoiceStatus, setInvoiceStatus] = useState({});
 
   useEffect(() => {
     async function fetchData() {
@@ -84,6 +85,23 @@ export default function Billing() {
     supabase.from('leads').select('id, client_id, created_at').gte('created_at', sixMonthsAgo.toISOString())
       .then(({ data }) => setChartLeads(data || []));
   }, []);
+
+  async function sendInvoice(row) {
+    setInvoiceStatus(prev => ({ ...prev, [row.id]: 'sending' }));
+    const limitDisplay = row.limit === Infinity ? 'Unlimited' : row.limit;
+    const emailBody = `Hi ${row.name}, here is your invoice summary for this billing period. Plan: ${capitalize(row.plan)}. Monthly fee: $${row.fee}. Estimates used: ${row.used}/${limitDisplay}. Overage charge: $${row.overageCharge}. Total due: $${row.total}. Thank you for using QuickQuote360. Questions? Contact support@quickquote360.com`;
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: row.email, name: row.name, subject: 'Your QuickQuote360 Invoice', body: emailBody }),
+      });
+      setInvoiceStatus(prev => ({ ...prev, [row.id]: res.ok ? 'sent' : 'failed' }));
+    } catch {
+      setInvoiceStatus(prev => ({ ...prev, [row.id]: 'failed' }));
+    }
+    setTimeout(() => setInvoiceStatus(prev => ({ ...prev, [row.id]: 'idle' })), 3000);
+  }
 
   /* ── Build billing rows ── */
   const leadsThisMonth = {};
@@ -292,10 +310,15 @@ export default function Billing() {
                         </td>
 
                         <td style={{ padding: '14px 16px' }}>
-                          <button type="button" onClick={() => alert('Invoice feature coming with Stripe integration')}
-                            style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: '#f4f6f4', color: '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-                            Send Invoice
-                          </button>
+                          {(() => {
+                            const st = invoiceStatus[row.id] || 'idle';
+                            return (
+                              <button type="button" onClick={() => sendInvoice(row)} disabled={st === 'sending'}
+                                style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: st === 'sent' ? '#dcfce7' : st === 'failed' ? '#fee2e2' : '#f4f6f4', color: st === 'sent' ? '#166534' : st === 'failed' ? '#dc2626' : '#374151', border: 'none', borderRadius: '8px', cursor: st === 'sending' ? 'not-allowed' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                                {st === 'sending' ? 'Sending…' : st === 'sent' ? 'Sent!' : st === 'failed' ? 'Failed' : 'Send Invoice'}
+                              </button>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );

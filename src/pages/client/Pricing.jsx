@@ -169,6 +169,7 @@ function PricingContent({ clientId, initialPricing }) {
             ))}
           </div>
         </div>
+        <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices are in the currency selected below.</p>
       </SettingsCard>
 
       <SettingsCard title="Fixed Costs"><PriceRows items={fixedCosts} setter={setFixedCosts} /></SettingsCard>

@@ -101,6 +101,7 @@ export default function LeadDetail() {
 
   async function handleSendEmail() {
     if (!lead?.email) return;
+    if (!window.confirm(`Send the quote PDF to ${lead.email}?`)) return;
     setSendingEmail(true);
     try {
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
@@ -108,7 +109,16 @@ export default function LeadDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: lead.email, name: lead.name || '', pdfBase64: '' }),
       });
-      setEmailMsg(res.ok ? 'Email sent!' : 'Failed to send email.');
+      if (res.ok) {
+        setEmailMsg('Email sent!');
+      } else {
+        let msg = 'Failed to send email.';
+        try {
+          const json = await res.json();
+          if (json?.error || json?.message) msg = json.error || json.message;
+        } catch {}
+        setEmailMsg(msg);
+      }
     } catch {
       setEmailMsg('Failed to send email.');
     }

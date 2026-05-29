@@ -269,9 +269,119 @@ function EmbedCodeSection({ clientId }) {
   );
 }
 
+/* ── 5. Account ──────────────────────────────────────────────── */
+
+function AccountSection() {
+  const { profile } = useAuth();
+  const [fullName,    setFullName]    = useState('');
+  const [avatarUrl,   setAvatarUrl]   = useState('');
+  const [saveMsg,     flash]          = useSaveMsg();
+  const [pwMsg,       setPwMsg]       = useState('');
+  const [uploading,   setUploading]   = useState(false);
+  const [dataReady,   setDataReady]   = useState(false);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    supabase.from('profiles').select('full_name, avatar_url').eq('id', profile.id).single()
+      .then(({ data }) => {
+        if (data) { setFullName(data.full_name || ''); setAvatarUrl(data.avatar_url || ''); }
+        setDataReady(true);
+      });
+  }, [profile?.id]);
+
+  async function handleSave() {
+    await supabase.from('profiles').update({ full_name: fullName }).eq('id', profile.id);
+    flash();
+  }
+
+  async function handleResetPassword() {
+    await supabase.auth.resetPasswordForEmail(profile.email);
+    setPwMsg('Reset email sent!');
+    setTimeout(() => setPwMsg(''), 3000);
+  }
+
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.id) return;
+    setUploading(true);
+    const ext  = file.name.split('.').pop();
+    const path = `${profile.id}/avatar.${ext}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      const url = urlData.publicUrl;
+      await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
+      setAvatarUrl(url);
+    }
+    setUploading(false);
+  }
+
+  if (!dataReady) return <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>;
+
+  const initials = (fullName || profile?.email || '?').slice(0, 2).toUpperCase();
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Account</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Manage your personal profile and security settings.</p>
+      </div>
+
+      {/* Profile Photo */}
+      <div style={CARD}>
+        <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Profile Photo</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar"
+              style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e8ede8', flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#0d1f12', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '22px', fontWeight: '700', color: LIME, fontFamily: FONT }}>{initials}</span>
+            </div>
+          )}
+          <div>
+            <label style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '13.5px', fontWeight: '600', cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: uploading ? 0.7 : 1, display: 'inline-block' }}>
+              {uploading ? 'Uploading…' : 'Upload Photo'}
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={uploading} />
+            </label>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>JPG, PNG or GIF. Max 5 MB.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Info */}
+      <div style={CARD}>
+        <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Profile Info</p>
+        <FieldRow label="Full Name">
+          <TextInput value={fullName} onChange={setFullName} placeholder="Your full name" />
+        </FieldRow>
+        <FieldRow label="Email">
+          <input type="email" value={profile?.email || ''} readOnly
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#6b7280', outline: 'none', fontFamily: FONT, backgroundColor: '#f9fafb', cursor: 'not-allowed' }} />
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Contact support to change your email.</p>
+        </FieldRow>
+      </div>
+      <SaveRow onClick={handleSave} msg={saveMsg} />
+
+      {/* Password */}
+      <div style={{ ...CARD, marginTop: '16px' }}>
+        <p style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Password</p>
+        <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>We'll send a password reset link to your email address.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button type="button" onClick={handleResetPassword}
+            style={{ backgroundColor: '#fff', color: '#0d1117', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+            Change Password
+          </button>
+          {pwMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{pwMsg}</span>}
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 
-const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code'];
+const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account'];
 
 export default function ClientSettingsPage() {
   const { profile } = useAuth();
@@ -315,6 +425,7 @@ export default function ClientSettingsPage() {
               {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} initialSettings={settingsRow} />}
               {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} initialSettings={settingsRow} />}
               {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
+              {activeSection === 'Account'        && <AccountSection />}
             </>
           )}
         </div>

@@ -322,7 +322,7 @@ export default function AllLeads() {
                         onChange={toggleSelectAll}
                         style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
                     </th>
-                    {['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Price','Status','Actions'].map(col => (
+                    {['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'].map(col => (
                       <th key={col} style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
                     ))}
                   </tr>
@@ -363,6 +363,7 @@ export default function AllLeads() {
                         <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</td>
                         <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.municipality || '—'}</td>
                         <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.answers?.wastewaterType || '—'}</td>
+                        <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.language || '—'}</td>
 
                         <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>
                           {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}

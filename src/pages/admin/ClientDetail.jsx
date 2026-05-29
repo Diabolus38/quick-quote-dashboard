@@ -37,6 +37,12 @@ function formatDate(str) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
+function formatDateTime(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
 function capitalize(s) {
   if (!s) return '—';
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -98,20 +104,23 @@ export default function ClientDetail() {
   const [resetMsg,     setResetMsg]     = useState('');
   const [changePlan,   setChangePlan]   = useState('');
   const [planSaved,    setPlanSaved]    = useState(false);
+  const [lastActivity, setLastActivity] = useState(null);
 
   useEffect(() => { fetchData(); }, [id]);
 
   async function fetchData() {
     setLoading(true);
-    const [{ data: clientData, error: clientErr }, { data: leadsData }] = await Promise.all([
+    const [{ data: clientData, error: clientErr }, { data: leadsData }, { data: profileData }] = await Promise.all([
       supabase.from('clients').select('*').eq('id', id).single(),
       supabase.from('leads').select('*').eq('client_id', id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('updated_at').eq('client_id', id).single(),
     ]);
     if (clientErr || !clientData) { setNotFound(true); setLoading(false); return; }
     setClient(clientData);
     setNotes(clientData.notes || '');
     setChangePlan(clientData.plan || 'starter');
     setLeads(leadsData || []);
+    setLastActivity(profileData?.updated_at || null);
     setLoading(false);
   }
 
@@ -276,6 +285,7 @@ export default function ClientDetail() {
               <InfoRow label="Plan">{capitalize(client.plan)}</InfoRow>
               <InfoRow label="Status">{isActive ? 'Active' : 'Inactive'}</InfoRow>
               <InfoRow label="Signed Up">{formatDate(client.created_at)}</InfoRow>
+              <InfoRow label="Last Activity">{formatDateTime(lastActivity)}</InfoRow>
               <InfoRow label="Client ID" last>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <code style={{ fontSize: '11px', backgroundColor: '#f4f6f4', padding: '3px 8px', borderRadius: '6px', color: '#374151', fontFamily: 'monospace' }}>{id}</code>

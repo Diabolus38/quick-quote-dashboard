@@ -128,12 +128,21 @@ function ProfileSection() {
 
 /* ── 2. Notifications ────────────────────────────────────────── */
 
+const NOTIF_KEY = 'qq360_admin_notifications';
+const NOTIF_DEFAULTS = { estimates: true, client: true, invoice: false };
+
 function NotificationsSection() {
-  const [toggles, setToggles] = useState({ estimates: true, client: true, invoice: false });
+  const [toggles, setToggles] = useState(() => {
+    try {
+      const stored = localStorage.getItem(NOTIF_KEY);
+      return stored ? { ...NOTIF_DEFAULTS, ...JSON.parse(stored) } : NOTIF_DEFAULTS;
+    } catch { return NOTIF_DEFAULTS; }
+  });
   const [saveMsg, setSaveMsg] = useState('');
   const flip = key => setToggles(prev => ({ ...prev, [key]: !prev[key] }));
 
   function handleSave() {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(toggles));
     setSaveMsg('Saved!');
     setTimeout(() => setSaveMsg(''), 2000);
   }

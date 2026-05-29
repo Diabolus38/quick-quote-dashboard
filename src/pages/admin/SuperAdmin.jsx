@@ -218,6 +218,13 @@ export default function SuperAdmin() {
   const mrr = starterCount * 300 + growthCount * 600 + scaleCount * 1149;
   const maxPlan = Math.max(starterCount, growthCount, scaleCount, 1);
 
+  const startOfThisMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevClients       = clients.filter(c => new Date(c.created_at) < startOfThisMonth);
+  const lastMonthMrr      = prevClients.filter(c => c.plan === 'starter').length * 300
+                          + prevClients.filter(c => c.plan === 'growth').length  * 600
+                          + prevClients.filter(c => c.plan === 'scale').length   * 1149;
+  const mrrDiff = mrr - lastMonthMrr;
+
   const leadCountPerClient  = {};
   const lastActivePerClient = {};
   leads.forEach(l => {
@@ -293,7 +300,9 @@ export default function SuperAdmin() {
                 <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '22px', fontWeight: '800', color: LIME }}>$</div>
                 <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Monthly Revenue</p>
                 <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>${mrr.toLocaleString()}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>+{thisMonthNew} new clients this month</p>
+                {mrrDiff > 0 && <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ +${mrrDiff.toLocaleString()} vs last month</p>}
+                {mrrDiff < 0 && <p style={{ margin: 0, fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>↓ −${Math.abs(mrrDiff).toLocaleString()} vs last month</p>}
+                {mrrDiff === 0 && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>— Same as last month</p>}
               </div>
 
               {/* Total Clients */}
