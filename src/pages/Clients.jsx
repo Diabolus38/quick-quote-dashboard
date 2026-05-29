@@ -153,9 +153,29 @@ export default function Clients() {
   }
 
   async function handleAdd(payload) {
-    const result = await supabase.from('clients').insert({ ...payload, active: true });
-    if (!result.error) fetchAll();
-    return result;
+    const { data, error } = await supabase.from('clients').insert({ ...payload, active: true }).select('id').single();
+    if (!error && data?.id) {
+      await Promise.all([
+        supabase.from('client_settings').insert({
+          client_id: data.id,
+          branding: {}, pdf_content: {}, email_settings: {}, language_settings: {},
+        }),
+        supabase.from('client_pricing').insert({
+          client_id: data.id,
+          base_prices: {
+            bdt:    { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+            wc:     { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+            wc_bdt: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+          },
+          fixed_costs: { planning: 0, establishment_zone1: 0, establishment_zone2: 0, de_establishment: 0, admin: 0, inspection: 0 },
+          per_meter_costs: { gravity_pipe: 0, pressure_pipe: 0, protection_pipe: 0, cable: 0, makadam: 0, labor: 0 },
+          addons: { pump_well: 0, double_pump: 0, telescope_cover: 0, lawn_restoration_base: 0, mass_removal: 0, transport: 0 },
+          rot_enabled: false, rot_percentage: 30, currency: 'SEK',
+        }),
+      ]);
+      fetchAll();
+    }
+    return { error };
   }
 
   async function handleEdit(payload) {

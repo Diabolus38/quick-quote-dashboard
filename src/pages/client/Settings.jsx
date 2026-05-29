@@ -76,15 +76,17 @@ function isValidUrl(str) {
 
 function BrandingSection({ clientId, initialSettings }) {
   const b = initialSettings?.branding || {};
-  const [companyName,  setCompanyName]  = useState(b.company_name   || '');
-  const [primaryColor, setPrimaryColor] = useState(b.primary_color  || '#166534');
-  const [colorHex,     setColorHex]     = useState(b.primary_color  || '#166534');
-  const [logoUrl,      setLogoUrl]      = useState(b.logo_url       || '');
+  const [companyName,    setCompanyName]    = useState(b.company_name    || '');
+  const [primaryColor,   setPrimaryColor]   = useState(b.primary_color   || '#166534');
+  const [colorHex,       setColorHex]       = useState(b.primary_color   || '#166534');
+  const [logoUrl,        setLogoUrl]        = useState(b.logo_url        || '');
+  const [companyPhone,   setCompanyPhone]   = useState(b.company_phone   || '');
+  const [companyAddress, setCompanyAddress] = useState(b.company_address || '');
   const [saveMsg, flash] = useSaveMsg();
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
-      { client_id: clientId, branding: { company_name: companyName, primary_color: primaryColor, logo_url: logoUrl } },
+      { client_id: clientId, branding: { company_name: companyName, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress } },
       { onConflict: 'client_id' }
     );
     flash();
@@ -120,6 +122,14 @@ function BrandingSection({ clientId, initialSettings }) {
               style={{ marginTop: '10px', maxHeight: '60px', maxWidth: '200px', borderRadius: '8px', border: '1px solid #e8ede8', objectFit: 'contain', display: 'block' }}
               onError={e => { e.target.style.display = 'none'; }} />
           )}
+        </FieldRow>
+
+        <FieldRow label="Company Phone">
+          <TextInput value={companyPhone} onChange={setCompanyPhone} placeholder="+46 8 123 456 78" />
+        </FieldRow>
+
+        <FieldRow label="Company Address">
+          <TextInput value={companyAddress} onChange={setCompanyAddress} placeholder="123 Main St, Stockholm" />
         </FieldRow>
       </div>
 
@@ -234,13 +244,22 @@ function LanguagesSection({ clientId, initialSettings }) {
 /* ── 4. Embed Code ───────────────────────────────────────────── */
 
 function EmbedCodeSection({ clientId }) {
-  const [copied, setCopied] = useState(false);
-  const scriptTag = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
+  const [copied,       setCopied]       = useState(false);
+  const [copiedIframe, setCopiedIframe] = useState(false);
+  const scriptTag  = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
+  const iframeTag  = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
 
   function handleCopy() {
     navigator.clipboard.writeText(scriptTag).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function handleCopyIframe() {
+    navigator.clipboard.writeText(iframeTag).then(() => {
+      setCopiedIframe(true);
+      setTimeout(() => setCopiedIframe(false), 2000);
     });
   }
 
@@ -252,14 +271,26 @@ function EmbedCodeSection({ clientId }) {
       </div>
 
       <div style={CARD}>
+        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Script Tag (recommended)</p>
         <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '20px', marginBottom: '14px', overflowX: 'auto' }}>
           <code style={{ fontSize: '13px', color: LIME, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.6' }}>
             {scriptTag}
           </code>
         </div>
         <button type="button" onClick={handleCopy}
-          style={{ backgroundColor: copied ? '#ecfccb' : PRIMARY, color: copied ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '12px' }}>
+          style={{ backgroundColor: copied ? '#ecfccb' : PRIMARY, color: copied ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '24px' }}>
           {copied ? 'Copied!' : 'Copy Code'}
+        </button>
+
+        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>iFrame Alternative</p>
+        <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '20px', marginBottom: '14px', overflowX: 'auto' }}>
+          <code style={{ fontSize: '13px', color: LIME, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.6' }}>
+            {iframeTag}
+          </code>
+        </div>
+        <button type="button" onClick={handleCopyIframe}
+          style={{ backgroundColor: copiedIframe ? '#ecfccb' : PRIMARY, color: copiedIframe ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '12px' }}>
+          {copiedIframe ? 'Copied!' : 'Copy iFrame'}
         </button>
         <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
           Paste this before the closing <code style={{ backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}>&lt;/body&gt;</code> tag on your website.

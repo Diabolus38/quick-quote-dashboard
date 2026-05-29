@@ -66,10 +66,10 @@ export default function ClientOverview() {
     : null;
 
   const statCards = [
-    { label: 'Leads Today',        value: loading ? '—' : String(todayLeads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '◎' },
-    { label: 'Leads This Month',   value: loading ? '—' : String(thisMonthLeads.length), color: '#dbeafe', textColor: '#1d4ed8', icon: '▤' },
-    { label: 'Conversion Rate',    value: loading ? '—' : `${conversionRate}%`,          color: '#dcfce7', textColor: '#166534', icon: '⊞' },
-    { label: 'Avg Estimate Value', value: loading ? '—' : avg != null ? `${avg.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '◈' },
+    { label: 'Leads Today',        value: loading ? '—' : String(todayLeads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '📥' },
+    { label: 'Leads This Month',   value: loading ? '—' : String(thisMonthLeads.length), color: '#dbeafe', textColor: '#1d4ed8', icon: '📊' },
+    { label: 'Conversion Rate',    value: loading ? '—' : `${conversionRate}%`,          color: '#dcfce7', textColor: '#166534', icon: '🎯' },
+    { label: 'Avg Estimate Value', value: loading ? '—' : avg != null ? `${avg.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '💰' },
   ];
 
   const recentLeads = leads.slice(0, 8);

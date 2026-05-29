@@ -222,10 +222,23 @@ export default function AllLeads() {
             <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>All Leads</h1>
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Every lead generated across all client accounts</p>
           </div>
-          <button type="button" onClick={() => exportCSV(filtered, clientMap)}
-            style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            ↓ Export CSV
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" onClick={() => {
+              const now = new Date();
+              const thisMonth = filtered.filter(l => {
+                const d = new Date(l.created_at);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+              });
+              exportCSV(thisMonth, clientMap);
+            }}
+              style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#fff', color: '#374151', border: '1px solid #e8ede8', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+              ↓ Export This Month
+            </button>
+            <button type="button" onClick={() => exportCSV(filtered, clientMap)}
+              style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              ↓ Export CSV
+            </button>
+          </div>
         </div>
 
         {/* ── Stat Cards ── */}

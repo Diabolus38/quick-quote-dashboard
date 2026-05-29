@@ -19,6 +19,23 @@ const STATUS_COLORS = {
 
 const STATUS_STAGES = ['New', 'Contacted', 'In Progress', 'Closed Won'];
 
+const KEY_LABELS = {
+  projectType:              'Project Type',
+  wastewaterType:           'Wastewater System',
+  propertyUsage:            'Property Usage',
+  households:               'Number of Households',
+  existingSystem:           'Existing System',
+  existingTankReusable:     'Existing Tank Reusable',
+  tankInspectionRequired:   'Tank Inspection Required',
+  municipalityPlanning:     'Municipality Planning Required',
+  installationType:         'Installation Type',
+  groundConditions:         'Ground Conditions',
+  pipeDepth:                'Pipe Depth',
+  excavationRequired:       'Excavation Required',
+  transportHelp:            'Transport Help Needed',
+  additionalWork:           'Additional Work',
+};
+
 function formatDate(str) {
   const d = new Date(str);
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
@@ -178,7 +195,7 @@ export default function LeadDetail() {
               ) : (
                 Object.entries(answers).map(([key, val]) => (
                   <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
-                    <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>{key.replace(/_/g,' ').replace(/^./,c=>c.toUpperCase())}</span>
+                    <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>{KEY_LABELS[key] || key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}</span>
                     <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{String(val)}</span>
                   </div>
                 ))

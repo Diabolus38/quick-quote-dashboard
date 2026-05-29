@@ -170,8 +170,8 @@ export default function ClientLayout({ title, subtitle, children }) {
             </div>
           </div>
 
-          {/* Upgrade Card — only if pct >= 60 */}
-          {pct >= 60 && (
+          {/* Upgrade Card — only if pct >= 75 */}
+          {pct >= 75 && (
             <div style={{ background: 'linear-gradient(135deg, #0d1f12 0%, #166534 100%)', borderRadius: '12px', padding: '16px', position: 'relative', overflow: 'hidden' }}>
               {/* Decorative circle */}
               <div style={{ position: 'absolute', top: '-16px', right: '-16px', width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(163,230,53,0.15)' }} />
