@@ -56,6 +56,7 @@ export default function QuestionEditor() {
   const [saveMsg,     flashSave]      = useSaveMsg();
   const [error,       setError]       = useState('');
   const [hasChanges,  setHasChanges]  = useState(false);
+  const [searchQ,     setSearchQ]     = useState('');
 
   /* ── Load ── */
   useEffect(() => {
@@ -131,9 +132,14 @@ export default function QuestionEditor() {
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#9ca3af', fontSize: '14px' }}>Loading questions…</div>
         ) : (
           <>
+            <div style={{ marginBottom: '16px' }}>
+              <input type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search questions..."
+                style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', height: '42px', fontSize: '13.5px', backgroundColor: '#fff', color: '#0d1117', outline: 'none', fontFamily: FONT }} />
+            </div>
+
             <SaveBar />
 
-            {QUESTION_DEFS.map(({ key, label }, idx) => {
+            {QUESTION_DEFS.filter(({ label }) => !searchQ || label.toLowerCase().includes(searchQ.toLowerCase())).map(({ key, label }, idx) => {
               const q = questions[key] || makeDefault(key);
               return (
                 <div key={key} style={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '22px 24px', marginBottom: '14px' }}>

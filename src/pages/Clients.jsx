@@ -135,6 +135,7 @@ export default function Clients() {
   const [search,       setSearch]       = useState('');
   const [planFilter,   setPlanFilter]   = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [sortBy,       setSortBy]       = useState('newest');
   const [currentPage,  setCurrentPage]  = useState(1);
 
   useEffect(() => { fetchAll(); }, []);
@@ -213,12 +214,19 @@ export default function Clients() {
     return matchSearch && matchPlan && matchStatus;
   });
 
-  useEffect(() => { setCurrentPage(1); }, [search, planFilter, statusFilter]);
+  useEffect(() => { setCurrentPage(1); }, [search, planFilter, statusFilter, sortBy]);
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'oldest')    return new Date(a.created_at) - new Date(b.created_at);
+    if (sortBy === 'name_az')   return (a.name || '').localeCompare(b.name || '');
+    if (sortBy === 'most_leads') return (leadCounts[b.id] || 0) - (leadCounts[a.id] || 0);
+    return new Date(b.created_at) - new Date(a.created_at); // newest
+  });
 
   /* ── Pagination ── */
-  const PAGE_SIZE      = 20;
-  const totalPages     = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedClients = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const PAGE_SIZE        = 20;
+  const totalPages       = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginatedClients = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const statCards = [
     { label: 'Total Clients',  value: totalClients,              bg: '#ecfccb', color: '#3f6212' },

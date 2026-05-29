@@ -134,6 +134,24 @@ function BrandingSection({ clientId, initialSettings }) {
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
+
+      <div style={{ marginTop: '24px' }}>
+        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Live Preview</p>
+        <div style={{ backgroundColor: primaryColor, borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {logoUrl && isValidUrl(logoUrl) ? (
+            <img src={logoUrl} alt="logo" style={{ height: '36px', width: '36px', borderRadius: '8px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.15)', flexShrink: 0 }}
+              onError={e => { e.target.style.display = 'none'; }} />
+          ) : (
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
+          )}
+          <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', flex: 1, fontFamily: FONT }}>
+            {companyName || 'Your Company Name'}
+          </span>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: '600', color: primaryColor, cursor: 'default', whiteSpace: 'nowrap', fontFamily: FONT }}>
+            Get a Quote
+          </div>
+        </div>
+      </div>
     </>
   );
 }
