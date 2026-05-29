@@ -307,6 +307,15 @@ export default function Clients() {
               </button>
             ))}
           </div>
+
+          {/* Sort */}
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+            style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', height: '42px', outline: 'none', fontFamily: FONT }}>
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="name_az">Name A–Z</option>
+            <option value="most_leads">Most Leads</option>
+          </select>
         </div>
 
         {/* ── Table ── */}
@@ -409,10 +418,10 @@ export default function Clients() {
         </div>
 
         {/* ── Pagination ── */}
-        {filtered.length > 0 && (
+        {sorted.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
-              Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} clients
+              Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, sorted.length)}–{Math.min(currentPage * PAGE_SIZE, sorted.length)} of {sorted.length} clients
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
