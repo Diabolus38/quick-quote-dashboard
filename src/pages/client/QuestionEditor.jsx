@@ -119,15 +119,6 @@ export default function QuestionEditor() {
 
   return (
     <ClientLayout title="Question Editor">
-      {hasChanges && (
-        <div style={{ position: 'fixed', bottom: 0, left: '240px', right: 0, backgroundColor: '#fff', borderTop: '1px solid #e8ede8', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -2px 12px rgba(0,0,0,0.06)' }}>
-          <span style={{ fontSize: '13.5px', color: '#9ca3af', fontFamily: FONT }}>You have unsaved changes</span>
-          <button type="button" onClick={handleSave} disabled={saving}
-            style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
-            {saving ? 'Saving…' : 'Save All Questions'}
-          </button>
-        </div>
-      )}
       <div style={{ fontFamily: FONT }}>
 
         {/* Page header */}
@@ -193,6 +184,16 @@ export default function QuestionEditor() {
             })}
 
             <SaveBar mt />
+
+            {hasChanges && (
+              <div style={{ position: 'fixed', bottom: 0, left: '240px', right: 0, backgroundColor: '#ffffff', borderTop: '1px solid #e8ede8', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -2px 12px rgba(0,0,0,0.06)', fontFamily: FONT }}>
+                <span style={{ fontSize: '13px', color: '#9ca3af' }}>You have unsaved changes</span>
+                <button type="button" onClick={handleSave} disabled={saving}
+                  style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : '#166534', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
+                  {saving ? 'Saving…' : 'Save All Questions'}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
