@@ -95,6 +95,15 @@ export default function AdminOverview() {
       setLoading(false);
     }
     fetchData();
+
+    const channel = supabase.channel('admin-overview-leads')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
+        const newLead = payload.new;
+        setLeads(prev => [newLead, ...prev]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   /* ── Computed ── */

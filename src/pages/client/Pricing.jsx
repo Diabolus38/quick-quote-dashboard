@@ -58,7 +58,12 @@ function FieldRow({ label, children }) {
 
 function PriceInput({ value, onChange }) {
   return (
-    <input type="number" value={value} onChange={e => onChange(e.target.value)}
+    <input type="number" value={value} onChange={e => {
+      const raw = parseFloat(e.target.value);
+      if (isNaN(raw)) { onChange('0'); return; }
+      const clamped = Math.min(Math.max(raw, 0), 999999);
+      onChange(String(clamped));
+    }}
       style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
   );
 }
@@ -111,6 +116,7 @@ function PricingContent({ clientId }) {
   const [currency,    setCurrency]   = useState('SEK');
   const [saveMsg, flash] = useSaveMsg();
   const [resetMsg, setResetMsg] = useState('');
+  const [lastSavedPricing, setLastSavedPricing] = useState(() => localStorage.getItem('qq360_last_saved_pricing') || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -215,6 +221,9 @@ function PricingContent({ clientId }) {
       currency,
     }).eq('client_id', clientId);
     flash();
+    const ts = new Date().toISOString();
+    localStorage.setItem('qq360_last_saved_pricing', ts);
+    setLastSavedPricing(ts);
   }
 
   function PriceRows({ items, setter }) {
@@ -287,6 +296,7 @@ function PricingContent({ clientId }) {
           </button>
         </div>
         <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+        {lastSavedPricing && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPricing); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
       </div>
     </>
   );

@@ -424,6 +424,27 @@ export default function Billing() {
                                 <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>First: <strong>{firstLead}</strong></p>
                                 <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>Last: <strong>{lastLead}</strong></p>
                               </div>
+                              <div>
+                                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Daily Volume</p>
+                                {rowLeads.length === 0 ? (
+                                  <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>No activity this period.</p>
+                                ) : (() => {
+                                  const [selYear, selMonthNum] = billingMonth.split('-').map(Number);
+                                  const daysInMonth = new Date(selYear, selMonthNum, 0).getDate();
+                                  const dailyCounts = Array.from({ length: daysInMonth }, (_, d) => {
+                                    const day = d + 1;
+                                    return rowLeads.filter(l => { const ld = new Date(l.created_at); return ld.getDate() === day; }).length;
+                                  });
+                                  const maxDay = Math.max(...dailyCounts, 1);
+                                  return (
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '40px' }}>
+                                      {dailyCounts.map((count, d) => (
+                                        <div key={d} style={{ width: '8px', height: count > 0 ? `${Math.max(Math.round((count / maxDay) * 36), 2)}px` : '2px', backgroundColor: count > 0 ? 'rgba(22,101,52,0.6)' : '#f3f4f6', borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
                             </div>
                           </td>
                         </tr>

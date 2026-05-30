@@ -102,10 +102,21 @@ export default function AllLeads() {
   const [currentPage,   setCurrentPage]   = useState(1);
   const [selectedLeads, setSelectedLeads] = useState(new Set());
   const [bulkStatus,    setBulkStatus]    = useState('new');
-  const [previewLead,   setPreviewLead]   = useState(null);
-  const [panelVisible,  setPanelVisible]  = useState(false);
-  const [quickNote,     setQuickNote]     = useState('');
-  const [noteSaved,     setNoteSaved]     = useState(false);
+  const [previewLead,    setPreviewLead]    = useState(null);
+  const [panelVisible,   setPanelVisible]   = useState(false);
+  const [quickNote,      setQuickNote]      = useState('');
+  const [noteSaved,      setNoteSaved]      = useState(false);
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
+  const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'];
+  const [visibleColumns, setVisibleColumns] = useState(new Set(ALL_COLS));
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (!e.target.closest('[data-col-picker]')) setShowColumnPicker(false);
+    }
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   useEffect(() => {
     if (previewLead) {
@@ -270,6 +281,22 @@ export default function AllLeads() {
               style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
               ↓ Export CSV
             </button>
+            <div style={{ position: 'relative' }} data-col-picker>
+              <button type="button" onClick={e => { e.stopPropagation(); setShowColumnPicker(p => !p); }}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '10px 16px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+                ⊞ Columns
+              </button>
+              {showColumnPicker && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: '200px' }}>
+                  {ALL_COLS.map(col => (
+                    <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', cursor: 'pointer', fontSize: '13px', color: '#374151', fontFamily: FONT }}>
+                      <input type="checkbox" checked={visibleColumns.has(col)} onChange={() => setVisibleColumns(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); return next; })} style={{ cursor: 'pointer' }} />
+                      {col}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -384,7 +411,7 @@ export default function AllLeads() {
                         onChange={toggleSelectAll}
                         style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
                     </th>
-                    {['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'].map(col => (
+                    {ALL_COLS.filter(col => visibleColumns.has(col)).map(col => (
                       <th key={col} style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
                     ))}
                   </tr>
@@ -409,45 +436,53 @@ export default function AllLeads() {
                             onChange={() => toggleSelect(lead.id)}
                             style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
                         </td>
-                        <td style={{ padding: '12px 16px', color: '#9ca3af', whiteSpace: 'nowrap' }}>{formatDate(lead.created_at)}</td>
+                        {visibleColumns.has('Date') && <td style={{ padding: '12px 16px', color: '#9ca3af', whiteSpace: 'nowrap' }}>{formatDate(lead.created_at)}</td>}
 
-                        <td style={{ padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: av.bg, color: av.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', flexShrink: 0 }}>
-                              {getInitials(clientName)}
+                        {visibleColumns.has('Client') && (
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: av.bg, color: av.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', flexShrink: 0 }}>
+                                {getInitials(clientName)}
+                              </div>
+                              <span style={{ fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{clientName}</span>
                             </div>
-                            <span style={{ fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{clientName}</span>
-                          </div>
-                        </td>
+                          </td>
+                        )}
 
-                        <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{lead.name || '—'}</td>
-                        <td style={{ padding: '12px 16px', color: '#4b5563' }}>{lead.email || '—'}</td>
-                        <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</td>
-                        <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.municipality || '—'}</td>
-                        <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.answers?.wastewaterType || '—'}</td>
-                        <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.language || '—'}</td>
+                        {visibleColumns.has('Customer Name') && <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{lead.name || '—'}</td>}
+                        {visibleColumns.has('Email') && <td style={{ padding: '12px 16px', color: '#4b5563' }}>{lead.email || '—'}</td>}
+                        {visibleColumns.has('Phone') && <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</td>}
+                        {visibleColumns.has('Municipality') && <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.municipality || '—'}</td>}
+                        {visibleColumns.has('System Type') && <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.answers?.wastewaterType || '—'}</td>}
+                        {visibleColumns.has('Language') && <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.language || '—'}</td>}
 
-                        <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>
-                          {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
-                        </td>
+                        {visibleColumns.has('Price') && (
+                          <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>
+                            {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                          </td>
+                        )}
 
-                        <td style={{ padding: '12px 16px' }}>
-                          <select value={rawStatus} onChange={e => updateStatus(lead.id, e.target.value)}
-                            style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', backgroundColor: sc.bg, color: sc.color, fontWeight: '600', cursor: 'pointer', fontFamily: FONT, outline: 'none' }}>
-                            <option value="new">New</option>
-                            <option value="contacted">Contacted</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="closed_won">Closed Won</option>
-                            <option value="closed_lost">Closed Lost</option>
-                          </select>
-                        </td>
+                        {visibleColumns.has('Status') && (
+                          <td style={{ padding: '12px 16px' }}>
+                            <select value={rawStatus} onChange={e => updateStatus(lead.id, e.target.value)}
+                              style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', backgroundColor: sc.bg, color: sc.color, fontWeight: '600', cursor: 'pointer', fontFamily: FONT, outline: 'none' }}>
+                              <option value="new">New</option>
+                              <option value="contacted">Contacted</option>
+                              <option value="in_progress">In Progress</option>
+                              <option value="closed_won">Closed Won</option>
+                              <option value="closed_lost">Closed Lost</option>
+                            </select>
+                          </td>
+                        )}
 
-                        <td style={{ padding: '12px 16px' }}>
-                          <button type="button" onClick={() => setPreviewLead(lead)}
-                            style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', backgroundColor: '#ecfccb', color: '#3f6212', border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: FONT }}>
-                            View
-                          </button>
-                        </td>
+                        {visibleColumns.has('Actions') && (
+                          <td style={{ padding: '12px 16px' }}>
+                            <button type="button" onClick={() => setPreviewLead(lead)}
+                              style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', backgroundColor: '#ecfccb', color: '#3f6212', border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: FONT }}>
+                              View
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

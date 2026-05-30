@@ -108,15 +108,20 @@ export default function ClientDetail() {
   const [changePlan,     setChangePlan]     = useState('');
   const [planSaved,      setPlanSaved]      = useState(false);
   const [lastActivity,   setLastActivity]   = useState(null);
+  const [setupChecklist, setSetupChecklist] = useState(null);
 
   useEffect(() => { fetchData(); }, [id]);
 
   async function fetchData() {
     setLoading(true);
-    const [{ data: clientData, error: clientErr }, { data: leadsData }, { data: profileData }] = await Promise.all([
+    const [{ data: clientData, error: clientErr }, { data: leadsData }, { data: profileData }, { data: settingsData }, { data: pricingData }, { data: questionsData }, { data: munisData }] = await Promise.all([
       supabase.from('clients').select('*').eq('id', id).single(),
       supabase.from('leads').select('*').eq('client_id', id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('updated_at').eq('client_id', id).single(),
+      supabase.from('client_settings').select('branding').eq('client_id', id).maybeSingle(),
+      supabase.from('client_pricing').select('base_prices').eq('client_id', id).maybeSingle(),
+      supabase.from('client_questions').select('id').eq('client_id', id).limit(1),
+      supabase.from('client_municipalities').select('id').eq('client_id', id).limit(1),
     ]);
     if (clientErr || !clientData) { setNotFound(true); setLoading(false); return; }
     setClient(clientData);
@@ -124,6 +129,14 @@ export default function ClientDetail() {
     setChangePlan(clientData.plan || 'starter');
     setLeads(leadsData || []);
     setLastActivity(profileData?.updated_at || null);
+    const bp = pricingData?.base_prices || {};
+    const anyPriceSet = Object.values(bp).some(row => typeof row === 'object' && Object.values(row).some(v => Number(v) > 0));
+    setSetupChecklist({
+      branding:      !!(settingsData?.branding?.company_name),
+      pricing:       anyPriceSet,
+      questions:     (questionsData || []).length > 0,
+      municipalities:(munisData || []).length > 0,
+    });
     try {
       const stored = localStorage.getItem('qq360_notes_history_' + id);
       setNotesHistory(stored ? JSON.parse(stored) : []);
@@ -547,6 +560,24 @@ export default function ClientDetail() {
                 Delete Client
               </button>
             </div>
+
+            {/* Setup Checklist */}
+            {setupChecklist && (
+              <div style={{ ...CARD, marginTop: '16px' }}>
+                <p style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Setup Checklist</p>
+                {[
+                  { label: 'Branding set',          ok: setupChecklist.branding       },
+                  { label: 'Pricing configured',     ok: setupChecklist.pricing        },
+                  { label: 'Questions customized',   ok: setupChecklist.questions      },
+                  { label: 'Municipalities added',   ok: setupChecklist.municipalities },
+                ].map(({ label, ok }, i, arr) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: i < arr.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                    <span style={{ fontSize: '13px', color: '#6b7280' }}>{label}</span>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: ok ? '#16a34a' : '#9ca3af' }}>{ok ? '✓' : '—'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
           </div>
         </div>

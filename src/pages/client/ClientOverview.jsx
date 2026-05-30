@@ -33,7 +33,8 @@ export default function ClientOverview() {
   const [hoveredRow,    setHoveredRow]    = useState(null);
   const [showToast,     setShowToast]     = useState(false);
   const [hoveredAction,  setHoveredAction]  = useState(null);
-  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showStatsModal,  setShowStatsModal]  = useState(false);
+  const [activityFilter,  setActivityFilter]  = useState('All');
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -188,10 +189,30 @@ export default function ClientOverview() {
 
         {/* Recent Activity */}
         <div style={{ ...CARD, marginTop: '24px' }}>
-          <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
-          {leads.slice(0, 5).length === 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {['All', 'Won', 'Active'].map(f => (
+                <button key={f} type="button" onClick={() => setActivityFilter(f)}
+                  style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', backgroundColor: activityFilter === f ? PRIMARY : '#f3f4f6', color: activityFilter === f ? '#fff' : '#6b7280', fontFamily: FONT, transition: 'all 0.12s' }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          {(() => {
+            const filtered = activityFilter === 'Won'
+              ? leads.filter(l => l.status === 'Closed Won')
+              : activityFilter === 'Active'
+              ? leads.filter(l => ['New','Contacted','In Progress'].includes(l.status))
+              : leads;
+            return filtered.slice(0, 5);
+          })().length === 0 ? (
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '16px 0', fontFamily: FONT }}>No leads yet.</p>
-          ) : leads.slice(0, 5).map((lead, i, arr) => {
+          ) : (() => {
+            const filtered = activityFilter === 'Won' ? leads.filter(l => l.status === 'Closed Won') : activityFilter === 'Active' ? leads.filter(l => ['New','Contacted','In Progress'].includes(l.status)) : leads;
+            return filtered.slice(0, 5);
+          })().map((lead, i, arr) => {
             const statusKey = (lead.status || '').toLowerCase().replace(/\s+/g, '_');
             const dotColor = statusKey === 'closed_won' ? '#16a34a' : statusKey === 'closed_lost' ? '#dc2626' : statusKey === 'in_progress' ? '#7c3aed' : statusKey === 'contacted' ? '#d97706' : '#a3e635';
             const diff = Date.now() - new Date(lead.created_at).getTime();

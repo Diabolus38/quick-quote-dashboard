@@ -72,6 +72,17 @@ function isValidUrl(str) {
   try { return Boolean(new URL(str)); } catch { return false; }
 }
 
+function fmtTs(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function LastSaved({ ts }) {
+  if (!ts) return null;
+  return <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {fmtTs(ts)}</p>;
+}
+
 function SettingsSkeleton() {
   return (
     <>
@@ -99,6 +110,7 @@ function BrandingSection({ clientId }) {
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
+  const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem('qq360_last_saved_branding') || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -123,6 +135,9 @@ function BrandingSection({ clientId }) {
       { onConflict: 'client_id' }
     );
     flash();
+    const ts = new Date().toISOString();
+    localStorage.setItem('qq360_last_saved_branding', ts);
+    setLastSavedBranding(ts);
   }
 
   return (
@@ -173,6 +188,7 @@ function BrandingSection({ clientId }) {
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
+      <LastSaved ts={lastSavedBranding} />
 
       <div style={{ marginTop: '24px' }}>
         <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Live Preview</p>
@@ -227,6 +243,7 @@ function EmailSection({ clientId }) {
   const [testMsg,      setTestMsg]      = useState('');
   const [testSending,  setTestSending]  = useState(false);
   const [loading,      setLoading]      = useState(true);
+  const [lastSavedEmail, setLastSavedEmail] = useState(() => localStorage.getItem('qq360_last_saved_email') || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -249,6 +266,9 @@ function EmailSection({ clientId }) {
       { onConflict: 'client_id' }
     );
     flash();
+    const ts = new Date().toISOString();
+    localStorage.setItem('qq360_last_saved_email', ts);
+    setLastSavedEmail(ts);
   }
 
   async function handleTestEmail() {
@@ -296,6 +316,7 @@ function EmailSection({ clientId }) {
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
+      <LastSaved ts={lastSavedEmail} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
         <button type="button" onClick={handleTestEmail} disabled={testSending || !replyTo}
@@ -303,6 +324,24 @@ function EmailSection({ clientId }) {
           {testSending ? 'Sending…' : 'Send Test Email'}
         </button>
         {testMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: testMsg.includes('sent') ? '#16a34a' : '#dc2626', fontFamily: FONT }}>{testMsg}</span>}
+      </div>
+
+      <div style={{ marginTop: '24px' }}>
+        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Email Preview</p>
+        <div style={{ border: '1px solid #e8ede8', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#fff' }}>
+          <div style={{ backgroundColor: '#f9fbf9', borderBottom: '1px solid #e8ede8', padding: '12px 16px', fontSize: '12.5px', color: '#374151', fontFamily: FONT }}>
+            <strong>From:</strong> {fromName || 'Your Name'} &nbsp;·&nbsp; <strong>Subject:</strong> {subject || 'Your Quote from QuickQuote360'}
+          </div>
+          <div style={{ padding: '20px', fontFamily: FONT }}>
+            <p style={{ margin: '0 0 12px', fontSize: '13.5px', color: '#0d1117' }}>Hi <em>Customer Name</em>,</p>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#374151', lineHeight: '1.6' }}>Your quote has been prepared and attached to this email. Please review it at your convenience.</p>
+            {footerText ? (
+              <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', borderTop: '1px solid #f4f6f4', paddingTop: '12px', lineHeight: '1.6' }}>{footerText}</p>
+            ) : (
+              <p style={{ margin: 0, fontSize: '12px', color: '#d1d5db', borderTop: '1px solid #f4f6f4', paddingTop: '12px', fontStyle: 'italic' }}>Email footer text will appear here…</p>
+            )}
+          </div>
+        </div>
       </div>
     </>
   );
@@ -322,6 +361,7 @@ function LanguagesSection({ clientId }) {
   const [defaultLanguage, setDefaultLanguage] = useState('EN');
   const [saveMsg, flash] = useSaveMsg();
   const [loading, setLoading] = useState(true);
+  const [lastSavedLangs, setLastSavedLangs] = useState(() => localStorage.getItem('qq360_last_saved_languages') || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -355,6 +395,9 @@ function LanguagesSection({ clientId }) {
       { onConflict: 'client_id' }
     );
     flash();
+    const ts = new Date().toISOString();
+    localStorage.setItem('qq360_last_saved_languages', ts);
+    setLastSavedLangs(ts);
   }
 
   const enabledCodes = LANG_OPTIONS.filter(({ code }) => enabled[code]);
@@ -391,6 +434,7 @@ function LanguagesSection({ clientId }) {
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
+      <LastSaved ts={lastSavedLangs} />
     </>
   );
 }

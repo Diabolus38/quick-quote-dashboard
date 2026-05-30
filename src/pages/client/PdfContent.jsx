@@ -81,6 +81,7 @@ function PDFContent({ clientId }) {
   const [sigPhone,      setSigPhone]      = useState('');
   const [sigEmail,      setSigEmail]      = useState('');
   const [saveMsg, flash] = useSaveMsg();
+  const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem('qq360_last_saved_pdf') || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -131,6 +132,9 @@ function PDFContent({ clientId }) {
       },
     }).eq('client_id', clientId);
     flash();
+    const ts = new Date().toISOString();
+    localStorage.setItem('qq360_last_saved_pdf', ts);
+    setLastSavedPdf(ts);
   }
 
   return (
@@ -156,6 +160,7 @@ function PDFContent({ clientId }) {
           </div>
         </SettingsCard>
         <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+        {lastSavedPdf && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPdf); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
       </div>
 
       {/* Right column: preview */}

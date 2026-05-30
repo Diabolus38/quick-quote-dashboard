@@ -64,6 +64,7 @@ function MunicipalitiesContent({ clientId }) {
   const [covered,           setCovered]           = useState([]);
   const [notCoveredMsg,     setNotCoveredMsg]     = useState('We currently do not cover your municipality.');
   const [notCoveredSaveMsg, setNotCoveredSaveMsg] = useState('');
+  const [lastSavedMuni,     setLastSavedMuni]     = useState(() => localStorage.getItem('qq360_last_saved_municipalities') || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -99,6 +100,9 @@ function MunicipalitiesContent({ clientId }) {
     }).eq('client_id', clientId);
     setNotCoveredSaveMsg('Saved!');
     setTimeout(() => setNotCoveredSaveMsg(''), 2000);
+    const ts = new Date().toISOString();
+    localStorage.setItem('qq360_last_saved_municipalities', ts);
+    setLastSavedMuni(ts);
   }
 
   const filtered = ALL_MUNICIPALITIES.filter(m =>
@@ -175,6 +179,7 @@ function MunicipalitiesContent({ clientId }) {
             </button>
             {notCoveredSaveMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', fontFamily: FONT }}>{notCoveredSaveMsg}</span>}
           </div>
+          {lastSavedMuni && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Last saved: {(() => { const d = new Date(lastSavedMuni); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
         </div>
       </div>
     </>

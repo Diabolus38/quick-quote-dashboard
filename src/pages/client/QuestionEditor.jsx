@@ -60,6 +60,7 @@ export default function QuestionEditor() {
   const [previewMode, setPreviewMode] = useState(false);
   const [previewLang, setPreviewLang] = useState('en');
   const [retryKey,    setRetryKey]    = useState(0);
+  const [lastSavedQ,  setLastSavedQ]  = useState(() => localStorage.getItem('qq360_last_saved_questions') || '');
 
   /* ── Load ── */
   useEffect(() => {
@@ -106,19 +107,22 @@ export default function QuestionEditor() {
     const { error: upsertErr } = await supabase
       .from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
     setSaving(false);
-    if (upsertErr) { setError('Failed to save. Please try again.'); } else { flashSave(); setHasChanges(false); }
+    if (upsertErr) { setError('Failed to save. Please try again.'); } else { flashSave(); setHasChanges(false); const ts = new Date().toISOString(); localStorage.setItem('qq360_last_saved_questions', ts); setLastSavedQ(ts); }
   }
 
   const inputStyle = { width: '100%', padding: '8px 12px', fontSize: '13px', color: '#0d1117', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff', fontFamily: FONT };
 
   const SaveBar = ({ mt = false }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: mt ? 0 : '28px', marginTop: mt ? '8px' : 0 }}>
-      <button type="button" onClick={handleSave} disabled={saving}
-        style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
-        {saving ? 'Saving…' : 'Save All Questions'}
-      </button>
-      {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{saveMsg}</span>}
-      {error   && <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '500', fontFamily: FONT }}>{error}</span>}
+    <div style={{ marginBottom: mt ? 0 : '28px', marginTop: mt ? '8px' : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <button type="button" onClick={handleSave} disabled={saving}
+          style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
+          {saving ? 'Saving…' : 'Save All Questions'}
+        </button>
+        {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{saveMsg}</span>}
+        {error   && <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '500', fontFamily: FONT }}>{error}</span>}
+      </div>
+      {lastSavedQ && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Last saved: {(() => { const d = new Date(lastSavedQ); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
     </div>
   );
 

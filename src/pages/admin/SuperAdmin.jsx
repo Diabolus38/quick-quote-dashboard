@@ -93,15 +93,18 @@ function SmallBtn({ label, bg, color, onClick }) {
 /* ── Add Client Modal ────────────────────────────────────────── */
 
 function AddClientModal({ onClose, onSaved }) {
-  const [name,   setName]   = useState('');
-  const [email,  setEmail]  = useState('');
-  const [plan,   setPlan]   = useState('starter');
-  const [saving, setSaving] = useState(false);
+  const [name,    setName]    = useState('');
+  const [email,   setEmail]   = useState('');
+  const [website, setWebsite] = useState('');
+  const [plan,    setPlan]    = useState('starter');
+  const [saving,  setSaving]  = useState(false);
 
   async function handleSave() {
     if (!name.trim()) return;
     setSaving(true);
-    const { data, error } = await supabase.from('clients').insert({ name: name.trim(), email: email.trim(), plan, active: true }).select('id').single();
+    const payload = { name: name.trim(), email: email.trim(), plan, active: true };
+    if (website.trim()) payload.website_url = website.trim();
+    const { data, error } = await supabase.from('clients').insert(payload).select('id').single();
     if (!error && data?.id) {
       await Promise.all([
         supabase.from('client_settings').insert({
@@ -141,6 +144,10 @@ function AddClientModal({ onClose, onSaved }) {
         <div style={{ marginBottom: '16px' }}>
           <label style={lbl}>Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="client@company.com" style={inp} />
+        </div>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={lbl}>Website URL <span style={{ fontWeight: '400', color: '#9ca3af' }}>(optional)</span></label>
+          <input type="text" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://example.com" style={inp} />
         </div>
         <div style={{ marginBottom: '28px' }}>
           <label style={lbl}>Plan</label>
@@ -185,6 +192,15 @@ export default function SuperAdmin() {
   const [dismissedAlerts, setDismissedAlerts] = useState(new Set());
 
   useEffect(() => { fetchAll(); }, []);
+
+  useEffect(() => {
+    const channel = supabase.channel('superadmin-leads')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
+        setLeads(prev => [payload.new, ...prev]);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   async function checkHealth() {
     setHealthStatus({ api: 'checking', frontend: 'checking', dashboard: 'checking' });
