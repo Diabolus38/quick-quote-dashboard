@@ -103,6 +103,21 @@ export default function AllLeads() {
   const [selectedLeads, setSelectedLeads] = useState(new Set());
   const [bulkStatus,    setBulkStatus]    = useState('new');
   const [previewLead,   setPreviewLead]   = useState(null);
+  const [panelVisible,  setPanelVisible]  = useState(false);
+
+  useEffect(() => {
+    if (previewLead) {
+      const t = setTimeout(() => setPanelVisible(true), 10);
+      return () => clearTimeout(t);
+    } else {
+      setPanelVisible(false);
+    }
+  }, [previewLead]);
+
+  function closePanel() {
+    setPanelVisible(false);
+    setTimeout(() => setPreviewLead(null), 250);
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -455,15 +470,15 @@ export default function AllLeads() {
       {/* ── Lead Preview Panel ── */}
       {previewLead && (
         <>
-          <div onClick={() => setPreviewLead(null)}
+          <div onClick={closePanel}
             style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 199 }} />
-          <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100vh', backgroundColor: '#fff', zIndex: 200, boxShadow: '-4px 0 32px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', fontFamily: FONT, overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100vh', backgroundColor: '#fff', zIndex: 200, boxShadow: '-4px 0 32px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', fontFamily: FONT, overflowY: 'auto', transform: panelVisible ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 0.25s ease' }}>
             <div style={{ padding: '24px 28px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div>
                 <p style={{ margin: '0 0 2px', fontSize: '18px', fontWeight: '700', color: '#0d1117' }}>{previewLead.name || '—'}</p>
                 <p style={{ margin: 0, fontSize: '12.5px', color: '#9ca3af' }}>Lead Preview</p>
               </div>
-              <button type="button" onClick={() => setPreviewLead(null)}
+              <button type="button" onClick={closePanel}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#9ca3af', padding: '4px', lineHeight: 1, fontFamily: FONT }}>×</button>
             </div>
             <div style={{ padding: '24px 28px', flex: 1 }}>

@@ -43,6 +43,25 @@ const KEY_LABELS = {
   additionalWork:           'Additional Work',
 };
 
+const VALUE_LABELS = {
+  bdt:              'BDT (Biological Treatment)',
+  wc:               'WC Only',
+  wc_bdt:           'WC + BDT',
+  new_installation: 'New Installation',
+  replacement:      'Replacement',
+  connected:        'Connected to municipal water',
+  not_connected:    'Not connected',
+  zone1:            'Zone 1',
+  zone2:            'Zone 2',
+  zone3:            'Zone 3',
+  yes:              'Yes',
+  no:               'No',
+  maybe:            'Maybe',
+  shallow:          'Shallow (0-1m)',
+  medium:           'Medium (1-2m)',
+  deep:             'Deep (2m+)',
+};
+
 const PLAN_STYLE = {
   scale:   { bg: '#ecfccb', color: '#3f6212' },
   growth:  { bg: '#ede9fe', color: '#7c3aed' },
@@ -197,7 +216,7 @@ export default function AdminLeadDetail() {
                     <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>
                       {KEY_LABELS[key] || key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}
                     </span>
-                    <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{String(val)}</span>
+                    <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{VALUE_LABELS[String(val)] || String(val)}</span>
                   </div>
                 ))
               )}

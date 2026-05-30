@@ -177,6 +177,36 @@ export default function ClientOverview() {
           </div>
         </div>
 
+        {/* Recent Activity */}
+        <div style={{ ...CARD, marginTop: '24px' }}>
+          <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
+          {leads.slice(0, 5).length === 0 ? (
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '16px 0', fontFamily: FONT }}>No leads yet.</p>
+          ) : leads.slice(0, 5).map((lead, i, arr) => {
+            const statusKey = (lead.status || '').toLowerCase().replace(/\s+/g, '_');
+            const dotColor = statusKey === 'closed_won' ? '#16a34a' : statusKey === 'closed_lost' ? '#dc2626' : statusKey === 'in_progress' ? '#7c3aed' : statusKey === 'contacted' ? '#d97706' : '#a3e635';
+            const diff = Date.now() - new Date(lead.created_at).getTime();
+            const mins = Math.floor(diff / 60000);
+            const timeAgoStr = mins < 1 ? 'just now' : mins < 60 ? `${mins} mins ago` : mins < 1440 ? `${Math.floor(mins/60)} hours ago` : `${Math.floor(mins/1440)} days ago`;
+            return (
+              <div key={lead.id}
+                onClick={() => navigate('/client/leads/' + lead.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid #f4f6f4' : 'none', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{lead.name || '—'}</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{timeAgoStr}</p>
+                </div>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: '#0d1117', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                  {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
     </ClientLayout>
   );

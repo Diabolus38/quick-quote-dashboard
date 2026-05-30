@@ -62,6 +62,7 @@ export default function Billing() {
   const [hovRow,        setHovRow]        = useState(null);
   const [chartLeads,    setChartLeads]    = useState([]);
   const [invoiceStatus, setInvoiceStatus] = useState({});
+  const [expandedRow,   setExpandedRow]   = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -327,16 +328,36 @@ export default function Billing() {
                 </thead>
                 <tbody>
                   {billingRows.map((row, i) => {
-                    const pb = PLAN_BADGE[row.plan] || PLAN_BADGE.starter;
+                    const pb         = PLAN_BADGE[row.plan] || PLAN_BADGE.starter;
+                    const isExpanded = expandedRow === row.id;
+                    const rowLeads   = leads.filter(l => l.client_id === row.id);
+                    const sOf        = l => (l.status || '').toLowerCase().replace(/\s+/g, '_');
+                    const statusCount = {
+                      new:          rowLeads.filter(l => sOf(l) === 'new').length,
+                      contacted:    rowLeads.filter(l => sOf(l) === 'contacted').length,
+                      in_progress:  rowLeads.filter(l => sOf(l) === 'in_progress').length,
+                      closed_won:   rowLeads.filter(l => sOf(l) === 'closed_won').length,
+                      closed_lost:  rowLeads.filter(l => sOf(l) === 'closed_lost').length,
+                    };
+                    const sortedDates = rowLeads.map(l => l.created_at).sort();
+                    const firstLead   = sortedDates[0] ? new Date(sortedDates[0]).toLocaleDateString('en-GB') : '—';
+                    const lastLead    = sortedDates[sortedDates.length - 1] ? new Date(sortedDates[sortedDates.length - 1]).toLocaleDateString('en-GB') : '—';
                     return (
+                      <>
                       <tr key={row.id}
+                        onClick={() => setExpandedRow(isExpanded ? null : row.id)}
                         onMouseEnter={() => setHovRow(row.id)}
                         onMouseLeave={() => setHovRow(null)}
-                        style={{ backgroundColor: hovRow === row.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
+                        style={{ backgroundColor: hovRow === row.id || isExpanded ? '#f9faf9' : '#fff', borderBottom: isExpanded ? 'none' : '1px solid #f4f6f4', cursor: 'pointer' }}>
 
                         <td style={{ padding: '14px 16px' }}>
-                          <div style={{ fontWeight: '600', color: '#0d1117' }}>{row.name}</div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{row.email}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '10px', color: '#9ca3af' }}>{isExpanded ? '▼' : '▶'}</span>
+                            <div>
+                              <div style={{ fontWeight: '600', color: '#0d1117' }}>{row.name}</div>
+                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{row.email}</div>
+                            </div>
+                          </div>
                         </td>
 
                         <td style={{ padding: '14px 16px' }}>
@@ -383,6 +404,31 @@ export default function Billing() {
                           })()}
                         </td>
                       </tr>
+                      {isExpanded && (
+                        <tr key={`${row.id}-expanded`} style={{ backgroundColor: '#f9fbf9', borderBottom: '1px solid #f4f6f4' }}>
+                          <td colSpan={10} style={{ padding: '16px 24px' }}>
+                            <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                              <div>
+                                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Status Breakdown</p>
+                                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                                  {[['New', statusCount.new, '#1d4ed8'], ['Contacted', statusCount.contacted, '#d97706'], ['In Progress', statusCount.in_progress, '#7c3aed'], ['Won', statusCount.closed_won, '#16a34a'], ['Lost', statusCount.closed_lost, '#dc2626']].map(([label, count, color]) => (
+                                    <div key={label} style={{ textAlign: 'center' }}>
+                                      <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color, fontFamily: FONT }}>{count}</p>
+                                      <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{label}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Dates This Period</p>
+                                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>First: <strong>{firstLead}</strong></p>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>Last: <strong>{lastLead}</strong></p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </>
                     );
                   })}
                 </tbody>

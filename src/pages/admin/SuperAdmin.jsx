@@ -180,8 +180,9 @@ export default function SuperAdmin() {
   const [copiedId,     setCopiedId]     = useState(null);
   const [copiedGlobal, setCopiedGlobal] = useState(false);
   const [hoveredRow,   setHoveredRow]   = useState(null);
-  const [healthStatus, setHealthStatus] = useState({ api: 'checking', frontend: 'checking', dashboard: 'checking' });
-  const [lastChecked,  setLastChecked]  = useState(null);
+  const [healthStatus,    setHealthStatus]    = useState({ api: 'checking', frontend: 'checking', dashboard: 'checking' });
+  const [lastChecked,     setLastChecked]     = useState(null);
+  const [dismissedAlerts, setDismissedAlerts] = useState(new Set());
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -271,13 +272,13 @@ export default function SuperAdmin() {
     const thisMonthCount = leadsThisMonthPerClient[c.id] || 0;
     if (planLimit !== Infinity && thisMonthCount / planLimit >= 0.9) {
       const pct = Math.round((thisMonthCount / planLimit) * 100);
-      systemAlerts.push({ msg: `⚠ ${c.name} is at ${pct}% of their ${c.plan} limit`, borderColor: '#d97706' });
+      systemAlerts.push({ key: `${c.id}_warning`, msg: `⚠ ${c.name} is at ${pct}% of their ${c.plan} limit`, borderColor: '#d97706' });
     }
     if (c.active === false) {
-      systemAlerts.push({ msg: `● ${c.name} account is inactive`, borderColor: '#1d4ed8' });
+      systemAlerts.push({ key: `${c.id}_info`, msg: `● ${c.name} account is inactive`, borderColor: '#1d4ed8' });
     }
     if ((leadCountPerClient[c.id] || 0) === 0) {
-      systemAlerts.push({ msg: `→ ${c.name} has no leads yet — they may need help with setup`, borderColor: '#9ca3af' });
+      systemAlerts.push({ key: `${c.id}_suggestion`, msg: `→ ${c.name} has no leads yet — they may need help with setup`, borderColor: '#9ca3af' });
     }
   });
 
@@ -612,12 +613,22 @@ export default function SuperAdmin() {
 
             {/* ── ROW 5: System Alerts ── */}
             <div style={{ ...CARD, marginTop: '24px' }}>
-              <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>System Alerts</p>
-              {systemAlerts.length === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>System Alerts</p>
+                {systemAlerts.filter(a => !dismissedAlerts.has(a.key)).length > 0 && (
+                  <button type="button" onClick={() => setDismissedAlerts(new Set(systemAlerts.map(a => a.key)))}
+                    style={{ fontSize: '12px', color: '#9ca3af', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>
+                    Dismiss All
+                  </button>
+                )}
+              </div>
+              {systemAlerts.filter(a => !dismissedAlerts.has(a.key)).length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>✓ No alerts — all systems normal</p>
-              ) : systemAlerts.map((alert, i) => (
-                <div key={i} style={{ borderLeft: `4px solid ${alert.borderColor}`, backgroundColor: '#fff', borderRadius: '8px', padding: '12px 16px', marginBottom: '8px', fontSize: '13px', color: '#0d1117', fontFamily: FONT, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                  {alert.msg}
+              ) : systemAlerts.filter(a => !dismissedAlerts.has(a.key)).map(alert => (
+                <div key={alert.key} style={{ borderLeft: `4px solid ${alert.borderColor}`, backgroundColor: '#fff', borderRadius: '8px', padding: '12px 16px', marginBottom: '8px', fontSize: '13px', color: '#0d1117', fontFamily: FONT, boxShadow: '0 1px 4px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <span>{alert.msg}</span>
+                  <button type="button" onClick={() => setDismissedAlerts(prev => new Set([...prev, alert.key]))}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '16px', lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>×</button>
                 </div>
               ))}
             </div>

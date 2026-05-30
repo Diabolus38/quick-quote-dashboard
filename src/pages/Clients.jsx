@@ -127,7 +127,8 @@ export default function Clients() {
   const [leadCounts,    setLeadCounts]    = useState({});
   const [lastLeadDates, setLastLeadDates] = useState({});
   const [loading,       setLoading]       = useState(true);
-  const [hoveredRow, setHoveredRow] = useState(null);
+  const [hoveredRow,    setHoveredRow]    = useState(null);
+  const [hoveredNote,   setHoveredNote]   = useState(null);
 
   const [showAdd,    setShowAdd]    = useState(false);
   const [editClient, setEditClient] = useState(null);
@@ -363,7 +364,21 @@ export default function Clients() {
                           {getInitials(client.name || '')}
                         </div>
                         <div>
-                          <div style={{ fontWeight: '600', color: '#0d1117' }}>{client.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontWeight: '600', color: '#0d1117' }}>{client.name}</span>
+                            {client.notes && (
+                              <div style={{ position: 'relative' }}
+                                onMouseEnter={() => setHoveredNote(client.id)}
+                                onMouseLeave={() => setHoveredNote(null)}>
+                                <span style={{ fontSize: '13px', cursor: 'default' }}>📝</span>
+                                {hoveredNote === client.id && (
+                                  <div style={{ position: 'absolute', top: '-8px', left: '100%', backgroundColor: '#0d1117', color: '#fff', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', maxWidth: '240px', zIndex: 50, whiteSpace: 'normal', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', marginLeft: '6px', lineHeight: '1.5' }}>
+                                    {client.notes.slice(0, 100)}{client.notes.length > 100 ? '…' : ''}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                           <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{client.email}</div>
                         </div>
                       </div>

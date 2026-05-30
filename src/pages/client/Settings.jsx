@@ -72,6 +72,21 @@ function isValidUrl(str) {
   try { return Boolean(new URL(str)); } catch { return false; }
 }
 
+function SettingsSkeleton() {
+  return (
+    <>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' }}>
+          <div style={{ height: '16px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '80%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '40%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+      ))}
+    </>
+  );
+}
+
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
 function BrandingSection({ clientId }) {
@@ -83,6 +98,7 @@ function BrandingSection({ clientId }) {
   const [companyAddress, setCompanyAddress] = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!clientId) return;
@@ -95,8 +111,11 @@ function BrandingSection({ clientId }) {
         setLogoUrl(b.logo_url            || '');
         setCompanyPhone(b.company_phone  || '');
         setCompanyAddress(b.company_address || '');
+        setLoading(false);
       });
   }, [clientId]);
+
+  if (loading) return <SettingsSkeleton />;
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -207,6 +226,7 @@ function EmailSection({ clientId }) {
   const [saveMsg, flash] = useSaveMsg();
   const [testMsg,      setTestMsg]      = useState('');
   const [testSending,  setTestSending]  = useState(false);
+  const [loading,      setLoading]      = useState(true);
 
   useEffect(() => {
     if (!clientId) return;
@@ -217,8 +237,11 @@ function EmailSection({ clientId }) {
         setReplyTo(es.reply_to      || '');
         setSubject(es.subject       || '');
         setFooterText(es.footer_text || '');
+        setLoading(false);
       });
   }, [clientId]);
+
+  if (loading) return <SettingsSkeleton />;
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -298,6 +321,7 @@ function LanguagesSection({ clientId }) {
   const [enabled,         setEnabled]         = useState({ EN: true, SV: false, DE: false, FR: false });
   const [defaultLanguage, setDefaultLanguage] = useState('EN');
   const [saveMsg, flash] = useSaveMsg();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!clientId) return;
@@ -306,8 +330,11 @@ function LanguagesSection({ clientId }) {
         const ls = data?.language_settings || {};
         setEnabled(ls.enabled || { EN: true, SV: false, DE: false, FR: false });
         setDefaultLanguage(ls.default_language || 'EN');
+        setLoading(false);
       });
   }, [clientId]);
+
+  if (loading) return <SettingsSkeleton />;
 
   function handleToggle(code) {
     setEnabled(prev => {
@@ -374,9 +401,11 @@ function EmbedCodeSection({ clientId }) {
   const [copied,        setCopied]        = useState(false);
   const [copiedIframe,  setCopiedIframe]  = useState(false);
   const [copiedWP,      setCopiedWP]      = useState(false);
+  const [copiedLink,    setCopiedLink]    = useState(false);
   const scriptTag    = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
   const iframeTag    = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
   const shortcodeTag = `[quickquote360 client_id="${clientId || 'CLIENT_ID_HERE'}"]`;
+  const directLink   = `https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}`;
 
   function handleCopy() {
     navigator.clipboard.writeText(scriptTag).then(() => {
@@ -445,6 +474,23 @@ function EmbedCodeSection({ clientId }) {
         <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
           Requires the QuickQuote360 WordPress plugin. Contact support to get the plugin.
         </p>
+
+        <p style={{ margin: '24px 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Direct Link</p>
+        <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '20px', marginBottom: '14px', overflowX: 'auto' }}>
+          <code style={{ fontSize: '13px', color: LIME, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.6' }}>
+            {directLink}
+          </code>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button type="button" onClick={() => navigator.clipboard.writeText(directLink).then(() => { setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); })}
+            style={{ backgroundColor: copiedLink ? '#ecfccb' : PRIMARY, color: copiedLink ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s' }}>
+            {copiedLink ? 'Copied!' : 'Copy Link'}
+          </button>
+          <a href={directLink} target="_blank" rel="noopener noreferrer"
+            style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: PRIMARY, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, textDecoration: 'none', display: 'inline-block' }}>
+            Open in new tab →
+          </a>
+        </div>
       </div>
     </>
   );
@@ -497,7 +543,7 @@ function AccountSection() {
     setUploading(false);
   }
 
-  if (!dataReady) return <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>;
+  if (!dataReady) return <SettingsSkeleton />;
 
   const initials = (fullName || profile?.email || '?').slice(0, 2).toUpperCase();
 
