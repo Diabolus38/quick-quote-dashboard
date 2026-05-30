@@ -575,6 +575,17 @@ function EmbedCodeSection({ clientId }) {
             Open in new tab →
           </a>
         </div>
+
+        <p style={{ margin: '24px 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>QR Code</p>
+        <img
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(directLink)}`}
+          alt="QR Code for estimator link"
+          style={{ width: '160px', height: '160px', borderRadius: '8px', border: '1px solid #e8ede8', display: 'block', marginBottom: '12px' }}
+        />
+        <button type="button" onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(directLink)}`, '_blank')}
+          style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+          Download QR Code
+        </button>
       </div>
     </>
   );
@@ -758,6 +769,33 @@ function DangerZoneSection() {
   );
 }
 
+/* ── Configuration Status ───────────────────────────────────── */
+
+function ConfigStatusCard() {
+  const sections = [
+    { key: 'qq360_last_saved_branding',      label: 'Brand'    },
+    { key: 'qq360_last_saved_pricing',        label: 'Pricing'  },
+    { key: 'qq360_last_saved_pdf',            label: 'PDF'      },
+    { key: 'qq360_last_saved_municipalities', label: 'Areas'    },
+    { key: 'qq360_last_saved_questions',      label: 'Questions'},
+  ];
+  const timestamps = sections.map(s => localStorage.getItem(s.key));
+  const count = timestamps.filter(Boolean).length;
+  return (
+    <div style={{ ...CARD, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', gap: '16px' }}>
+        {sections.map((s, i) => (
+          <div key={s.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: timestamps[i] ? '#16a34a' : '#e5e7eb' }} />
+            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+      <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+    </div>
+  );
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 
 const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Danger Zone'];
@@ -779,6 +817,7 @@ export default function ClientSettingsPage() {
 
   return (
     <ClientLayout title="Settings">
+      <ConfigStatusCard />
       <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
 
         {/* Side nav */}

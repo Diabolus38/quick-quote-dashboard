@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
@@ -87,10 +87,12 @@ export default function AllLeads() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [leads,    setLeads]    = useState([]);
-  const [clients,  setClients]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [hovRow,   setHovRow]   = useState(null);
+  const [leads,        setLeads]        = useState([]);
+  const [clients,      setClients]      = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [hovRow,       setHovRow]       = useState(null);
+  const [newLeadToast, setNewLeadToast] = useState(null);
+  const clientsRef = useRef([]);
 
   const [search,        setSearch]        = useState('');
   const [clientFilter,  setClientFilter]  = useState(() => {
@@ -108,7 +110,13 @@ export default function AllLeads() {
   const [noteSaved,      setNoteSaved]      = useState(false);
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'];
-  const [visibleColumns, setVisibleColumns] = useState(new Set(ALL_COLS));
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    try {
+      const saved = localStorage.getItem('qq360_leads_columns');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {}
+    return new Set(ALL_COLS);
+  });
 
   useEffect(() => {
     function handleClick(e) {
@@ -154,6 +162,21 @@ export default function AllLeads() {
       setLoading(false);
     }
     fetchData();
+  }, []);
+
+  useEffect(() => { clientsRef.current = clients; }, [clients]);
+
+  useEffect(() => {
+    const channel = supabase.channel('admin-all-leads-rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
+        const lead = payload.new;
+        setLeads(prev => [lead, ...prev]);
+        const clientName = clientsRef.current.find(c => c.id === lead.client_id)?.name || '—';
+        setNewLeadToast(`New lead from ${lead.name || 'Unknown'} via ${clientName}`);
+        setTimeout(() => setNewLeadToast(null), 4000);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   async function updateStatus(leadId, newStatus) {
@@ -257,6 +280,11 @@ export default function AllLeads() {
 
   return (
     <Layout title="All Leads">
+      {newLeadToast && (
+        <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, backgroundColor: '#0d1117', color: '#fff', borderRadius: '12px', padding: '14px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          {newLeadToast}
+        </div>
+      )}
       <div style={{ fontFamily: FONT }}>
 
         {/* ── Header ── */}
@@ -290,7 +318,7 @@ export default function AllLeads() {
                 <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: '200px' }}>
                   {ALL_COLS.map(col => (
                     <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', cursor: 'pointer', fontSize: '13px', color: '#374151', fontFamily: FONT }}>
-                      <input type="checkbox" checked={visibleColumns.has(col)} onChange={() => setVisibleColumns(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); return next; })} style={{ cursor: 'pointer' }} />
+                      <input type="checkbox" checked={visibleColumns.has(col)} onChange={() => setVisibleColumns(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); localStorage.setItem('qq360_leads_columns', JSON.stringify([...next])); return next; })} style={{ cursor: 'pointer' }} />
                       {col}
                     </label>
                   ))}

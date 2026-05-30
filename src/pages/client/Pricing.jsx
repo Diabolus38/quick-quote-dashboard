@@ -117,6 +117,10 @@ function PricingContent({ clientId }) {
   const [saveMsg, flash] = useSaveMsg();
   const [resetMsg, setResetMsg] = useState('');
   const [lastSavedPricing, setLastSavedPricing] = useState(() => localStorage.getItem('qq360_last_saved_pricing') || '');
+  const [showPreview,        setShowPreview]        = useState(false);
+  const [previewSystemType,  setPreviewSystemType]  = useState('bdt');
+  const [previewHouseholds,  setPreviewHouseholds]  = useState('1');
+  const [previewZone,        setPreviewZone]        = useState('Zone 1');
   const [hoveredHH, setHoveredHH] = useState(null);
 
   useEffect(() => {
@@ -309,7 +313,94 @@ function PricingContent({ clientId }) {
         <SaveButton onClick={handleSave} saveMsg={saveMsg} />
         {lastSavedPricing && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPricing); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
       </div>
+
+      <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+        <button type="button" onClick={() => setShowPreview(true)}
+          style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+          Preview Estimate
+        </button>
+      </div>
+
+      {showPreview && (() => {
+        const baseRow = baseGrid.find(r => r.key === previewSystemType);
+        const baseVal = baseRow ? Number(baseRow.values[Number(previewHouseholds) - 1] || 0) : 0;
+        const estKey = previewZone === 'Zone 1' ? 'establishment_zone1' : 'establishment_zone2';
+        const estCost = Number(fixedCosts.find(f => f.key === estKey)?.value || 0);
+        const total = baseVal + estCost;
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={e => { if (e.target === e.currentTarget) setShowPreview(false); }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '36px', width: '560px', maxWidth: '90vw', boxSizing: 'border-box', fontFamily: FONT }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0d1117' }}>Estimate Preview</h2>
+                <button type="button" onClick={() => setShowPreview(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#9ca3af', lineHeight: 1, padding: '4px' }}>×</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '28px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>System Type</label>
+                  <select value={previewSystemType} onChange={e => setPreviewSystemType(e.target.value)}
+                    style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 12px', fontSize: '13px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer' }}>
+                    <option value="bdt">BDT</option>
+                    <option value="wc">WC only</option>
+                    <option value="wc_bdt">WC+BDT</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Households</label>
+                  <select value={previewHouseholds} onChange={e => setPreviewHouseholds(e.target.value)}
+                    style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 12px', fontSize: '13px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer' }}>
+                    {['1','2','3','4','5'].map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Zone</label>
+                  <select value={previewZone} onChange={e => setPreviewZone(e.target.value)}
+                    style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 12px', fontSize: '13px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer' }}>
+                    <option value="Zone 1">Zone 1</option>
+                    <option value="Zone 2">Zone 2</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ backgroundColor: '#0d1f12', borderRadius: '16px', padding: '28px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Estimated Price</p>
+                <p style={{ margin: 0, fontSize: '40px', fontWeight: '800', color: '#a3e635', letterSpacing: '-1px', lineHeight: 1 }}>
+                  {total > 0 ? `${total.toLocaleString()} ${currency}` : '—'}
+                </p>
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                  Base: {baseVal.toLocaleString()} + Establishment: {estCost.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
+  );
+}
+
+function ConfigStatusCard() {
+  const sections = [
+    { key: 'qq360_last_saved_branding',      label: 'Brand'    },
+    { key: 'qq360_last_saved_pricing',        label: 'Pricing'  },
+    { key: 'qq360_last_saved_pdf',            label: 'PDF'      },
+    { key: 'qq360_last_saved_municipalities', label: 'Areas'    },
+    { key: 'qq360_last_saved_questions',      label: 'Questions'},
+  ];
+  const timestamps = sections.map(s => localStorage.getItem(s.key));
+  const count = timestamps.filter(Boolean).length;
+  return (
+    <div style={{ ...CARD, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', gap: '16px' }}>
+        {sections.map((s, i) => (
+          <div key={s.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: timestamps[i] ? '#16a34a' : '#e5e7eb' }} />
+            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+      <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+    </div>
   );
 }
 
@@ -319,6 +410,7 @@ export default function Pricing() {
 
   return (
     <ClientLayout title="Pricing">
+      <ConfigStatusCard />
       <PricingContent clientId={clientId} />
     </ClientLayout>
   );

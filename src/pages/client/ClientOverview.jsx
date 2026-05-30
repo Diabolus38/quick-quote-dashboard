@@ -294,6 +294,18 @@ export default function ClientOverview() {
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{value}</span>
                 </div>
               ))}
+              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => {
+                  const csv = ['Stat Name,Value', ...statsRows.map(r => `"${r.label}","${r.value}"`)].join('\n');
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+                  a.download = `quickquote360-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                }}
+                  style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                  Download Stats
+                </button>
+              </div>
             </div>
           </div>
         );

@@ -61,8 +61,14 @@ export default function Leads() {
       play(520, ctx.currentTime); play(660, ctx.currentTime + 0.15);
     } catch {}
   }
-  const DEFAULT_VIS = new Set(['Date','Name','Email','Municipality','Estimated Price','Status','Actions']);
-  const [visibleCols, setVisibleCols] = useState(DEFAULT_VIS);
+  const DEFAULT_VIS_ARR = ['Date','Name','Email','Municipality','Estimated Price','Status','Actions'];
+  const [visibleCols, setVisibleCols] = useState(() => {
+    try {
+      const saved = localStorage.getItem('qq360_client_leads_columns');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {}
+    return new Set(DEFAULT_VIS_ARR);
+  });
 
   useEffect(() => {
     function onClick(e) { if (!e.target.closest('[data-leads-col-picker]')) setShowColPicker(false); }
@@ -179,7 +185,7 @@ export default function Leads() {
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: '200px' }}>
                 {COLUMNS.map(col => (
                   <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', cursor: 'pointer', fontSize: '13px', color: '#374151', fontFamily: FONT }}>
-                    <input type="checkbox" checked={visibleCols.has(col)} onChange={() => setVisibleCols(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); return next; })} style={{ cursor: 'pointer' }} />
+                    <input type="checkbox" checked={visibleCols.has(col)} onChange={() => setVisibleCols(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); localStorage.setItem('qq360_client_leads_columns', JSON.stringify([...next])); return next; })} style={{ cursor: 'pointer' }} />
                     {col}
                   </label>
                 ))}

@@ -64,6 +64,7 @@ export default function Billing() {
   const [invoiceStatus, setInvoiceStatus] = useState({});
   const [expandedRow,   setExpandedRow]   = useState(null);
   const [paidStatus,    setPaidStatus]    = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_paid_status') || '{}'); } catch { return {}; } });
+  const [ytdLeads,      setYtdLeads]      = useState([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -80,6 +81,16 @@ export default function Billing() {
       setLoading(false);
     }
     fetchData();
+  }, [billingMonth]);
+
+  useEffect(() => {
+    const [year, month] = billingMonth.split('-').map(Number);
+    const ytdStart = new Date(year, 0, 1).toISOString();
+    const ytdEnd   = new Date(year, month, 1).toISOString();
+    supabase.from('leads').select('id, client_id, created_at')
+      .gte('created_at', ytdStart)
+      .lt('created_at', ytdEnd)
+      .then(({ data }) => setYtdLeads(data || []));
   }, [billingMonth]);
 
   useEffect(() => {
@@ -310,6 +321,47 @@ export default function Billing() {
             ))}
           </div>
         </div>
+
+        {/* ── Projected Revenue ── */}
+        {(() => {
+          const projectedAnnual = totalRevenue * 12;
+          const [yearStr] = billingMonth.split('-');
+          const year = Number(yearStr);
+          let ytdTotal = 0;
+          for (let m = 1; m <= selMonthNum; m++) {
+            const monthCounts = {};
+            ytdLeads.forEach(l => {
+              const d = new Date(l.created_at);
+              if (d.getFullYear() === year && d.getMonth() + 1 === m) {
+                monthCounts[l.client_id] = (monthCounts[l.client_id] || 0) + 1;
+              }
+            });
+            clients.forEach(c => {
+              const plan    = c.plan || 'starter';
+              const fee     = PLAN_FEE[plan]     || 300;
+              const limit   = PLAN_LIMIT[plan]   ?? 30;
+              const rate    = OVERAGE_RATE[plan] ?? 25;
+              const used    = monthCounts[c.id] || 0;
+              const overage = limit === Infinity ? 0 : Math.max(0, used - limit);
+              ytdTotal += fee + overage * rate;
+            });
+          }
+          return (
+            <div style={{ ...CARD, marginBottom: '28px', display: 'flex', gap: '48px', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Projected Annual Revenue</p>
+                <p style={{ margin: '0 0 4px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${projectedAnnual.toLocaleString()}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Based on current month performance</p>
+              </div>
+              <div style={{ width: '1px', height: '60px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+              <div>
+                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Year to Date Revenue</p>
+                <p style={{ margin: '0 0 4px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${ytdTotal.toLocaleString()}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Jan–{new Date(year, selMonthNum - 1, 1).toLocaleString('default', { month: 'short' })} {year}</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Billing Table ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>

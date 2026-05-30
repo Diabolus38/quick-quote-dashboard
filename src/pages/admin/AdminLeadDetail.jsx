@@ -26,6 +26,8 @@ const STATUS_COLORS = {
 
 const STATUS_STAGES = ['New', 'Contacted', 'In Progress', 'Closed Won'];
 
+const KEYS_ORDER = ['projectType','wastewaterType','propertyUsage','households','existingSystem','existingTankReusable','tankInspectionRequired','municipalityPlanning','installationType','groundConditions','pipeDepth','excavationRequired','transportHelp','additionalWork'];
+
 const KEY_LABELS = {
   projectType:              'Project Type',
   wastewaterType:           'Wastewater System',
@@ -220,14 +222,20 @@ export default function AdminLeadDetail() {
               {Object.keys(answers).length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>No answers recorded.</p>
               ) : (
-                Object.entries(answers).map(([key, val]) => (
-                  <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
-                    <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>
-                      {KEY_LABELS[key] || key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}
-                    </span>
-                    <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{VALUE_LABELS[String(val)] || String(val)}</span>
-                  </div>
-                ))
+                Object.entries(answers)
+                  .sort(([a], [b]) => {
+                    const ai = KEYS_ORDER.indexOf(a);
+                    const bi = KEYS_ORDER.indexOf(b);
+                    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+                  })
+                  .map(([key, val]) => (
+                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                      <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>
+                        {KEY_LABELS[key] || key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())}
+                      </span>
+                      <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{VALUE_LABELS[String(val)] || String(val)}</span>
+                    </div>
+                  ))
               )}
             </div>
 

@@ -130,10 +130,15 @@ export default function Clients() {
   const [hoveredRow,    setHoveredRow]    = useState(null);
   const [hoveredNote,   setHoveredNote]   = useState(null);
 
-  const [showAdd,      setShowAdd]      = useState(false);
-  const [editClient,   setEditClient]   = useState(null);
-  const [copiedId,     setCopiedId]     = useState(null);
-  const [copiedEmail,  setCopiedEmail]  = useState(null);
+  const [showAdd,          setShowAdd]          = useState(false);
+  const [editClient,       setEditClient]       = useState(null);
+  const [copiedId,         setCopiedId]         = useState(null);
+  const [copiedEmail,      setCopiedEmail]      = useState(null);
+  const [selectedClients,  setSelectedClients]  = useState(new Set());
+  const [sendBulkModal,    setSendBulkModal]    = useState(false);
+  const [bulkSubject,      setBulkSubject]      = useState('');
+  const [bulkBody,         setBulkBody]         = useState('');
+  const [bulkProgress,     setBulkProgress]     = useState(null);
 
   const [search,       setSearch]       = useState('');
   const [planFilter,   setPlanFilter]   = useState('All');
@@ -195,6 +200,29 @@ export default function Clients() {
     const result = await supabase.from('clients').update(payload).eq('id', editClient.id);
     if (!result.error) fetchAll();
     return result;
+  }
+
+  function toggleClientSelect(id) {
+    setSelectedClients(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  async function handleSendBulkEmail() {
+    const selected = clients.filter(c => selectedClients.has(c.id));
+    setBulkProgress({ current: 0, total: selected.length });
+    for (let i = 0; i < selected.length; i++) {
+      const c = selected[i];
+      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: c.email, name: c.name, subject: bulkSubject, body: bulkBody }),
+      });
+      setBulkProgress({ current: i + 1, total: selected.length });
+    }
+    setBulkProgress('done');
   }
 
   async function toggleActive(client) {
@@ -330,11 +358,39 @@ export default function Clients() {
           </select>
         </div>
 
+        {/* ── Bulk Action Bar ── */}
+        {selectedClients.size > 0 && (
+          <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '12px 20px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ color: '#fff', fontSize: '13px', fontWeight: '600' }}>{selectedClients.size} clients selected</span>
+            <div style={{ flex: 1 }} />
+            <button type="button" onClick={() => { setSendBulkModal(true); setBulkProgress(null); setBulkSubject(''); setBulkBody(''); }}
+              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              Send Email to Selected
+            </button>
+            <button type="button" onClick={() => setSelectedClients(new Set())}
+              style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '12px', fontFamily: FONT, padding: 0 }}>
+              Clear
+            </button>
+          </div>
+        )}
+
         {/* ── Table ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
             <thead>
               <tr style={{ backgroundColor: '#fafafa' }}>
+                <th style={{ padding: '12px 16px', borderBottom: '1px solid #e8ede8', width: '40px' }}>
+                  <input type="checkbox"
+                    checked={paginatedClients.length > 0 && paginatedClients.every(c => selectedClients.has(c.id))}
+                    onChange={() => {
+                      if (paginatedClients.every(c => selectedClients.has(c.id))) {
+                        setSelectedClients(new Set());
+                      } else {
+                        setSelectedClients(new Set(paginatedClients.map(c => c.id)));
+                      }
+                    }}
+                    style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
+                </th>
                 {['Client','Website','Plan','Usage','Last Lead','Status','Actions'].map(col => (
                   <th key={col} style={{ textAlign: 'left', padding: '12px 20px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
                 ))}
@@ -342,7 +398,7 @@ export default function Clients() {
             </thead>
             <tbody>
               {paginatedClients.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
+                <tr><td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
               ) : paginatedClients.map((client, i) => {
                 const av       = avatarPalette[i % avatarPalette.length];
                 const pb       = PLAN_BADGE[client.plan] || PLAN_BADGE.starter;
@@ -357,6 +413,13 @@ export default function Clients() {
                     onMouseEnter={() => setHoveredRow(client.id)}
                     onMouseLeave={() => setHoveredRow(null)}
                     style={{ backgroundColor: hoveredRow === client.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
+
+                    <td style={{ padding: '14px 16px' }}>
+                      <input type="checkbox"
+                        checked={selectedClients.has(client.id)}
+                        onChange={() => toggleClientSelect(client.id)}
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
+                    </td>
 
                     {/* Client */}
                     <td style={{ padding: '14px 20px' }}>
@@ -507,6 +570,42 @@ export default function Clients() {
             onClose={() => setEditClient(null)}
             onSave={handleEdit}
           />
+        )}
+
+        {/* ── Send Bulk Email Modal ── */}
+        {sendBulkModal && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '36px', width: '560px', maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', fontFamily: FONT, boxSizing: 'border-box' }}>
+              <h2 style={{ margin: '0 0 24px', fontSize: '20px', fontWeight: '700', color: '#0d1117' }}>Send Email to {selectedClients.size} Clients</h2>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={LBL}>Subject</label>
+                <input type="text" value={bulkSubject} onChange={e => setBulkSubject(e.target.value)} placeholder="Email subject" style={INP} disabled={bulkProgress !== null} />
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={LBL}>Message</label>
+                <textarea value={bulkBody} onChange={e => setBulkBody(e.target.value)} placeholder="Email body" rows={6}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff', resize: 'vertical' }}
+                  disabled={bulkProgress !== null} />
+              </div>
+              {bulkProgress !== null && (
+                <p style={{ fontSize: '13px', color: bulkProgress === 'done' ? '#16a34a' : '#374151', fontWeight: '600', marginBottom: '16px', fontFamily: FONT }}>
+                  {bulkProgress === 'done' ? 'All sent!' : `Sending ${bulkProgress.current} of ${bulkProgress.total}…`}
+                </p>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" onClick={() => { setSendBulkModal(false); setBulkProgress(null); setBulkSubject(''); setBulkBody(''); }}
+                  style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#0d1117', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT, fontWeight: '500' }}>
+                  {bulkProgress === 'done' ? 'Close' : 'Cancel'}
+                </button>
+                {bulkProgress !== 'done' && (
+                  <button type="button" onClick={handleSendBulkEmail} disabled={bulkProgress !== null || !bulkSubject.trim() || !bulkBody.trim()}
+                    style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: (bulkProgress !== null || !bulkSubject.trim() || !bulkBody.trim()) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: bulkProgress !== null ? 0.7 : 1 }}>
+                    Send
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
       </div>
