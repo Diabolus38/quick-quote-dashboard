@@ -365,14 +365,14 @@ export default function SuperAdmin() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f9fbf9' }}>
-                      {['Client','Plan','Estimates Used','Usage Bar','Last Active','Status','Embed','Actions'].map(h => (
+                      {['Client','Plan','Revenue','Estimates Used','Usage Bar','Last Active','Status','Embed','Actions'].map(h => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredClients.length === 0 ? (
-                      <tr><td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found</td></tr>
+                      <tr><td colSpan={9} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found</td></tr>
                     ) : filteredClients.map(client => {
                       const isActive   = client.active !== false;
                       const pb         = planBadge[client.plan] || planBadge.starter;
@@ -403,6 +403,11 @@ export default function SuperAdmin() {
                             <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>
                               {client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : 'Free'}
                             </span>
+                          </td>
+
+                          {/* Revenue */}
+                          <td style={{ ...TD, fontWeight: '700', color: '#0d1117' }}>
+                            ${({ starter: 300, growth: 600, scale: 1149 }[client.plan] || 300).toLocaleString()}/mo
                           </td>
 
                           {/* Estimates Used */}

@@ -54,6 +54,8 @@ function exportBillingCSV(rows) {
 }
 
 export default function Billing() {
+  const _now = new Date();
+  const [billingMonth,  setBillingMonth]  = useState(`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`);
   const [clients,       setClients]       = useState([]);
   const [leads,         setLeads]         = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -63,19 +65,20 @@ export default function Billing() {
 
   useEffect(() => {
     async function fetchData() {
-      const now        = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const [year, month] = billingMonth.split('-').map(Number);
+      const monthStart = new Date(year, month - 1, 1).toISOString();
+      const monthEnd   = new Date(year, month, 1).toISOString();
 
       const [clientsRes, leadsRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
-        supabase.from('leads').select('id, client_id, created_at').gte('created_at', monthStart),
+        supabase.from('leads').select('id, client_id, created_at').gte('created_at', monthStart).lt('created_at', monthEnd),
       ]);
       setClients(clientsRes.data || []);
       setLeads(leadsRes.data   || []);
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [billingMonth]);
 
   useEffect(() => {
     const sixMonthsAgo = new Date();
@@ -200,15 +203,22 @@ export default function Billing() {
       <div style={{ fontFamily: FONT }}>
 
         {/* ── Header ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', gap: '16px', flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Billing</h1>
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Revenue tracking and invoice management</p>
           </div>
-          <button type="button" onClick={() => exportBillingCSV(billingRows)}
-            style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            ↓ Export Report
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '600', color: '#374151', fontFamily: FONT, whiteSpace: 'nowrap' }}>Billing Period</label>
+              <input type="month" value={billingMonth} onChange={e => setBillingMonth(e.target.value)}
+                style={{ border: '1px solid #d1d5db', borderRadius: '10px', padding: '8px 12px', fontSize: '13px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff', cursor: 'pointer' }} />
+            </div>
+            <button type="button" onClick={() => exportBillingCSV(billingRows)}
+              style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              ↓ Export Report
+            </button>
+          </div>
         </div>
 
         {/* ── Stat Cards ── */}

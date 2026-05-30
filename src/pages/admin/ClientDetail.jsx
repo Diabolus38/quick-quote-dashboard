@@ -96,8 +96,9 @@ export default function ClientDetail() {
   const [loading,  setLoading]  = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [notes,      setNotes]      = useState('');
-  const [notesSaved, setNotesSaved] = useState(false);
+  const [notes,        setNotes]        = useState('');
+  const [notesSaved,   setNotesSaved]   = useState(false);
+  const [notesHistory, setNotesHistory] = useState([]);
 
   const [copiedEmbed,  setCopiedEmbed]  = useState(false);
   const [copiedId,     setCopiedId]     = useState(false);
@@ -121,6 +122,10 @@ export default function ClientDetail() {
     setChangePlan(clientData.plan || 'starter');
     setLeads(leadsData || []);
     setLastActivity(profileData?.updated_at || null);
+    try {
+      const stored = localStorage.getItem('qq360_notes_history_' + id);
+      setNotesHistory(stored ? JSON.parse(stored) : []);
+    } catch { setNotesHistory([]); }
     setLoading(false);
   }
 
@@ -132,6 +137,10 @@ export default function ClientDetail() {
 
   async function handleSaveNotes() {
     await supabase.from('clients').update({ notes }).eq('id', id);
+    const entry = { text: notes, savedAt: new Date().toISOString() };
+    const updated = [entry, ...notesHistory].slice(0, 5);
+    setNotesHistory(updated);
+    localStorage.setItem('qq360_notes_history_' + id, JSON.stringify(updated));
     setNotesSaved(true);
     setTimeout(() => setNotesSaved(false), 2000);
   }
@@ -309,6 +318,29 @@ export default function ClientDetail() {
                 </button>
                 {notesSaved && <span style={{ fontSize: '13px', color: '#166534', fontWeight: '600' }}>✓ Saved!</span>}
               </div>
+              {notesHistory.length > 0 && (
+                <div style={{ marginTop: '18px', borderTop: '1px solid #f4f6f4', paddingTop: '14px' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Notes History</p>
+                  {notesHistory.map((item, i) => {
+                    const d = new Date(item.savedAt);
+                    const ts = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    return (
+                      <div key={i} style={{ padding: '10px 0', borderBottom: i < notesHistory.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ margin: '0 0 3px', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{ts}</p>
+                            <p style={{ margin: 0, fontSize: '12px', color: '#374151', fontFamily: FONT, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{item.text || '(empty)'}</p>
+                          </div>
+                          <button type="button" onClick={() => setNotes(item.text)}
+                            style={{ flexShrink: 0, border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '6px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer', fontFamily: FONT }}>
+                            Restore
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Recent Leads */}

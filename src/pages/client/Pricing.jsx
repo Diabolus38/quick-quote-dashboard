@@ -116,12 +116,36 @@ function PricingContent({ clientId, initialPricing }) {
   const [rotPercent,  setRotPercent] = useState(String(p.rot_percentage ?? 30));
   const [currency,    setCurrency]   = useState(p.currency || 'SEK');
   const [saveMsg, flash] = useSaveMsg();
+  const [resetMsg, setResetMsg] = useState('');
 
   function updateGrid(ri, ci, val) {
     setBaseGrid(prev => prev.map((row, r) => r === ri ? { ...row, values: row.values.map((v, c) => c === ci ? val : v) } : row));
   }
   function updateList(setter, idx, val) {
     setter(prev => prev.map((item, i) => i === idx ? { ...item, value: val } : item));
+  }
+
+  async function handleReset() {
+    if (!window.confirm('Reset all pricing to zero? This will clear all your pricing data.')) return;
+    const zero5 = Object.fromEntries(hh.map(h => [h, 0]));
+    setBaseGrid(prev => prev.map(row => ({ ...row, values: hh.map(() => '0') })));
+    setFixedCosts(prev => prev.map(item => ({ ...item, value: '0' })));
+    setPerMeter(prev => prev.map(item => ({ ...item, value: '0' })));
+    setAddOns(prev => prev.map(item => ({ ...item, value: '0' })));
+    setRotEnabled(false);
+    setRotPercent('30');
+    setCurrency('SEK');
+    await supabase.from('client_pricing').update({
+      base_prices: { bdt: zero5, wc: zero5, wc_bdt: zero5 },
+      fixed_costs: Object.fromEntries(fixedCosts.map(i => [i.key, 0])),
+      per_meter_costs: Object.fromEntries(perMeter.map(i => [i.key, 0])),
+      addons: Object.fromEntries(addOns.map(i => [i.key, 0])),
+      rot_enabled: false,
+      rot_percentage: 30,
+      currency: 'SEK',
+    }).eq('client_id', clientId);
+    setResetMsg('Reset complete');
+    setTimeout(() => setResetMsg(''), 2000);
   }
 
   async function handleSave() {
@@ -199,7 +223,16 @@ function PricingContent({ clientId, initialPricing }) {
         </FieldRow>
       </SettingsCard>
 
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {resetMsg && <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{resetMsg}</span>}
+          <button type="button" onClick={handleReset}
+            style={{ backgroundColor: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+            Reset to Defaults
+          </button>
+        </div>
+        <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      </div>
     </>
   );
 }

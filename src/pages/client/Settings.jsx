@@ -165,6 +165,8 @@ function EmailSection({ clientId, initialSettings }) {
   const [subject,      setSubject]      = useState(es.subject        || '');
   const [footerText,   setFooterText]   = useState(es.footer_text   || '');
   const [saveMsg, flash] = useSaveMsg();
+  const [testMsg,      setTestMsg]      = useState('');
+  const [testSending,  setTestSending]  = useState(false);
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -172,6 +174,28 @@ function EmailSection({ clientId, initialSettings }) {
       { onConflict: 'client_id' }
     );
     flash();
+  }
+
+  async function handleTestEmail() {
+    if (!replyTo) return;
+    setTestSending(true);
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: replyTo,
+          name: fromName,
+          subject: 'Test Email from QuickQuote360',
+          body: `This is a test email to confirm your email settings are working correctly. From Name: ${fromName}. Reply-To: ${replyTo}. If you received this email your settings are configured correctly.`,
+        }),
+      });
+      setTestMsg(res.ok ? 'Test email sent!' : 'Failed to send');
+    } catch {
+      setTestMsg('Failed to send');
+    }
+    setTestSending(false);
+    setTimeout(() => setTestMsg(''), 3000);
   }
 
   return (
@@ -197,6 +221,14 @@ function EmailSection({ clientId, initialSettings }) {
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+        <button type="button" onClick={handleTestEmail} disabled={testSending || !replyTo}
+          style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: (testSending || !replyTo) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: !replyTo ? 0.5 : 1 }}>
+          {testSending ? 'Sending…' : 'Send Test Email'}
+        </button>
+        {testMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: testMsg.includes('sent') ? '#16a34a' : '#dc2626', fontFamily: FONT }}>{testMsg}</span>}
+      </div>
     </>
   );
 }

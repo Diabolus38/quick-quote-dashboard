@@ -102,6 +102,7 @@ export default function AllLeads() {
   const [currentPage,   setCurrentPage]   = useState(1);
   const [selectedLeads, setSelectedLeads] = useState(new Set());
   const [bulkStatus,    setBulkStatus]    = useState('new');
+  const [previewLead,   setPreviewLead]   = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -394,7 +395,7 @@ export default function AllLeads() {
                         </td>
 
                         <td style={{ padding: '12px 16px' }}>
-                          <button type="button" onClick={() => navigate(`/admin/leads/${lead.id}`)}
+                          <button type="button" onClick={() => setPreviewLead(lead)}
                             style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', backgroundColor: '#ecfccb', color: '#3f6212', border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: FONT }}>
                             View
                           </button>
@@ -428,6 +429,56 @@ export default function AllLeads() {
         )}
 
       </div>
+
+      {/* ── Lead Preview Panel ── */}
+      {previewLead && (
+        <>
+          <div onClick={() => setPreviewLead(null)}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 199 }} />
+          <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100vh', backgroundColor: '#fff', zIndex: 200, boxShadow: '-4px 0 32px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', fontFamily: FONT, overflowY: 'auto' }}>
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div>
+                <p style={{ margin: '0 0 2px', fontSize: '18px', fontWeight: '700', color: '#0d1117' }}>{previewLead.name || '—'}</p>
+                <p style={{ margin: 0, fontSize: '12.5px', color: '#9ca3af' }}>Lead Preview</p>
+              </div>
+              <button type="button" onClick={() => setPreviewLead(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#9ca3af', padding: '4px', lineHeight: 1, fontFamily: FONT }}>×</button>
+            </div>
+            <div style={{ padding: '24px 28px', flex: 1 }}>
+              {(() => {
+                const rawStatus = (previewLead.status || 'new').toLowerCase().replace(/\s+/g, '_');
+                const sc = STATUS_COLORS[rawStatus] || { bg: '#f3f4f6', color: '#6b7280', label: previewLead.status || 'New' };
+                return (
+                  <div style={{ marginBottom: '20px' }}>
+                    <span style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', backgroundColor: sc.bg, color: sc.color }}>{sc.label}</span>
+                  </div>
+                );
+              })()}
+              {[
+                { label: 'Email',        value: previewLead.email || '—' },
+                { label: 'Phone',        value: previewLead.phone || '—' },
+                { label: 'Date',         value: formatDate(previewLead.created_at) },
+                { label: 'Client',       value: clientMap[previewLead.client_id]?.name || '—' },
+                { label: 'Municipality', value: previewLead.municipality || '—' },
+                { label: 'System Type',  value: previewLead.answers?.wastewaterType || '—' },
+                { label: 'Language',     value: previewLead.language || '—' },
+                { label: 'Est. Price',   value: previewLead.estimated_price != null ? `${Number(previewLead.estimated_price).toLocaleString()} kr` : '—' },
+              ].map(({ label, value }, idx, arr) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: idx < arr.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>{label}</span>
+                  <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500', textAlign: 'right', maxWidth: '60%', wordBreak: 'break-word' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '20px 28px', borderTop: '1px solid #e8ede8', flexShrink: 0 }}>
+              <button type="button" onClick={() => navigate(`/admin/leads/${previewLead.id}`)}
+                style={{ width: '100%', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '11px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                View Full Details →
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </Layout>
   );
 }

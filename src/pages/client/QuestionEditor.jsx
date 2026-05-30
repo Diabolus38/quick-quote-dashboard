@@ -57,6 +57,8 @@ export default function QuestionEditor() {
   const [error,       setError]       = useState('');
   const [hasChanges,  setHasChanges]  = useState(false);
   const [searchQ,     setSearchQ]     = useState('');
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewLang, setPreviewLang] = useState('en');
 
   /* ── Load ── */
   useEffect(() => {
@@ -123,75 +125,120 @@ export default function QuestionEditor() {
       <div style={{ fontFamily: FONT }}>
 
         {/* Page header */}
-        <div style={{ marginBottom: '28px' }}>
-          <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Question Editor</h1>
-          <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Customize the labels and helper text for each estimator question.</p>
+        <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Question Editor</h1>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Customize the labels and helper text for each estimator question.</p>
+          </div>
+          <button type="button" onClick={() => setPreviewMode(p => !p)}
+            style={{ padding: '9px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: previewMode ? PRIMARY : '#fff', color: previewMode ? '#fff' : PRIMARY, border: `1px solid ${PRIMARY}`, cursor: 'pointer', fontFamily: FONT, flexShrink: 0 }}>
+            {previewMode ? 'Exit Preview' : 'Preview Mode'}
+          </button>
         </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#9ca3af', fontSize: '14px' }}>Loading questions…</div>
         ) : (
           <>
-            <div style={{ marginBottom: '16px' }}>
-              <input type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search questions..."
-                style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', height: '42px', fontSize: '13.5px', backgroundColor: '#fff', color: '#0d1117', outline: 'none', fontFamily: FONT }} />
-            </div>
+            {!previewMode && (
+              <div style={{ marginBottom: '16px' }}>
+                <input type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search questions..."
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', height: '42px', fontSize: '13.5px', backgroundColor: '#fff', color: '#0d1117', outline: 'none', fontFamily: FONT }} />
+              </div>
+            )}
 
-            <SaveBar />
-
-            {QUESTION_DEFS.filter(({ label }) => !searchQ || label.toLowerCase().includes(searchQ.toLowerCase())).map(({ key, label }, idx) => {
-              const q = questions[key] || makeDefault(key);
-              return (
-                <div key={key} style={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '22px 24px', marginBottom: '14px' }}>
-
-                  {/* Card header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{label}</span>
-                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#d1d5db', fontFamily: FONT }}>#{idx + 1}</span>
-                    </div>
-
-                    {/* Visible toggle */}
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <div onClick={() => update(key, 'visible', !q.visible)}
-                        style={{ width: '40px', height: '22px', borderRadius: '11px', backgroundColor: q.visible ? PRIMARY : '#e5e7eb', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background-color 0.2s' }}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: q.visible ? '21px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
-                      </div>
-                      <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>Visible</span>
-                    </label>
-                  </div>
-
-                  {/* 4-column language grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                    {LANGS.map(lang => (
-                      <div key={lang.code} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT, marginBottom: '2px' }}>{lang.name}</div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500', fontFamily: FONT }}>Label</div>
-                          <input type="text" placeholder={`Label in ${lang.name}`}
-                            value={q[`label_${lang.code}`] || ''}
-                            onChange={e => update(key, `label_${lang.code}`, e.target.value)}
-                            style={inputStyle} />
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500', fontFamily: FONT }}>Helper text</div>
-                          <input type="text" placeholder={`Helper in ${lang.name}`}
-                            value={q[`helper_${lang.code}`] || ''}
-                            onChange={e => update(key, `helper_${lang.code}`, e.target.value)}
-                            style={inputStyle} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {previewMode ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>Preview language:</span>
+                  {LANGS.map(lang => (
+                    <button key={lang.code} type="button" onClick={() => setPreviewLang(lang.code)}
+                      style={{ padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', border: '1px solid', borderColor: previewLang === lang.code ? PRIMARY : '#e8ede8', backgroundColor: previewLang === lang.code ? PRIMARY : '#fff', color: previewLang === lang.code ? '#fff' : '#374151', cursor: 'pointer', fontFamily: FONT }}>
+                      {lang.name}
+                    </button>
+                  ))}
                 </div>
-              );
-            })}
+                {QUESTION_DEFS.map(({ key, label }, idx) => {
+                  const q = questions[key] || makeDefault(key);
+                  const displayLabel  = q[`label_${previewLang}`]  || label;
+                  const displayHelper = q[`helper_${previewLang}`] || '';
+                  return (
+                    <div key={key} style={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '18px 24px', marginBottom: '10px', opacity: q.visible ? 1 : 0.5 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: displayHelper ? '4px' : 0 }}>
+                            <span style={{ fontSize: '14px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{displayLabel}</span>
+                            <span style={{ fontSize: '11px', fontWeight: '600', color: '#d1d5db', fontFamily: FONT }}>#{idx + 1}</span>
+                          </div>
+                          {displayHelper && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{displayHelper}</p>}
+                        </div>
+                        {!q.visible && (
+                          <span style={{ fontSize: '11px', fontWeight: '600', backgroundColor: '#fee2e2', color: '#991b1b', padding: '3px 10px', borderRadius: '20px', flexShrink: 0, fontFamily: FONT }}>Hidden</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                <SaveBar />
 
-            <SaveBar mt />
+                {QUESTION_DEFS.filter(({ label }) => !searchQ || label.toLowerCase().includes(searchQ.toLowerCase())).map(({ key, label }, idx) => {
+                  const q = questions[key] || makeDefault(key);
+                  return (
+                    <div key={key} style={{ backgroundColor: '#fff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '22px 24px', marginBottom: '14px' }}>
 
-            {hasChanges && (
+                      {/* Card header */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{label}</span>
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: '#d1d5db', fontFamily: FONT }}>#{idx + 1}</span>
+                        </div>
+
+                        {/* Visible toggle */}
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                          <div onClick={() => update(key, 'visible', !q.visible)}
+                            style={{ width: '40px', height: '22px', borderRadius: '11px', backgroundColor: q.visible ? PRIMARY : '#e5e7eb', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background-color 0.2s' }}>
+                            <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: q.visible ? '21px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+                          </div>
+                          <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>Visible</span>
+                        </label>
+                      </div>
+
+                      {/* 4-column language grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                        {LANGS.map(lang => (
+                          <div key={lang.code} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT, marginBottom: '2px' }}>{lang.name}</div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500', fontFamily: FONT }}>Label</div>
+                              <input type="text" placeholder={`Label in ${lang.name}`}
+                                value={q[`label_${lang.code}`] || ''}
+                                onChange={e => update(key, `label_${lang.code}`, e.target.value)}
+                                style={inputStyle} />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500', fontFamily: FONT }}>Helper text</div>
+                              <input type="text" placeholder={`Helper in ${lang.name}`}
+                                value={q[`helper_${lang.code}`] || ''}
+                                onChange={e => update(key, `helper_${lang.code}`, e.target.value)}
+                                style={inputStyle} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <SaveBar mt />
+              </>
+            )}
+
+            {hasChanges && !previewMode && (
               <div style={{ position: 'fixed', bottom: 0, left: '240px', right: 0, backgroundColor: '#ffffff', borderTop: '1px solid #e8ede8', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -2px 12px rgba(0,0,0,0.06)', fontFamily: FONT }}>
                 <span style={{ fontSize: '13px', color: '#9ca3af' }}>You have unsaved changes</span>
                 <button type="button" onClick={handleSave} disabled={saving}
