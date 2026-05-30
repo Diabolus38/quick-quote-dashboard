@@ -150,8 +150,8 @@ export default function AdminOverview() {
     <Layout title="Dashboard">
       <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
       <div style={{ fontFamily: FONT }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
-          {[0,1,2,3].map(i => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '20px' }}>
+          {[0,1,2,3,4].map(i => (
             <div key={i} style={{ borderRadius: '16px', background: '#f0f0f0', height: '120px', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ))}
         </div>
@@ -178,7 +178,7 @@ export default function AdminOverview() {
         </div>
 
         {/* ── Row 1: KPI Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '20px' }}>
 
           <div style={CARD}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '22px', fontWeight: '800', color: LIME }}>$</div>
@@ -206,6 +206,13 @@ export default function AdminOverview() {
             <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>All Time Leads</p>
             <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{totalLeads}</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>across all clients</p>
+          </div>
+
+          <div style={CARD}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '20px', color: '#7c3aed' }}>▤</div>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Leads This Month</p>
+            <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#7c3aed', letterSpacing: '-0.5px', lineHeight: 1 }}>{leadsThisMonth}</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>current calendar month</p>
           </div>
         </div>
 

@@ -126,9 +126,9 @@ function MunicipalitiesContent({ clientId, initialMunicipalities, initialSetting
           ) : covered.map(c => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
               <span style={{ flex: 1, fontSize: '13.5px', color: '#0d1117', fontWeight: '500', fontFamily: FONT }}>{c.municipality}</span>
-              {[1, 2].map(z => (
+              {[1, 2, 3].map(z => (
                 <button key={z} type="button" onClick={() => changeZone(c.id, z)}
-                  style={{ padding: '4px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, border: c.zone === z ? 'none' : '1px solid #e8ede8', backgroundColor: c.zone === z ? (z === 1 ? PRIMARY : '#1d4ed8') : '#fff', color: c.zone === z ? '#fff' : '#6b7280' }}>
+                  style={{ padding: '4px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, border: c.zone === z ? 'none' : '1px solid #e8ede8', backgroundColor: c.zone === z ? (z === 1 ? PRIMARY : z === 2 ? '#1d4ed8' : '#7c3aed') : '#fff', color: c.zone === z ? '#fff' : '#6b7280' }}>
                   Zone {z}
                 </button>
               ))}

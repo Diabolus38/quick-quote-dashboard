@@ -253,6 +253,31 @@ export default function SuperAdmin() {
     if (!ex || new Date(l.created_at) > new Date(ex)) lastActivePerClient[l.client_id] = l.created_at;
   });
 
+  const leadsThisMonthPerClient = {};
+  leads.forEach(l => {
+    const d = new Date(l.created_at);
+    if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+      leadsThisMonthPerClient[l.client_id] = (leadsThisMonthPerClient[l.client_id] || 0) + 1;
+    }
+  });
+
+  const PLAN_LIMIT_SA = { starter: 30, growth: 75, scale: Infinity };
+  const systemAlerts = [];
+  clients.forEach(c => {
+    const planLimit = PLAN_LIMIT_SA[c.plan] || 30;
+    const thisMonthCount = leadsThisMonthPerClient[c.id] || 0;
+    if (planLimit !== Infinity && thisMonthCount / planLimit >= 0.9) {
+      const pct = Math.round((thisMonthCount / planLimit) * 100);
+      systemAlerts.push({ msg: `⚠ ${c.name} is at ${pct}% of their ${c.plan} limit`, borderColor: '#d97706' });
+    }
+    if (c.active === false) {
+      systemAlerts.push({ msg: `● ${c.name} account is inactive`, borderColor: '#1d4ed8' });
+    }
+    if ((leadCountPerClient[c.id] || 0) === 0) {
+      systemAlerts.push({ msg: `→ ${c.name} has no leads yet — they may need help with setup`, borderColor: '#9ca3af' });
+    }
+  });
+
   const clientMap = {};
   clients.forEach(c => { clientMap[c.id] = c.name; });
 
@@ -580,6 +605,18 @@ export default function SuperAdmin() {
                   <QuickActionBtn key={i} label={btn.label} icon={btn.icon} onClick={btn.action} />
                 ))}
               </div>
+            </div>
+
+            {/* ── ROW 5: System Alerts ── */}
+            <div style={{ ...CARD, marginTop: '24px' }}>
+              <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>System Alerts</p>
+              {systemAlerts.length === 0 ? (
+                <p style={{ margin: 0, fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>✓ No alerts — all systems normal</p>
+              ) : systemAlerts.map((alert, i) => (
+                <div key={i} style={{ borderLeft: `4px solid ${alert.borderColor}`, backgroundColor: '#fff', borderRadius: '8px', padding: '12px 16px', marginBottom: '8px', fontSize: '13px', color: '#0d1117', fontFamily: FONT, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  {alert.msg}
+                </div>
+              ))}
             </div>
           </>
         )}

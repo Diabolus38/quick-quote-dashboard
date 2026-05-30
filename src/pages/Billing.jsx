@@ -81,13 +81,14 @@ export default function Billing() {
   }, [billingMonth]);
 
   useEffect(() => {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-    sixMonthsAgo.setDate(1);
-    sixMonthsAgo.setHours(0, 0, 0, 0);
-    supabase.from('leads').select('id, client_id, created_at').gte('created_at', sixMonthsAgo.toISOString())
+    const [selYear, selMonthNum] = billingMonth.split('-').map(Number);
+    const windowStart = new Date(selYear, selMonthNum - 6, 1);
+    const windowEnd   = new Date(selYear, selMonthNum, 1);
+    supabase.from('leads').select('id, client_id, created_at')
+      .gte('created_at', windowStart.toISOString())
+      .lt('created_at', windowEnd.toISOString())
       .then(({ data }) => setChartLeads(data || []));
-  }, []);
+  }, [billingMonth]);
 
   async function sendInvoice(row) {
     setInvoiceStatus(prev => ({ ...prev, [row.id]: 'sending' }));
@@ -138,14 +139,14 @@ export default function Billing() {
     };
   });
 
-  /* ── Revenue chart data (last 6 months) ── */
-  const now2 = new Date();
+  /* ── Revenue chart data (6 months ending at selected billing month) ── */
+  const [selYear, selMonthNum] = billingMonth.split('-').map(Number);
   const chartMonths = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now2.getFullYear(), now2.getMonth() - (5 - i), 1);
-    return { year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString('default', { month: 'short' }) };
+    const d = new Date(selYear, selMonthNum - 1 - (5 - i), 1);
+    return { year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString('default', { month: 'short' }), isSelected: i === 5 };
   });
 
-  const chartData = chartMonths.map(({ year, month, label }) => {
+  const chartData = chartMonths.map(({ year, month, label, isSelected }) => {
     const leadsInMonth = {};
     chartLeads.forEach(l => {
       const d = new Date(l.created_at);
@@ -162,7 +163,7 @@ export default function Billing() {
       const overage = limit === Infinity ? 0 : Math.max(0, used - limit);
       return sum + fee + overage * rate;
     }, 0);
-    return { label, total };
+    return { label, total, isSelected };
   });
 
   const maxChartTotal = Math.max(...chartData.map(d => d.total), 1);
@@ -236,14 +237,15 @@ export default function Billing() {
         <div style={{ ...CARD, marginBottom: '28px' }}>
           <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Revenue Last 6 Months</p>
           <div style={{ display: 'flex', alignItems: 'flex-end', height: '140px', gap: '8px' }}>
-            {chartData.map(({ label, total }) => {
+            {chartData.map(({ label, total, isSelected }) => {
               const heightPct = total > 0 ? Math.max(Math.round((total / maxChartTotal) * 100), 4) : 0;
+              const barHeight = isSelected ? Math.min(heightPct * 1.1, 100) : heightPct;
               return (
                 <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-                  <span style={{ fontSize: '10px', fontWeight: '700', color: '#374151', marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '700', color: isSelected ? '#3f6212' : '#374151', marginBottom: '4px', whiteSpace: 'nowrap' }}>
                     {total > 0 ? `$${total.toLocaleString()}` : ''}
                   </span>
-                  <div style={{ width: '100%', height: `${heightPct}%`, backgroundColor: PRIMARY, borderRadius: '6px 6px 2px 2px', minHeight: heightPct > 0 ? '4px' : '0' }} />
+                  <div style={{ width: '100%', height: `${barHeight}%`, backgroundColor: isSelected ? '#a3e635' : PRIMARY, borderRadius: '6px 6px 2px 2px', minHeight: barHeight > 0 ? '4px' : '0' }} />
                 </div>
               );
             })}

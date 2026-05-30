@@ -113,6 +113,12 @@ function BrandingSection({ clientId, initialSettings }) {
               onChange={e => { setColorHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setPrimaryColor(e.target.value); }}
               style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
           </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            {['#166534', '#1d4ed8', '#7c3aed', '#dc2626', '#d97706', '#0e7490'].map(color => (
+              <div key={color} onClick={() => { setPrimaryColor(color); setColorHex(color); }}
+                style={{ width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', backgroundColor: color, border: `2px solid ${primaryColor === color ? '#0d1117' : 'transparent'}` }} />
+            ))}
+          </div>
         </FieldRow>
 
         <FieldRow label="Logo URL">
@@ -294,10 +300,12 @@ function LanguagesSection({ clientId, initialSettings }) {
 /* ── 4. Embed Code ───────────────────────────────────────────── */
 
 function EmbedCodeSection({ clientId }) {
-  const [copied,       setCopied]       = useState(false);
-  const [copiedIframe, setCopiedIframe] = useState(false);
-  const scriptTag  = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
-  const iframeTag  = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
+  const [copied,        setCopied]        = useState(false);
+  const [copiedIframe,  setCopiedIframe]  = useState(false);
+  const [copiedWP,      setCopiedWP]      = useState(false);
+  const scriptTag    = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
+  const iframeTag    = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
+  const shortcodeTag = `[quickquote360 client_id="${clientId || 'CLIENT_ID_HERE'}"]`;
 
   function handleCopy() {
     navigator.clipboard.writeText(scriptTag).then(() => {
@@ -310,6 +318,13 @@ function EmbedCodeSection({ clientId }) {
     navigator.clipboard.writeText(iframeTag).then(() => {
       setCopiedIframe(true);
       setTimeout(() => setCopiedIframe(false), 2000);
+    });
+  }
+
+  function handleCopyWP() {
+    navigator.clipboard.writeText(shortcodeTag).then(() => {
+      setCopiedWP(true);
+      setTimeout(() => setCopiedWP(false), 2000);
     });
   }
 
@@ -344,6 +359,20 @@ function EmbedCodeSection({ clientId }) {
         </button>
         <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
           Paste this before the closing <code style={{ backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}>&lt;/body&gt;</code> tag on your website.
+        </p>
+
+        <p style={{ margin: '24px 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>WordPress Shortcode</p>
+        <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '20px', marginBottom: '14px', overflowX: 'auto' }}>
+          <code style={{ fontSize: '13px', color: LIME, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.6' }}>
+            {shortcodeTag}
+          </code>
+        </div>
+        <button type="button" onClick={handleCopyWP}
+          style={{ backgroundColor: copiedWP ? '#ecfccb' : PRIMARY, color: copiedWP ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '10px' }}>
+          {copiedWP ? 'Copied!' : 'Copy Shortcode'}
+        </button>
+        <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
+          Requires the QuickQuote360 WordPress plugin. Contact support to get the plugin.
         </p>
       </div>
     </>

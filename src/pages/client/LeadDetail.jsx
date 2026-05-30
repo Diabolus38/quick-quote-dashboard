@@ -147,7 +147,7 @@ export default function LeadDetail() {
   if (notFound) return <ClientLayout title="Lead Detail"><div style={{ textAlign: 'center', padding: '80px', color: '#dc2626', fontSize: '14px', fontFamily: FONT }}>Lead not found.</div></ClientLayout>;
 
   const answers  = lead.answers || {};
-  const stageIdx = STATUS_STAGES.indexOf(lead.status);
+  const stageIdx = STATUS_STAGES.indexOf(lead.status?.trim());
   const isLost   = lead.status === 'Closed Lost';
 
   return (

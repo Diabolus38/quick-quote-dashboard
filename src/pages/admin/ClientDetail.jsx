@@ -100,12 +100,14 @@ export default function ClientDetail() {
   const [notesSaved,   setNotesSaved]   = useState(false);
   const [notesHistory, setNotesHistory] = useState([]);
 
-  const [copiedEmbed,  setCopiedEmbed]  = useState(false);
-  const [copiedId,     setCopiedId]     = useState(false);
-  const [resetMsg,     setResetMsg]     = useState('');
-  const [changePlan,   setChangePlan]   = useState('');
-  const [planSaved,    setPlanSaved]    = useState(false);
-  const [lastActivity, setLastActivity] = useState(null);
+  const [copiedEmbed,    setCopiedEmbed]    = useState(false);
+  const [copiedId,       setCopiedId]       = useState(false);
+  const [resetMsg,       setResetMsg]       = useState('');
+  const [welcomeMsg,     setWelcomeMsg]     = useState('');
+  const [sendingWelcome, setSendingWelcome] = useState(false);
+  const [changePlan,     setChangePlan]     = useState('');
+  const [planSaved,      setPlanSaved]      = useState(false);
+  const [lastActivity,   setLastActivity]   = useState(null);
 
   useEffect(() => { fetchData(); }, [id]);
 
@@ -151,6 +153,27 @@ export default function ClientDetail() {
     });
     setResetMsg(error ? 'Failed to send reset email.' : `Reset email sent to ${client.email}`);
     setTimeout(() => setResetMsg(''), 3000);
+  }
+
+  async function handleSendWelcome() {
+    setSendingWelcome(true);
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: client.email,
+          name: client.name,
+          subject: 'Welcome to QuickQuote360',
+          body: `Hi ${client.name}, welcome to QuickQuote360! Your account has been set up and you can now log in at https://dashboard.quickquote360.com. Your embed code is ready — log in to find it under Settings. If you need help getting started contact support@quickquote360.com. Welcome aboard!`,
+        }),
+      });
+      setWelcomeMsg(res.ok ? 'Sent!' : 'Failed');
+    } catch {
+      setWelcomeMsg('Failed');
+    }
+    setSendingWelcome(false);
+    setTimeout(() => setWelcomeMsg(''), 3000);
   }
 
   async function handleSavePlan() {
@@ -432,6 +455,11 @@ export default function ClientDetail() {
             {/* Actions */}
             <div style={{ ...CARD, marginTop: '16px' }}>
               <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Actions</p>
+
+              <button type="button" onClick={handleSendWelcome} disabled={sendingWelcome} style={{ ...BTN_SECONDARY, opacity: sendingWelcome ? 0.6 : 1 }}>
+                {sendingWelcome ? 'Sending…' : 'Send Welcome Email'}
+              </button>
+              {welcomeMsg && <p style={{ fontSize: '12px', color: welcomeMsg === 'Sent!' ? '#16a34a' : '#dc2626', marginBottom: '8px', fontFamily: FONT }}>{welcomeMsg}</p>}
 
               <button type="button" onClick={handleSendReset} style={BTN_SECONDARY}>
                 Send Password Reset Email

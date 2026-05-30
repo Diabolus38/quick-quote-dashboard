@@ -123,9 +123,10 @@ function ClientModal({ title, initial, onClose, onSave }) {
 export default function Clients() {
   const navigate = useNavigate();
 
-  const [clients,    setClients]    = useState([]);
-  const [leadCounts, setLeadCounts] = useState({});
-  const [loading,    setLoading]    = useState(true);
+  const [clients,       setClients]       = useState([]);
+  const [leadCounts,    setLeadCounts]    = useState({});
+  const [lastLeadDates, setLastLeadDates] = useState({});
+  const [loading,       setLoading]       = useState(true);
   const [hoveredRow, setHoveredRow] = useState(null);
 
   const [showAdd,    setShowAdd]    = useState(false);
@@ -144,12 +145,17 @@ export default function Clients() {
     setLoading(true);
     const [{ data: clientData }, { data: leadsData }] = await Promise.all([
       supabase.from('clients').select('*').order('created_at', { ascending: false }),
-      supabase.from('leads').select('client_id'),
+      supabase.from('leads').select('client_id, created_at'),
     ]);
     setClients(clientData || []);
     const counts = {};
-    (leadsData || []).forEach(l => { counts[l.client_id] = (counts[l.client_id] || 0) + 1; });
+    const lastDates = {};
+    (leadsData || []).forEach(l => {
+      counts[l.client_id] = (counts[l.client_id] || 0) + 1;
+      if (!lastDates[l.client_id] || l.created_at > lastDates[l.client_id]) lastDates[l.client_id] = l.created_at;
+    });
     setLeadCounts(counts);
+    setLastLeadDates(lastDates);
     setLoading(false);
   }
 
@@ -323,20 +329,22 @@ export default function Clients() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
             <thead>
               <tr style={{ backgroundColor: '#fafafa' }}>
-                {['Client','Website','Plan','Leads','Usage','Status','Actions'].map(col => (
+                {['Client','Website','Plan','Leads','Usage','Last Lead','Status','Actions'].map(col => (
                   <th key={col} style={{ textAlign: 'left', padding: '12px 20px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {paginatedClients.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
+                <tr><td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
               ) : paginatedClients.map((client, i) => {
-                const av      = avatarPalette[i % avatarPalette.length];
-                const pb      = PLAN_BADGE[client.plan] || PLAN_BADGE.starter;
+                const av       = avatarPalette[i % avatarPalette.length];
+                const pb       = PLAN_BADGE[client.plan] || PLAN_BADGE.starter;
                 const isActive = client.active !== false;
-                const count   = leadCounts[client.id] || 0;
+                const count    = leadCounts[client.id] || 0;
                 const isCopied = copiedId === client.id;
+                const lastLeadRaw = lastLeadDates[client.id];
+                const lastLeadStr = lastLeadRaw ? (() => { const d = new Date(lastLeadRaw); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : 'Never';
 
                 return (
                   <tr key={client.id}
@@ -381,6 +389,9 @@ export default function Clients() {
 
                     {/* Usage */}
                     <td style={{ padding: '14px 20px' }}><UsageBar count={count} plan={client.plan} /></td>
+
+                    {/* Last Lead */}
+                    <td style={{ padding: '14px 20px', fontSize: '13px', color: lastLeadRaw ? '#0d1117' : '#9ca3af', whiteSpace: 'nowrap' }}>{lastLeadStr}</td>
 
                     {/* Status */}
                     <td style={{ padding: '14px 20px' }}>

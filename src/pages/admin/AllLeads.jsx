@@ -120,6 +120,7 @@ export default function AllLeads() {
   async function updateStatus(leadId, newStatus) {
     await supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+    setPreviewLead(prev => prev?.id === leadId ? { ...prev, status: newStatus } : prev);
   }
 
   function toggleSelect(leadId) {

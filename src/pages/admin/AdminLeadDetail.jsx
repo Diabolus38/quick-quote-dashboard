@@ -128,7 +128,7 @@ export default function AdminLeadDetail() {
   );
 
   const answers  = typeof lead.answers === 'string' ? JSON.parse(lead.answers || '{}') : (lead.answers || {});
-  const stageIdx = STATUS_STAGES.indexOf(lead.status);
+  const stageIdx = STATUS_STAGES.indexOf(lead.status?.trim());
   const isLost   = lead.status === 'Closed Lost';
   const planStyle = PLAN_STYLE[client?.plan] || PLAN_STYLE.starter;
 
