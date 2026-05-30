@@ -307,6 +307,24 @@ export default function SuperAdmin() {
     navigator.clipboard.writeText(code).then(() => { setCopiedGlobal(true); setTimeout(() => setCopiedGlobal(false), 2000); });
   }
 
+  function exportAllData() {
+    const clientMap = {};
+    clients.forEach(c => { clientMap[c.id] = c.name; });
+    const clientHeaders = ['ID','Name','Email','Plan','Active','Created At'];
+    const clientRows = clients.map(c => [c.id, c.name || '', c.email || '', c.plan || '', c.active !== false ? 'Yes' : 'No', c.created_at || '']);
+    const leadHeaders = ['ID','Client ID','Client Name','Customer Name','Email','Phone','Municipality','Estimated Price','Status','Language','Created At'];
+    const leadRows = leads.map(l => [l.id, l.client_id || '', clientMap[l.client_id] || '', l.name || '', l.email || '', l.phone || '', l.municipality || '', l.estimated_price ?? '', l.status || '', l.language || '', l.created_at || '']);
+    const toCSV = rows => rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const csv = `${toCSV([clientHeaders, ...clientRows])}\n\n${toCSV([leadHeaders, ...leadRows])}`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `quickquote360-full-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const filteredClients = clients.filter(c => {
     const q = search.toLowerCase();
     return !q || (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q);
@@ -331,10 +349,16 @@ export default function SuperAdmin() {
             <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Super Admin</h1>
             <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Full system control — QuickQuote360</p>
           </div>
-          <button type="button" onClick={() => setShowModal(true)}
-            style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            + New Client
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="button" onClick={exportAllData}
+              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+              ↓ Export All Data
+            </button>
+            <button type="button" onClick={() => setShowModal(true)}
+              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              + New Client
+            </button>
+          </div>
         </div>
 
         {loading ? (

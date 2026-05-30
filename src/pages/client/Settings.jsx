@@ -606,9 +606,70 @@ function AccountSection() {
   );
 }
 
+/* ── 6. Danger Zone ──────────────────────────────────────────── */
+
+function DangerZoneSection() {
+  const { profile } = useAuth();
+  const [msg, setMsg] = useState('');
+
+  async function handleDeleteLeads() {
+    if (!window.confirm('Permanently delete all your leads? This cannot be undone.')) return;
+    await supabase.from('leads').delete().eq('client_id', profile.client_id);
+    setMsg('All leads deleted.');
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function handleRequestDeletion() {
+    if (!window.confirm('Request account deletion? Our team will contact you to confirm.')) return;
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email:   'support@quickquote360.com',
+        subject: 'Account Deletion Request',
+        body:    `Client ${profile.full_name || ''} (${profile.email}) has requested account deletion. Client ID: ${profile.client_id}.`,
+      }),
+    });
+    setMsg('Request sent. We will contact you shortly.');
+    setTimeout(() => setMsg(''), 4000);
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#dc2626', fontFamily: FONT }}>Danger Zone</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Irreversible actions. Proceed with caution.</p>
+      </div>
+      <div style={{ ...CARD, border: '1.5px solid #fca5a5', backgroundColor: '#fff' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #fef2f2' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Delete All My Leads</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Permanently removes all leads from your account.</p>
+          </div>
+          <button type="button" onClick={handleDeleteLeads}
+            style={{ backgroundColor: '#fff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '16px' }}>
+            Delete All Leads
+          </button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Request Account Deletion</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Our team will contact you to confirm.</p>
+          </div>
+          <button type="button" onClick={handleRequestDeletion}
+            style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '16px' }}>
+            Request Deletion
+          </button>
+        </div>
+      </div>
+      {msg && <p style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT, marginTop: '8px' }}>{msg}</p>}
+    </>
+  );
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 
-const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account'];
+const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Danger Zone'];
 
 export default function ClientSettingsPage() {
   const { profile } = useAuth();
@@ -641,6 +702,7 @@ export default function ClientSettingsPage() {
           {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} />}
           {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
           {activeSection === 'Account'        && <AccountSection />}
+          {activeSection === 'Danger Zone'    && <DangerZoneSection />}
         </div>
       </div>
     </ClientLayout>

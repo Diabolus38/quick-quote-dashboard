@@ -130,9 +130,10 @@ export default function Clients() {
   const [hoveredRow,    setHoveredRow]    = useState(null);
   const [hoveredNote,   setHoveredNote]   = useState(null);
 
-  const [showAdd,    setShowAdd]    = useState(false);
-  const [editClient, setEditClient] = useState(null);
-  const [copiedId,   setCopiedId]   = useState(null);
+  const [showAdd,      setShowAdd]      = useState(false);
+  const [editClient,   setEditClient]   = useState(null);
+  const [copiedId,     setCopiedId]     = useState(null);
+  const [copiedEmail,  setCopiedEmail]  = useState(null);
 
   const [search,       setSearch]       = useState('');
   const [planFilter,   setPlanFilter]   = useState('All');
@@ -446,6 +447,15 @@ export default function Clients() {
                         <button type="button" onClick={() => copyEmbed(client.id)}
                           style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: isCopied ? '#ecfccb' : '#f4f6f4', color: isCopied ? '#3f6212' : '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s' }}>
                           {isCopied ? 'Copied!' : 'Copy Embed'}
+                        </button>
+                        <button type="button" onClick={() => {
+                          navigator.clipboard.writeText(client.email || '').then(() => {
+                            setCopiedEmail(client.id);
+                            setTimeout(() => setCopiedEmail(null), 2000);
+                          });
+                        }}
+                          style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: copiedEmail === client.id ? '#ecfccb' : '#f4f6f4', color: copiedEmail === client.id ? '#3f6212' : '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s' }}>
+                          {copiedEmail === client.id ? 'Copied!' : 'Copy Email'}
                         </button>
                         <button type="button" onClick={() => toggleActive(client)}
                           style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: isActive ? '#fee2e2' : '#dcfce7', color: isActive ? '#dc2626' : '#166534', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT }}>

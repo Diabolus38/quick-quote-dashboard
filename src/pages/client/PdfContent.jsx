@@ -68,17 +68,18 @@ function useSaveMsg() {
 }
 
 function PDFContent({ clientId }) {
-  const [loading,    setLoading]    = useState(true);
-  const [companyName, setCompanyName] = useState('Your Company');
-  const [intro,      setIntro]      = useState('');
-  const [systemDesc, setSystemDesc] = useState('');
-  const [serviceAg,  setServiceAg]  = useState('');
-  const [payTerms,   setPayTerms]   = useState('');
-  const [legal,      setLegal]      = useState('');
-  const [sigName,    setSigName]    = useState('');
-  const [sigTitle,   setSigTitle]   = useState('');
-  const [sigPhone,   setSigPhone]   = useState('');
-  const [sigEmail,   setSigEmail]   = useState('');
+  const [loading,       setLoading]       = useState(true);
+  const [companyName,   setCompanyName]   = useState('Your Company');
+  const [previewColor,  setPreviewColor]  = useState(PRIMARY);
+  const [intro,         setIntro]         = useState('');
+  const [systemDesc,    setSystemDesc]    = useState('');
+  const [serviceAg,     setServiceAg]     = useState('');
+  const [payTerms,      setPayTerms]      = useState('');
+  const [legal,         setLegal]         = useState('');
+  const [sigName,       setSigName]       = useState('');
+  const [sigTitle,      setSigTitle]      = useState('');
+  const [sigPhone,      setSigPhone]      = useState('');
+  const [sigEmail,      setSigEmail]      = useState('');
   const [saveMsg, flash] = useSaveMsg();
 
   useEffect(() => {
@@ -86,7 +87,9 @@ function PDFContent({ clientId }) {
     supabase.from('client_settings').select('pdf_content, branding').eq('client_id', clientId).maybeSingle()
       .then(({ data }) => {
         const pc = data?.pdf_content || {};
-        setCompanyName(data?.branding?.company_name || 'Your Company');
+        const b  = data?.branding   || {};
+        setCompanyName(b.company_name   || 'Your Company');
+        setPreviewColor(b.primary_color || PRIMARY);
         setIntro(pc.introduction       || '');
         setSystemDesc(pc.system_description || '');
         setServiceAg(pc.service_agreement  || '');
@@ -160,7 +163,7 @@ function PDFContent({ clientId }) {
         <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>PDF Preview</p>
         <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', fontSize: '12px', fontFamily: FONT }}>
           {/* Header */}
-          <div style={{ backgroundColor: PRIMARY, borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ backgroundColor: previewColor, borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>{companyName}</span>
             <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>QUOTE</span>
           </div>

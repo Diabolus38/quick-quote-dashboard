@@ -220,7 +220,25 @@ export default function QuestionEditor() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                         {LANGS.map(lang => (
                           <div key={lang.code} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT, marginBottom: '2px' }}>{lang.name}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>{lang.name}</div>
+                              {lang.code !== 'en' && (
+                                <span style={{ fontSize: '11px', color: '#9ca3af', cursor: 'pointer', fontFamily: FONT, userSelect: 'none' }}
+                                  onClick={() => {
+                                    setQuestions(prev => ({
+                                      ...prev,
+                                      [key]: {
+                                        ...prev[key],
+                                        [`label_${lang.code}`]:  prev[key]?.label_en  || '',
+                                        [`helper_${lang.code}`]: prev[key]?.helper_en || '',
+                                      },
+                                    }));
+                                    setHasChanges(true);
+                                  }}>
+                                  Copy EN →
+                                </span>
+                              )}
+                            </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500', fontFamily: FONT }}>Label</div>

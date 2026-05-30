@@ -104,15 +104,26 @@ export default function AllLeads() {
   const [bulkStatus,    setBulkStatus]    = useState('new');
   const [previewLead,   setPreviewLead]   = useState(null);
   const [panelVisible,  setPanelVisible]  = useState(false);
+  const [quickNote,     setQuickNote]     = useState('');
+  const [noteSaved,     setNoteSaved]     = useState(false);
 
   useEffect(() => {
     if (previewLead) {
+      setQuickNote(previewLead.notes || '');
       const t = setTimeout(() => setPanelVisible(true), 10);
       return () => clearTimeout(t);
     } else {
       setPanelVisible(false);
     }
   }, [previewLead]);
+
+  async function saveNote() {
+    await supabase.from('leads').update({ notes: quickNote }).eq('id', previewLead.id);
+    setLeads(prev => prev.map(l => l.id === previewLead.id ? { ...l, notes: quickNote } : l));
+    setPreviewLead(prev => ({ ...prev, notes: quickNote }));
+    setNoteSaved(true);
+    setTimeout(() => setNoteSaved(false), 2000);
+  }
 
   function closePanel() {
     setPanelVisible(false);
@@ -507,7 +518,20 @@ export default function AllLeads() {
                 </div>
               ))}
             </div>
-            <div style={{ padding: '20px 28px', borderTop: '1px solid #e8ede8', flexShrink: 0 }}>
+            <div style={{ padding: '16px 28px', borderTop: '1px solid #e8ede8', flexShrink: 0 }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Quick Note</p>
+              <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
+                placeholder="Add a quick note…"
+                style={{ height: '80px', width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', fontFamily: FONT, resize: 'none', outline: 'none', color: '#0d1117', backgroundColor: '#fff' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
+                <button type="button" onClick={saveNote}
+                  style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                  Save Note
+                </button>
+                {noteSaved && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>Saved!</span>}
+              </div>
+            </div>
+            <div style={{ padding: '16px 28px', borderTop: '1px solid #e8ede8', flexShrink: 0 }}>
               <button type="button" onClick={() => navigate(`/admin/leads/${previewLead.id}`)}
                 style={{ width: '100%', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '11px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
                 View Full Details →

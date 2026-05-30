@@ -455,6 +455,41 @@ export default function ClientDetail() {
               </div>
             </div>
 
+            {/* Usage History */}
+            <div style={{ ...CARD, marginTop: '16px' }}>
+              <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Usage History</p>
+              {(() => {
+                const months = Array.from({ length: 6 }, (_, i) => {
+                  const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+                  return { year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleString('default', { month: 'short' }) };
+                });
+                const counts = months.map(({ year, month }) =>
+                  leads.filter(l => { const d = new Date(l.created_at); return d.getFullYear() === year && d.getMonth() === month; }).length
+                );
+                const maxCount = Math.max(...counts, 1);
+                return (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '6px' }}>
+                      {counts.map((count, i) => {
+                        const heightPct = count > 0 ? Math.max(Math.round((count / maxCount) * 100), 4) : 0;
+                        return (
+                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '700', color: '#374151', marginBottom: '3px' }}>{count > 0 ? count : ''}</span>
+                            <div style={{ width: '100%', height: `${heightPct}%`, backgroundColor: LIME, borderRadius: '4px 4px 2px 2px', minHeight: count > 0 ? '4px' : '0' }} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                      {months.map(({ label }, i) => (
+                        <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '10px', color: '#9ca3af', fontWeight: '500' }}>{label}</div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
             {/* Embed Code */}
             <div style={{ ...CARD, marginTop: '16px' }}>
               <p style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Embed Code</p>

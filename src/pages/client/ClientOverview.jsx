@@ -32,7 +32,8 @@ export default function ClientOverview() {
   const [loading,       setLoading]       = useState(true);
   const [hoveredRow,    setHoveredRow]    = useState(null);
   const [showToast,     setShowToast]     = useState(false);
-  const [hoveredAction, setHoveredAction] = useState(null);
+  const [hoveredAction,  setHoveredAction]  = useState(null);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -174,6 +175,14 @@ export default function ClientOverview() {
                 <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{action.label}</span>
               </div>
             ))}
+            <div
+              onClick={() => setShowStatsModal(true)}
+              onMouseEnter={() => setHoveredAction('reports')}
+              onMouseLeave={() => setHoveredAction(null)}
+              style={{ backgroundColor: hoveredAction === 'reports' ? '#f9faf9' : '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px', transition: 'background-color 0.12s' }}>
+              <span style={{ fontSize: '22px' }}>📈</span>
+              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>View Reports</span>
+            </div>
           </div>
         </div>
 
@@ -208,6 +217,37 @@ export default function ClientOverview() {
         </div>
 
       </div>
+
+      {showStatsModal && (() => {
+        const weekStart = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d; })();
+        const thisWeek  = leads.filter(l => new Date(l.created_at) >= weekStart).length;
+        const statsRows = [
+          { label: 'Total Leads Ever',       value: String(leads.length) },
+          { label: 'Leads This Month',        value: String(thisMonthLeads.length) },
+          { label: 'Leads This Week',         value: String(thisWeek) },
+          { label: 'Total Won Leads',         value: String(wonLeads.length) },
+          { label: 'Conversion Rate',         value: `${conversionRate}%` },
+          { label: 'Average Estimate Value',  value: avg != null ? `${avg.toLocaleString()} kr` : '—' },
+        ];
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={e => { if (e.target === e.currentTarget) setShowStatsModal(false); }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '36px', width: '560px', maxWidth: '90vw', boxSizing: 'border-box', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', fontFamily: FONT }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0d1117' }}>Your Stats Summary</h2>
+                <button type="button" onClick={() => setShowStatsModal(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#9ca3af', lineHeight: 1, padding: '4px' }}>×</button>
+              </div>
+              {statsRows.map(({ label, value }, i, arr) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: i < arr.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                  <span style={{ fontSize: '13.5px', color: '#6b7280', fontFamily: FONT }}>{label}</span>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </ClientLayout>
   );
 }

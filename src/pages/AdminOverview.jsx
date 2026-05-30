@@ -77,9 +77,10 @@ export default function AdminOverview() {
   const { profile } = useAuth();
   const navigate    = useNavigate();
 
-  const [clients, setClients] = useState([]);
-  const [leads,   setLeads]   = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [clients,   setClients]   = useState([]);
+  const [leads,     setLeads]     = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [rankMode,  setRankMode]  = useState('leads');
 
   useEffect(() => {
     async function fetchData() {
@@ -140,10 +141,17 @@ export default function AdminOverview() {
   const recentLeads = leads.slice(0, 8);
   const maxPlan     = Math.max(starterCount, growthCount, scaleCount, 1);
 
+  const PLAN_FEE_OV = { starter: 300, growth: 600, scale: 1149 };
   const top5Clients = [...clients]
-    .sort((a, b) => (leadCountPerClient[b.id] || 0) - (leadCountPerClient[a.id] || 0))
+    .sort((a, b) => rankMode === 'revenue'
+      ? (PLAN_FEE_OV[b.plan] || 0) - (PLAN_FEE_OV[a.plan] || 0)
+      : (leadCountPerClient[b.id] || 0) - (leadCountPerClient[a.id] || 0))
     .slice(0, 5);
-  const top5MaxCount = top5Clients.length > 0 ? (leadCountPerClient[top5Clients[0].id] || 1) : 1;
+  const top5MaxCount = top5Clients.length > 0
+    ? (rankMode === 'revenue'
+        ? PLAN_FEE_OV[top5Clients[0].plan] || 1
+        : (leadCountPerClient[top5Clients[0].id] || 1))
+    : 1;
 
   const events = [
     ...leads.map(l   => ({ type: 'lead',   id: l.id, date: new Date(l.created_at), name: l.name || 'Anonymous', clientName: clientMap[l.client_id]?.name || '—', plan: null })),
@@ -385,14 +393,25 @@ export default function AdminOverview() {
           )}
         </div>
 
-        {/* ── Row 4: Top Clients by Leads ── */}
+        {/* ── Row 4: Top Clients by Leads/Revenue ── */}
         <div style={CARD}>
-          <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Top Clients by Leads</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Top Clients</p>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[{ key: 'leads', label: 'By Leads' }, { key: 'revenue', label: 'By Revenue' }].map(m => (
+                <button key={m.key} type="button" onClick={() => setRankMode(m.key)}
+                  style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', backgroundColor: rankMode === m.key ? PRIMARY : '#f3f4f6', color: rankMode === m.key ? '#fff' : '#6b7280', fontFamily: FONT, transition: 'all 0.12s' }}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
           {top5Clients.length === 0 ? (
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No client data yet.</p>
           ) : top5Clients.map((client, idx) => {
-            const count = leadCountPerClient[client.id] || 0;
-            const pct   = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
+            const count    = rankMode === 'revenue' ? (PLAN_FEE_OV[client.plan] || 0) : (leadCountPerClient[client.id] || 0);
+            const display  = rankMode === 'revenue' ? `$${count.toLocaleString()}/mo` : String(count);
+            const pct      = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
             const rankColors = [
               { bg: '#d97706', color: '#fff' },
               { bg: '#9ca3af', color: '#fff' },
@@ -412,7 +431,7 @@ export default function AdminOverview() {
                     {idx + 1}
                   </div>
                   <span style={{ flex: 1, fontSize: '13.5px', fontWeight: '600', color: '#0d1117' }}>{client.name}</span>
-                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>{count}</span>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>{display}</span>
                 </div>
                 <div style={{ marginLeft: '36px', height: '4px', borderRadius: '99px', backgroundColor: '#f3f4f6', overflow: 'hidden' }}>
                   <div style={{ width: `${pct}%`, height: '100%', backgroundColor: LIME, borderRadius: '99px' }} />

@@ -112,6 +112,10 @@ export default function Leads() {
   const totalValue = leads.reduce((s, l) => s + (Number(l.estimated_price) || 0), 0);
   const weekStart = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d; })();
   const leadsThisWeek = leads.filter(l => new Date(l.created_at) >= weekStart).length;
+  const nonNewLeads = leads.filter(l => (l.status || 'New') !== 'New');
+  const avgResponseTime = nonNewLeads.length > 0
+    ? Math.round(nonNewLeads.reduce((s, l) => s + (Date.now() - new Date(l.created_at).getTime()) / (1000 * 60 * 60 * 24), 0) / nonNewLeads.length)
+    : null;
 
   const statCards = [
     { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '▤' },
@@ -170,9 +174,10 @@ export default function Leads() {
         {/* Summary Bar */}
         <div style={{ ...CARD, padding: '16px 24px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center' }}>
           {[
-            { label: 'Total Value',   value: `${totalValue.toLocaleString()} kr` },
-            { label: 'Won Leads',     value: String(wonLeads) },
-            { label: 'Leads This Week', value: String(leadsThisWeek) },
+            { label: 'Total Value',       value: `${totalValue.toLocaleString()} kr` },
+            { label: 'Won Leads',         value: String(wonLeads) },
+            { label: 'Leads This Week',   value: String(leadsThisWeek) },
+            { label: 'Avg Response Time', value: avgResponseTime != null ? `${avgResponseTime} days` : '—' },
           ].map((stat, i, arr) => (
             <div key={stat.label} style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
               <div>
