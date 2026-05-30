@@ -189,16 +189,14 @@ export default function ClientOverview() {
 
         {/* Recent Activity */}
         <div style={{ ...CARD, marginTop: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {['All', 'Won', 'Active'].map(f => (
-                <button key={f} type="button" onClick={() => setActivityFilter(f)}
-                  style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', backgroundColor: activityFilter === f ? PRIMARY : '#f3f4f6', color: activityFilter === f ? '#fff' : '#6b7280', fontFamily: FONT, transition: 'all 0.12s' }}>
-                  {f}
-                </button>
-              ))}
-            </div>
+          <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+            {['All', 'Won', 'Active'].map(f => (
+              <button key={f} type="button" onClick={() => setActivityFilter(f)}
+                style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: activityFilter === f ? 'none' : '1px solid #e8ede8', backgroundColor: activityFilter === f ? PRIMARY : '#fff', color: activityFilter === f ? '#fff' : '#4b5563', fontFamily: FONT, transition: 'all 0.12s' }}>
+                {f}
+              </button>
+            ))}
           </div>
           {(() => {
             const filtered = activityFilter === 'Won'
