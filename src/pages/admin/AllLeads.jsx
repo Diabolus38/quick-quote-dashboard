@@ -171,8 +171,7 @@ export default function AllLeads() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
         const lead = payload.new;
         setLeads(prev => [lead, ...prev]);
-        const clientName = clientsRef.current.find(c => c.id === lead.client_id)?.name || '—';
-        setNewLeadToast(`New lead from ${lead.name || 'Unknown'} via ${clientName}`);
+        setNewLeadToast(`New lead from ${lead.name || 'Unknown'}`);
         setTimeout(() => setNewLeadToast(null), 4000);
       })
       .subscribe();

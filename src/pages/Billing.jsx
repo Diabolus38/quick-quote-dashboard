@@ -347,17 +347,18 @@ export default function Billing() {
             });
           }
           return (
-            <div style={{ ...CARD, marginBottom: '28px', display: 'flex', gap: '48px', alignItems: 'center' }}>
-              <div>
-                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Projected Annual Revenue</p>
-                <p style={{ margin: '0 0 4px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${projectedAnnual.toLocaleString()}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Based on current month performance</p>
-              </div>
-              <div style={{ width: '1px', height: '60px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
-              <div>
-                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Year to Date Revenue</p>
-                <p style={{ margin: '0 0 4px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${ytdTotal.toLocaleString()}</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Jan–{new Date(year, selMonthNum - 1, 1).toLocaleString('default', { month: 'short' })} {year}</p>
+            <div style={{ ...CARD, marginBottom: '28px' }}>
+              <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Revenue Projections</p>
+              <div style={{ display: 'flex', gap: '48px', alignItems: 'center' }}>
+                <div>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Projected Annual</p>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${projectedAnnual.toLocaleString()}</p>
+                </div>
+                <div style={{ width: '1px', height: '60px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Year to Date</p>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${ytdTotal.toLocaleString()}</p>
+                </div>
               </div>
             </div>
           );

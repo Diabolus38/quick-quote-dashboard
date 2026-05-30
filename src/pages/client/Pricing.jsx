@@ -310,15 +310,14 @@ function PricingContent({ clientId }) {
             Reset to Defaults
           </button>
         </div>
-        <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button type="button" onClick={() => setShowPreview(true)}
+            style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+            Preview Estimate
+          </button>
+          <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+        </div>
         {lastSavedPricing && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPricing); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
-      </div>
-
-      <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-        <button type="button" onClick={() => setShowPreview(true)}
-          style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-          Preview Estimate
-        </button>
       </div>
 
       {showPreview && (() => {
@@ -330,7 +329,7 @@ function PricingContent({ clientId }) {
         return (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={e => { if (e.target === e.currentTarget) setShowPreview(false); }}>
-            <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '36px', width: '560px', maxWidth: '90vw', boxSizing: 'border-box', fontFamily: FONT }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '36px', width: '520px', maxWidth: '90vw', boxSizing: 'border-box', fontFamily: FONT }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
                 <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0d1117' }}>Estimate Preview</h2>
                 <button type="button" onClick={() => setShowPreview(false)}
