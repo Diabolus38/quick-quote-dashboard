@@ -80,7 +80,8 @@ export default function AdminOverview() {
   const [clients,   setClients]   = useState([]);
   const [leads,     setLeads]     = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [rankMode,  setRankMode]  = useState('leads');
+  const [rankMode,    setRankMode]    = useState('leads');
+  const [hoveredCard, setHoveredCard] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -207,21 +208,21 @@ export default function AdminOverview() {
         {/* ── Row 1: KPI Cards ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '20px' }}>
 
-          <div style={CARD}>
+          <div onClick={() => navigate('/admin/billing')} onMouseEnter={() => setHoveredCard('mrr')} onMouseLeave={() => setHoveredCard(null)} style={{ ...CARD, cursor: 'pointer', boxShadow: hoveredCard === 'mrr' ? '0 4px 24px rgba(0,0,0,0.12)' : CARD.boxShadow }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '22px', fontWeight: '800', color: LIME }}>$</div>
             <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Monthly Revenue</p>
             <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{'$' + mrr.toLocaleString()}</p>
             <p style={{ margin: 0, fontSize: '12px', color: LIME, fontWeight: '600' }}>+{mrrGrowth} new this month</p>
           </div>
 
-          <div style={CARD}>
+          <div onClick={() => navigate('/admin/clients')} onMouseEnter={() => setHoveredCard('clients')} onMouseLeave={() => setHoveredCard(null)} style={{ ...CARD, cursor: 'pointer', boxShadow: hoveredCard === 'clients' ? '0 4px 24px rgba(0,0,0,0.12)' : CARD.boxShadow }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#ecfccb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '20px', color: '#3f6212' }}>◎</div>
             <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Clients</p>
             <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{totalClients}</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>{activeClients} active</p>
           </div>
 
-          <div style={CARD}>
+          <div onClick={() => navigate('/admin/leads')} onMouseEnter={() => setHoveredCard('today')} onMouseLeave={() => setHoveredCard(null)} style={{ ...CARD, cursor: 'pointer', boxShadow: hoveredCard === 'today' ? '0 4px 24px rgba(0,0,0,0.12)' : CARD.boxShadow }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '20px', color: '#1d4ed8' }}>▤</div>
             <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Leads Today</p>
             <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{leadsToday}</p>
@@ -235,7 +236,7 @@ export default function AdminOverview() {
             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>across all clients</p>
           </div>
 
-          <div style={CARD}>
+          <div onClick={() => navigate('/admin/leads')} onMouseEnter={() => setHoveredCard('month')} onMouseLeave={() => setHoveredCard(null)} style={{ ...CARD, cursor: 'pointer', boxShadow: hoveredCard === 'month' ? '0 4px 24px rgba(0,0,0,0.12)' : CARD.boxShadow }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '20px', color: '#7c3aed' }}>▤</div>
             <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Leads This Month</p>
             <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#7c3aed', letterSpacing: '-0.5px', lineHeight: 1 }}>{leadsThisMonth}</p>

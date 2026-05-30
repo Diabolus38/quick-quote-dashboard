@@ -191,7 +191,16 @@ export default function LeadDetail() {
               {[lead.email, lead.phone, lead.municipality].filter(Boolean).join(' · ')}
             </p>
             <div style={{ marginBottom: '20px' }}>
-              <select value={lead.status || 'New'} onChange={e => updateStatus(e.target.value)}
+              <select value={lead.status || 'New'} onChange={e => {
+                const newStatus = e.target.value;
+                if (newStatus === 'Closed Lost') {
+                  if (!window.confirm('Mark this lead as Closed Lost? This will move it out of your active pipeline.')) {
+                    e.target.value = lead.status || 'New';
+                    return;
+                  }
+                }
+                updateStatus(newStatus);
+              }}
                 style={{ border: '1px solid #d1d5db', borderRadius: '10px', padding: '8px 14px', fontSize: '13.5px', color: STATUS_COLORS[lead.status] || '#374151', fontWeight: '600', backgroundColor: '#fff', cursor: 'pointer', outline: 'none', fontFamily: FONT }}>
                 {['New', 'Contacted', 'In Progress', 'Closed Won', 'Closed Lost'].map(s => <option key={s} value={s}>{s}</option>)}
               </select>

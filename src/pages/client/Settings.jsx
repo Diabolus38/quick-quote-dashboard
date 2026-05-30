@@ -111,6 +111,7 @@ function BrandingSection({ clientId, setHasUnsaved }) {
   const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
   const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem('qq360_last_saved_branding') || '');
+  const [restoreMsg, setRestoreMsg] = useState('');
   const _ll = useRef(false);
 
   useEffect(() => {
@@ -147,6 +148,17 @@ function BrandingSection({ clientId, setHasUnsaved }) {
     setLastSavedBranding(ts);
   }
 
+  async function handleRestoreDefaults() {
+    if (!window.confirm('Reset branding to defaults? This will clear your company name, logo, and color settings.')) return;
+    setCompanyName(''); setPrimaryColor('#166534'); setColorHex('#166534'); setLogoUrl(''); setCompanyPhone(''); setCompanyAddress('');
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, branding: { company_name: '', primary_color: '#166534', logo_url: '', company_phone: '', company_address: '' } },
+      { onConflict: 'client_id' }
+    );
+    setRestoreMsg('Defaults restored');
+    setTimeout(() => setRestoreMsg(''), 2000);
+  }
+
   return (
     <>
       <div style={{ marginBottom: '20px' }}>
@@ -173,6 +185,13 @@ function BrandingSection({ clientId, setHasUnsaved }) {
               <div key={color} onClick={() => { setPrimaryColor(color); setColorHex(color); }}
                 style={{ width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', backgroundColor: color, border: `2px solid ${primaryColor === color ? '#0d1117' : 'transparent'}` }} />
             ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+            <button type="button" onClick={handleRestoreDefaults}
+              style={{ fontSize: '12px', color: '#9ca3af', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontFamily: FONT, textDecoration: 'underline' }}>
+              Restore Defaults
+            </button>
+            {restoreMsg && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{restoreMsg}</span>}
           </div>
         </FieldRow>
 

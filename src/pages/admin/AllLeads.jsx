@@ -201,7 +201,7 @@ export default function AllLeads() {
 
   const filtered = leads.filter(l => {
     const q            = search.toLowerCase();
-    const matchSearch  = !q || (l.name || '').toLowerCase().includes(q) || (l.email || '').toLowerCase().includes(q);
+    const matchSearch  = !q || (l.name || '').toLowerCase().includes(q) || (l.email || '').toLowerCase().includes(q) || (l.phone || '').toLowerCase().includes(q) || (l.municipality || '').toLowerCase().includes(q) || (l.company || '').toLowerCase().includes(q) || (l.answers?.wastewaterType || '').toLowerCase().includes(q);
     const matchClient  = clientFilter === 'all' || l.client_id === clientFilter;
     const rawStatus    = (l.status || 'new').toLowerCase().replace(/\s+/g, '_');
     const matchStatus  = statusFilter === 'All' || rawStatus === statusFilter.toLowerCase().replace(/\s+/g, '_');

@@ -61,6 +61,7 @@ export default function QuestionEditor() {
   const [previewLang, setPreviewLang] = useState('en');
   const [retryKey,    setRetryKey]    = useState(0);
   const [lastSavedQ,  setLastSavedQ]  = useState(() => localStorage.getItem('qq360_last_saved_questions') || '');
+  const [resetBanner, setResetBanner] = useState(false);
 
   /* ── Load ── */
   useEffect(() => {
@@ -136,11 +137,31 @@ export default function QuestionEditor() {
             <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Question Editor</h1>
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Customize the labels and helper text for each estimator question.</p>
           </div>
-          <button type="button" onClick={() => setPreviewMode(p => !p)}
-            style={{ padding: '9px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: previewMode ? PRIMARY : '#fff', color: previewMode ? '#fff' : PRIMARY, border: `1px solid ${PRIMARY}`, cursor: 'pointer', fontFamily: FONT, flexShrink: 0 }}>
-            {previewMode ? 'Exit Preview' : 'Preview Mode'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <button type="button" onClick={() => {
+              if (!window.confirm('Reset all questions to default labels? This will overwrite your custom labels.')) return;
+              const reset = {};
+              QUESTION_DEFS.forEach(({ key }) => { reset[key] = { ...(questions[key] || {}), label_en: '', label_sv: '', label_de: '', label_fr: '', helper_en: '', helper_sv: '', helper_de: '', helper_fr: '', visible: true }; });
+              setQuestions(reset);
+              setHasChanges(true);
+              setResetBanner(true);
+              setTimeout(() => setResetBanner(false), 4000);
+            }}
+              style={{ padding: '9px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: '#fff', color: '#374151', border: '1px solid #e8ede8', cursor: 'pointer', fontFamily: FONT }}>
+              Reset to Defaults
+            </button>
+            <button type="button" onClick={() => setPreviewMode(p => !p)}
+              style={{ padding: '9px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: previewMode ? PRIMARY : '#fff', color: previewMode ? '#fff' : PRIMARY, border: `1px solid ${PRIMARY}`, cursor: 'pointer', fontFamily: FONT }}>
+              {previewMode ? 'Exit Preview' : 'Preview Mode'}
+            </button>
+          </div>
         </div>
+
+        {resetBanner && (
+          <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '12px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '20px', fontFamily: FONT }}>
+            Questions reset to defaults. Click Save All Questions to apply.
+          </div>
+        )}
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#9ca3af', fontSize: '14px' }}>Loading questions…</div>

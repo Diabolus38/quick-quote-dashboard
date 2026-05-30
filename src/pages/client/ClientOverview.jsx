@@ -31,10 +31,29 @@ export default function ClientOverview() {
   const [leads,         setLeads]         = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [hoveredRow,    setHoveredRow]    = useState(null);
-  const [showToast,     setShowToast]     = useState(false);
+  const [showToast,      setShowToast]      = useState(false);
   const [hoveredAction,  setHoveredAction]  = useState(null);
-  const [showStatsModal,  setShowStatsModal]  = useState(false);
-  const [activityFilter,  setActivityFilter]  = useState('All');
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [activityFilter, setActivityFilter] = useState('All');
+  const [soundEnabled,   setSoundEnabled]   = useState(true);
+
+  function playChime() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const play = (freq, startTime) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
+        osc.start(startTime); osc.stop(startTime + 0.1);
+      };
+      play(520, ctx.currentTime);
+      play(660, ctx.currentTime + 0.15);
+    } catch {}
+  }
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -47,11 +66,12 @@ export default function ClientOverview() {
         setLeads(prev => [payload.new, ...prev]);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 4000);
+        if (soundEnabled) playChime();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [profile]);
+  }, [profile, soundEnabled]);
 
   const now = new Date();
   const thisMonthLeads = leads.filter(l => {
@@ -89,7 +109,8 @@ export default function ClientOverview() {
         <OnboardingBanner />
 
         {/* Page header */}
-        <div style={{ marginBottom: '28px' }}>
+        <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
           <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Overview</h1>
           <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>
             {profile?.full_name ? `Welcome back, ${profile.full_name.split(' ')[0]}.` : 'Welcome back.'} Here's your dashboard.
@@ -99,6 +120,11 @@ export default function ClientOverview() {
               {todayLeads.length > 0 ? `You have received ${todayLeads.length} new lead${todayLeads.length === 1 ? '' : 's'} today` : 'No leads yet today'}
             </span>
           )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }} onClick={() => setSoundEnabled(p => !p)}>
+            <span style={{ fontSize: '20px' }}>{soundEnabled ? '🔔' : '🔕'}</span>
+            <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Sound</span>
+          </div>
         </div>
 
         {/* Stat cards */}

@@ -63,6 +63,7 @@ export default function Billing() {
   const [chartLeads,    setChartLeads]    = useState([]);
   const [invoiceStatus, setInvoiceStatus] = useState({});
   const [expandedRow,   setExpandedRow]   = useState(null);
+  const [paidStatus,    setPaidStatus]    = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_paid_status') || '{}'); } catch { return {}; } });
 
   useEffect(() => {
     async function fetchData() {
@@ -213,11 +214,13 @@ export default function Billing() {
   const totalRevenue  = totalMRR + totalOverages;
   const activeCount   = clients.filter(c => c.active !== false).length;
 
+  const collectedRevenue = billingRows.filter(r => paidStatus[r.id]).reduce((s, r) => s + r.total, 0);
+
   const statCards = [
-    { label: 'Monthly Revenue',      value: `$${totalRevenue.toLocaleString()}`,  bg: '#ecfccb', color: '#3f6212' },
-    { label: 'Collected',            value: `$${totalRevenue.toLocaleString()}`,  bg: '#dcfce7', color: '#166534' },
-    { label: 'Pending Overages',     value: `$${totalOverages.toLocaleString()}`, bg: '#fef9c3', color: '#854d0e' },
-    { label: 'Active Subscriptions', value: activeCount,                           bg: '#dbeafe', color: '#1d4ed8' },
+    { label: 'Monthly Revenue',      value: `$${totalRevenue.toLocaleString()}`,     bg: '#ecfccb', color: '#3f6212' },
+    { label: 'Collected Revenue',    value: `$${collectedRevenue.toLocaleString()}`, bg: '#dcfce7', color: '#166534' },
+    { label: 'Pending Overages',     value: `$${totalOverages.toLocaleString()}`,    bg: '#fef9c3', color: '#854d0e' },
+    { label: 'Active Subscriptions', value: activeCount,                              bg: '#dbeafe', color: '#1d4ed8' },
   ];
 
   if (loading) return (
@@ -387,8 +390,12 @@ export default function Billing() {
                         </td>
 
                         <td style={{ padding: '14px 16px' }}>
-                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: row.status === 'Paid' ? '#dcfce7' : '#fef9c3', color: row.status === 'Paid' ? '#166534' : '#854d0e' }}>
-                            {row.status}
+                          <span onClick={() => {
+                            const next = { ...paidStatus, [row.id]: !paidStatus[row.id] };
+                            setPaidStatus(next);
+                            localStorage.setItem('qq360_paid_status', JSON.stringify(next));
+                          }} style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', backgroundColor: paidStatus[row.id] ? '#dcfce7' : '#fef9c3', color: paidStatus[row.id] ? '#166534' : '#854d0e' }}>
+                            {paidStatus[row.id] ? 'Paid' : 'Pending'}
                           </span>
                         </td>
 

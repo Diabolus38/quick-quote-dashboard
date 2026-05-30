@@ -220,7 +220,7 @@ export default function Clients() {
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
-    const matchSearch = !q || (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q);
+    const matchSearch = !q || (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.website_url || '').toLowerCase().includes(q) || (c.notes || '').toLowerCase().includes(q);
     const matchPlan   = planFilter === 'All' || (c.plan || 'starter').toLowerCase() === planFilter.toLowerCase();
     const matchStatus = statusFilter === 'All' || (statusFilter === 'Active' ? c.active !== false : c.active === false);
     return matchSearch && matchPlan && matchStatus;
