@@ -246,6 +246,19 @@ export default function ClientDetail() {
   const limit = client.plan === 'scale' ? '∞ Unlimited' : (PLAN_LIMIT[client.plan] || 30);
   const embedCode = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${id}"></script>`;
 
+  const wonLeadsCount     = leads.filter(l => (l.status || '').toLowerCase().replace(/\s+/g,'_') === 'closed_won').length;
+  const conversionRate    = leads.length > 0 ? (wonLeadsCount / leads.length) * 100 : 0;
+  const planLimitNum      = PLAN_LIMIT[client.plan] ?? 30;
+  const usagePct          = planLimitNum === Infinity ? 0 : (leads.length / planLimitNum);
+  let healthScore = 0;
+  if (thisMonthLeads.length > 0) healthScore += 30;
+  if (conversionRate > 10)       healthScore += 20;
+  if (usagePct < 0.8)            healthScore += 20;
+  if (client.website_url)        healthScore += 15;
+  if (isActive)                  healthScore += 15;
+  const healthColor = healthScore >= 80 ? '#16a34a' : healthScore >= 50 ? '#d97706' : '#dc2626';
+  const healthBg    = healthScore >= 80 ? '#dcfce7'  : healthScore >= 50 ? '#fef9c3'  : '#fee2e2';
+
   const BTN_PRIMARY   = { backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, width: '100%', marginBottom: '8px' };
   const BTN_SECONDARY = { backgroundColor: '#fff', border: '1px solid #e8ede8', color: '#0d1117', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT, width: '100%', marginBottom: '8px' };
   const BTN_DANGER    = { backgroundColor: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, width: '100%', marginBottom: '8px' };
@@ -420,7 +433,12 @@ export default function ClientDetail() {
 
             {/* Quick Stats */}
             <div style={CARD}>
-              <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Quick Stats</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Quick Stats</p>
+                <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', backgroundColor: healthBg, color: healthColor, fontSize: '13px', fontWeight: '700' }}>
+                  {healthScore}/100
+                </span>
+              </div>
               {[
                 { label: 'Total Leads',       value: leads.length },
                 { label: 'Leads This Month',  value: thisMonthLeads.length },

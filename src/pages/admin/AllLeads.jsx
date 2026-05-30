@@ -195,6 +195,8 @@ export default function AllLeads() {
     { label: 'This Month',   value: thisMonth,   bg: '#ede9fe', color: '#7c3aed' },
     { label: 'Avg Value',    value: avgValue > 0 ? `${avgValue.toLocaleString()} kr` : '—', bg: '#fef9c3', color: '#854d0e' },
   ];
+  const summaryTotalValue = leads.reduce((s, l) => s + (Number(l.estimated_price) || 0), 0);
+  const summaryWon        = leads.filter(l => (l.status || '').toLowerCase().replace(/\s+/g,'_') === 'closed_won').length;
 
   if (loading) return (
     <Layout title="All Leads">
@@ -319,6 +321,23 @@ export default function AllLeads() {
             </button>
           </div>
         )}
+
+        {/* ── Summary Bar ── */}
+        <div style={{ ...CARD, padding: '16px 24px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center' }}>
+          {[
+            { label: 'Total Value',  value: `${summaryTotalValue.toLocaleString()} kr` },
+            { label: 'Won Leads',    value: String(summaryWon) },
+            { label: 'Leads Today',  value: String(today) },
+          ].map((stat, i, arr) => (
+            <div key={stat.label} style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>{stat.label}</p>
+                <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{stat.value}</p>
+              </div>
+              {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />}
+            </div>
+          ))}
+        </div>
 
         {/* ── Table ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>

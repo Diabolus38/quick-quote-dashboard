@@ -138,6 +138,11 @@ export default function AdminOverview() {
   const recentLeads = leads.slice(0, 8);
   const maxPlan     = Math.max(starterCount, growthCount, scaleCount, 1);
 
+  const top5Clients = [...clients]
+    .sort((a, b) => (leadCountPerClient[b.id] || 0) - (leadCountPerClient[a.id] || 0))
+    .slice(0, 5);
+  const top5MaxCount = top5Clients.length > 0 ? (leadCountPerClient[top5Clients[0].id] || 1) : 1;
+
   const events = [
     ...leads.map(l   => ({ type: 'lead',   id: l.id, date: new Date(l.created_at), name: l.name || 'Anonymous', clientName: clientMap[l.client_id]?.name || '—', plan: null })),
     ...clients.map(c => ({ type: 'signup', id: c.id, date: new Date(c.created_at), name: c.name, clientName: null, plan: c.plan })),
@@ -346,7 +351,7 @@ export default function AdminOverview() {
         </div>
 
         {/* ── Row 3: Activity Feed ── */}
-        <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+        <div style={{ ...CARD, padding: 0, overflow: 'hidden', marginBottom: '20px' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Activity Feed</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 10px', borderRadius: '20px', backgroundColor: '#ecfccb', fontSize: '11px', fontWeight: '600', color: '#3f6212' }}>
@@ -376,6 +381,43 @@ export default function AdminOverview() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* ── Row 4: Top Clients by Leads ── */}
+        <div style={CARD}>
+          <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Top Clients by Leads</p>
+          {top5Clients.length === 0 ? (
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No client data yet.</p>
+          ) : top5Clients.map((client, idx) => {
+            const count = leadCountPerClient[client.id] || 0;
+            const pct   = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
+            const rankColors = [
+              { bg: '#d97706', color: '#fff' },
+              { bg: '#9ca3af', color: '#fff' },
+              { bg: '#b45309', color: '#fff' },
+              { bg: '#e5e7eb', color: '#374151' },
+              { bg: '#e5e7eb', color: '#374151' },
+            ];
+            const rc = rankColors[idx];
+            return (
+              <div key={client.id}
+                onClick={() => navigate(`/admin/clients/${client.id}`)}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f9faf9'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = ''}
+                style={{ padding: '10px 0', borderBottom: idx < top5Clients.length - 1 ? '1px solid #f4f6f4' : 'none', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: rc.bg, color: rc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
+                    {idx + 1}
+                  </div>
+                  <span style={{ flex: 1, fontSize: '13.5px', fontWeight: '600', color: '#0d1117' }}>{client.name}</span>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>{count}</span>
+                </div>
+                <div style={{ marginLeft: '36px', height: '4px', borderRadius: '99px', backgroundColor: '#f3f4f6', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', backgroundColor: LIME, borderRadius: '99px' }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
       </div>

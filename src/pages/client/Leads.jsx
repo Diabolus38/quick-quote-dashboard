@@ -109,6 +109,9 @@ export default function Leads() {
 
   const wonLeads = leads.filter(l => l.status === 'Closed Won').length;
   const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0;
+  const totalValue = leads.reduce((s, l) => s + (Number(l.estimated_price) || 0), 0);
+  const weekStart = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d; })();
+  const leadsThisWeek = leads.filter(l => new Date(l.created_at) >= weekStart).length;
 
   const statCards = [
     { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '▤' },
@@ -162,6 +165,23 @@ export default function Leads() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Summary Bar */}
+        <div style={{ ...CARD, padding: '16px 24px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center' }}>
+          {[
+            { label: 'Total Value',   value: `${totalValue.toLocaleString()} kr` },
+            { label: 'Won Leads',     value: String(wonLeads) },
+            { label: 'Leads This Week', value: String(leadsThisWeek) },
+          ].map((stat, i, arr) => (
+            <div key={stat.label} style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>{stat.label}</p>
+                <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{stat.value}</p>
+              </div>
+              {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />}
+            </div>
+          ))}
         </div>
 
         {/* Table */}

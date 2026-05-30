@@ -329,14 +329,14 @@ export default function Clients() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
             <thead>
               <tr style={{ backgroundColor: '#fafafa' }}>
-                {['Client','Website','Plan','Leads','Usage','Last Lead','Status','Actions'].map(col => (
+                {['Client','Website','Plan','Usage','Last Lead','Status','Actions'].map(col => (
                   <th key={col} style={{ textAlign: 'left', padding: '12px 20px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {paginatedClients.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
+                <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients found.</td></tr>
               ) : paginatedClients.map((client, i) => {
                 const av       = avatarPalette[i % avatarPalette.length];
                 const pb       = PLAN_BADGE[client.plan] || PLAN_BADGE.starter;
@@ -384,11 +384,24 @@ export default function Clients() {
                       </span>
                     </td>
 
-                    {/* Leads */}
-                    <td style={{ padding: '14px 20px', fontWeight: '600', color: '#0d1117' }}>{count}</td>
-
                     {/* Usage */}
-                    <td style={{ padding: '14px 20px' }}><UsageBar count={count} plan={client.plan} /></td>
+                    <td style={{ padding: '14px 20px' }}>
+                      {client.plan === 'scale' ? (
+                        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>
+                      ) : (() => {
+                        const limit = client.plan === 'growth' ? 75 : 30;
+                        const pct   = Math.min(Math.round((count / limit) * 100), 100);
+                        const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
+                        return (
+                          <div>
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#0d1117', fontFamily: FONT, display: 'block', marginBottom: '5px' }}>{count}/{limit}</span>
+                            <div style={{ width: '80px', height: '6px', borderRadius: '99px', backgroundColor: '#f3f4f6', overflow: 'hidden' }}>
+                              <div style={{ width: `${pct}%`, height: '100%', backgroundColor: fill, borderRadius: '99px' }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
 
                     {/* Last Lead */}
                     <td style={{ padding: '14px 20px', fontSize: '13px', color: lastLeadRaw ? '#0d1117' : '#9ca3af', whiteSpace: 'nowrap' }}>{lastLeadStr}</td>

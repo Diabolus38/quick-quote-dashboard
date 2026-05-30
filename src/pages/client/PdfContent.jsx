@@ -69,6 +69,7 @@ function useSaveMsg() {
 
 function PDFContent({ clientId, initialSettings }) {
   const pc = initialSettings?.pdf_content || {};
+  const companyName = initialSettings?.branding?.company_name || 'Your Company';
 
   const [intro,      setIntro]      = useState(pc.introduction       || '');
   const [systemDesc, setSystemDesc] = useState(pc.system_description || '');
@@ -99,27 +100,61 @@ function PDFContent({ clientId, initialSettings }) {
   }
 
   return (
-    <>
-      <SectionHeader title="PDF Content" subtitle="Edit the text sections of your generated PDF." />
-      {[
-        { label: 'Introduction Text',  value: intro,      onChange: setIntro      },
-        { label: 'System Description', value: systemDesc, onChange: setSystemDesc },
-        { label: 'Service Agreement',  value: serviceAg,  onChange: setServiceAg  },
-        { label: 'Payment Terms',      value: payTerms,   onChange: setPayTerms   },
-        { label: 'Legal Reservations', value: legal,      onChange: setLegal      },
-      ].map(s => (
-        <SettingsCard key={s.label} title={s.label}><Textarea value={s.value} onChange={s.onChange} /></SettingsCard>
-      ))}
-      <SettingsCard title="Signature Block">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <FieldRow label="Name"> <TextInput value={sigName}  onChange={setSigName}  /></FieldRow>
-          <FieldRow label="Title"><TextInput value={sigTitle} onChange={setSigTitle} /></FieldRow>
-          <FieldRow label="Phone"><TextInput value={sigPhone} onChange={setSigPhone} /></FieldRow>
-          <FieldRow label="Email"><TextInput value={sigEmail} onChange={setSigEmail} /></FieldRow>
+    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      {/* Left column: form */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <SectionHeader title="PDF Content" subtitle="Edit the text sections of your generated PDF." />
+        {[
+          { label: 'Introduction Text',  value: intro,      onChange: setIntro      },
+          { label: 'System Description', value: systemDesc, onChange: setSystemDesc },
+          { label: 'Service Agreement',  value: serviceAg,  onChange: setServiceAg  },
+          { label: 'Payment Terms',      value: payTerms,   onChange: setPayTerms   },
+          { label: 'Legal Reservations', value: legal,      onChange: setLegal      },
+        ].map(s => (
+          <SettingsCard key={s.label} title={s.label}><Textarea value={s.value} onChange={s.onChange} /></SettingsCard>
+        ))}
+        <SettingsCard title="Signature Block">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <FieldRow label="Name"> <TextInput value={sigName}  onChange={setSigName}  /></FieldRow>
+            <FieldRow label="Title"><TextInput value={sigTitle} onChange={setSigTitle} /></FieldRow>
+            <FieldRow label="Phone"><TextInput value={sigPhone} onChange={setSigPhone} /></FieldRow>
+            <FieldRow label="Email"><TextInput value={sigEmail} onChange={setSigEmail} /></FieldRow>
+          </div>
+        </SettingsCard>
+        <SaveButton onClick={handleSave} saveMsg={saveMsg} />
+      </div>
+
+      {/* Right column: preview */}
+      <div style={{ width: '340px', flexShrink: 0, position: 'sticky', top: '80px' }}>
+        <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>PDF Preview</p>
+        <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', fontSize: '12px', fontFamily: FONT }}>
+          {/* Header */}
+          <div style={{ backgroundColor: PRIMARY, borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>{companyName}</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>QUOTE</span>
+          </div>
+          {/* Customer */}
+          <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Prepared for</p>
+            <p style={{ margin: '0 0 1px', fontSize: '13px', fontWeight: '700', color: '#0d1117' }}>Customer Name</p>
+            <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>customer@example.com</p>
+          </div>
+          {/* Introduction */}
+          <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Introduction</p>
+            <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              {intro || 'Your introduction text will appear here…'}
+            </p>
+          </div>
+          {/* Footer */}
+          <div style={{ paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
+            <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#0d1117' }}>{sigName || 'Signature Name'}</p>
+            <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigTitle || 'Title'}</p>
+            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
+          </div>
         </div>
-      </SettingsCard>
-      <SaveButton onClick={handleSave} saveMsg={saveMsg} />
-    </>
+      </div>
+    </div>
   );
 }
 

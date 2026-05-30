@@ -28,10 +28,11 @@ const COLUMNS = ['Name', 'Municipality', 'Estimated Price', 'Status', 'Date'];
 export default function ClientOverview() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [leads,      setLeads]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [hoveredRow, setHoveredRow] = useState(null);
-  const [showToast,  setShowToast]  = useState(false);
+  const [leads,         setLeads]         = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [hoveredRow,    setHoveredRow]    = useState(null);
+  const [showToast,     setShowToast]     = useState(false);
+  const [hoveredAction, setHoveredAction] = useState(null);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -152,6 +153,28 @@ export default function ClientOverview() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Quick Actions */}
+        <div style={{ ...CARD, marginTop: '24px' }}>
+          <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Quick Actions</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {[
+              { key: 'leads',     icon: '📋', label: 'View All Leads',    path: '/client/leads'     },
+              { key: 'pricing',   icon: '💰', label: 'Configure Pricing',  path: '/client/pricing'   },
+              { key: 'questions', icon: '✏️', label: 'Edit Questions',     path: '/client/questions' },
+              { key: 'embed',     icon: '🔗', label: 'Get Embed Code',     path: '/client/settings'  },
+            ].map(action => (
+              <div key={action.key}
+                onClick={() => navigate(action.path)}
+                onMouseEnter={() => setHoveredAction(action.key)}
+                onMouseLeave={() => setHoveredAction(null)}
+                style={{ backgroundColor: hoveredAction === action.key ? '#f9faf9' : '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px', transition: 'background-color 0.12s' }}>
+                <span style={{ fontSize: '22px' }}>{action.icon}</span>
+                <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{action.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
       </div>

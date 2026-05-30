@@ -71,7 +71,7 @@ export default function Billing() {
 
       const [clientsRes, leadsRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
-        supabase.from('leads').select('id, client_id, created_at').gte('created_at', monthStart).lt('created_at', monthEnd),
+        supabase.from('leads').select('id, client_id, created_at, status').gte('created_at', monthStart).lt('created_at', monthEnd),
       ]);
       setClients(clientsRes.data || []);
       setLeads(leadsRes.data   || []);
@@ -89,6 +89,44 @@ export default function Billing() {
       .lt('created_at', windowEnd.toISOString())
       .then(({ data }) => setChartLeads(data || []));
   }, [billingMonth]);
+
+  function exportDetailedBillingCSV(rows) {
+    const headers = ['Client','Client ID','Website URL','Created At','Plan','Monthly Fee','Leads Used','Limit','Overage','Overage Charge','Total This Month','Status','New','Contacted','In Progress','Won','Lost'];
+    const statusOf = (l) => (l.status || '').toLowerCase().replace(/\s+/g, '_');
+    const data = rows.map(r => {
+      const client = clients.find(c => c.id === r.id) || {};
+      const clientLeads = leads.filter(l => l.client_id === r.id);
+      return [
+        r.name,
+        r.id,
+        client.website_url || '',
+        client.created_at ? new Date(client.created_at).toLocaleDateString('en-GB') : '',
+        r.plan,
+        r.fee,
+        r.used,
+        r.limit === Infinity ? 'Unlimited' : r.limit,
+        r.overage,
+        r.overageCharge,
+        r.total,
+        r.status,
+        clientLeads.filter(l => statusOf(l) === 'new').length,
+        clientLeads.filter(l => statusOf(l) === 'contacted').length,
+        clientLeads.filter(l => statusOf(l) === 'in_progress').length,
+        clientLeads.filter(l => statusOf(l) === 'closed_won').length,
+        clientLeads.filter(l => statusOf(l) === 'closed_lost').length,
+      ];
+    });
+    const csv = [headers, ...data]
+      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `quickquote360-detailed-billing-${billingMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function sendInvoice(row) {
     setInvoiceStatus(prev => ({ ...prev, [row.id]: 'sending' }));
@@ -215,6 +253,10 @@ export default function Billing() {
               <input type="month" value={billingMonth} onChange={e => setBillingMonth(e.target.value)}
                 style={{ border: '1px solid #d1d5db', borderRadius: '10px', padding: '8px 12px', fontSize: '13px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff', cursor: 'pointer' }} />
             </div>
+            <button type="button" onClick={() => exportDetailedBillingCSV(billingRows)}
+              style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#fff', color: '#374151', border: '1px solid #e8ede8', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+              ↓ Download Detailed Report
+            </button>
             <button type="button" onClick={() => exportBillingCSV(billingRows)}
               style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
               ↓ Export Report
