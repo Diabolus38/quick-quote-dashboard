@@ -117,6 +117,7 @@ function PricingContent({ clientId }) {
   const [saveMsg, flash] = useSaveMsg();
   const [resetMsg, setResetMsg] = useState('');
   const [lastSavedPricing, setLastSavedPricing] = useState(() => localStorage.getItem('qq360_last_saved_pricing') || '');
+  const [hoveredHH, setHoveredHH] = useState(null);
 
   useEffect(() => {
     if (!clientId) return;
@@ -245,7 +246,17 @@ function PricingContent({ clientId }) {
         <div style={{ overflowX: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '100px repeat(5, 80px)', gap: '8px', alignItems: 'center' }}>
             <div />
-            {hh.map(h => <div key={h} style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textAlign: 'center', fontFamily: FONT }}>{h} hh</div>)}
+            {hh.map((h, ci) => (
+              <div key={h} style={{ position: 'relative', fontSize: '11px', color: '#9ca3af', fontWeight: '600', textAlign: 'center', fontFamily: FONT }}
+                onMouseEnter={() => setHoveredHH(ci)} onMouseLeave={() => setHoveredHH(null)}>
+                {h} hh
+                {hoveredHH === ci && (
+                  <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, marginBottom: '4px', pointerEvents: 'none' }}>
+                    Number of households
+                  </div>
+                )}
+              </div>
+            ))}
             {baseGrid.map((row, ri) => (
               <>
                 <div key={row.key} style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>{row.label}</div>

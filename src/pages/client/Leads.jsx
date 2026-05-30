@@ -180,6 +180,26 @@ export default function Leads() {
           ))}
         </div>
 
+        {/* Last 7 Days Heatmap */}
+        <div style={{ ...CARD, marginBottom: '16px' }}>
+          <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Last 7 Days</p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (6 - i));
+              const count = leads.filter(l => { const ld = new Date(l.created_at); ld.setHours(0,0,0,0); return ld.getTime() === d.getTime(); }).length;
+              const bg = count === 0 ? '#f3f4f6' : count <= 2 ? '#bbf7d0' : count <= 5 ? '#4ade80' : '#166534';
+              const color = count >= 6 ? '#fff' : count >= 3 ? '#fff' : '#374151';
+              const label = d.toLocaleDateString('en-GB', { weekday: 'short' });
+              return (
+                <div key={i} style={{ flex: 1, height: '64px', borderRadius: '10px', backgroundColor: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', color }}>{label}</span>
+                  <span style={{ fontSize: '18px', fontWeight: '800', color }}>{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Search + filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #e8ede8', borderRadius: '10px', padding: '0 14px', height: '42px', backgroundColor: '#fff' }}>

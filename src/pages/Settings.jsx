@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -39,11 +39,12 @@ function SaveButton({ onClick, saveMsg, label = 'Save' }) {
 
 /* ── 1. Profile ──────────────────────────────────────────────── */
 
-function ProfileSection() {
+function ProfileSection({ setHasUnsaved }) {
   const { profile } = useAuth();
   const [fullName,      setFullName]      = useState('');
   const [saveMsg,       setSaveMsg]       = useState('');
   const [avatarSaveMsg, setAvatarSaveMsg] = useState('');
+  const _ll = useRef(false);
 
   const initials = (() => {
     const name = profile?.full_name;
@@ -54,8 +55,15 @@ function ProfileSection() {
   })();
 
   useEffect(() => {
-    if (profile?.full_name) setFullName(profile.full_name);
+    if (profile?.full_name) {
+      setFullName(profile.full_name);
+      setTimeout(() => { _ll.current = true; }, 50);
+    }
   }, [profile]);
+
+  useEffect(() => {
+    if (_ll.current) setHasUnsaved?.(true);
+  }, [fullName]);
 
   async function handleAvatarUpload(e) {
     const file = e.target.files[0];
@@ -74,6 +82,7 @@ function ProfileSection() {
     await supabase.from('profiles').update({ full_name: fullName.trim() }).eq('id', profile.id);
     setSaveMsg('Saved!');
     setTimeout(() => setSaveMsg(''), 2000);
+    setHasUnsaved?.(false);
   }
 
   const inp = {
@@ -131,7 +140,7 @@ function ProfileSection() {
 const NOTIF_KEY = 'qq360_admin_notifications';
 const NOTIF_DEFAULTS = { estimates: true, client: true, invoice: false };
 
-function NotificationsSection() {
+function NotificationsSection({ setHasUnsaved }) {
   const [toggles, setToggles] = useState(() => {
     try {
       const stored = localStorage.getItem(NOTIF_KEY);
@@ -139,12 +148,15 @@ function NotificationsSection() {
     } catch { return NOTIF_DEFAULTS; }
   });
   const [saveMsg, setSaveMsg] = useState('');
-  const flip = key => setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  const _init = useRef(JSON.stringify(toggles));
+  const flip = key => { setToggles(prev => ({ ...prev, [key]: !prev[key] })); setHasUnsaved?.(true); };
 
   function handleSave() {
     localStorage.setItem(NOTIF_KEY, JSON.stringify(toggles));
     setSaveMsg('Saved!');
     setTimeout(() => setSaveMsg(''), 2000);
+    setHasUnsaved?.(false);
+    _init.current = JSON.stringify(toggles);
   }
 
   const rows = [
@@ -214,8 +226,17 @@ function DangerZoneSection() {
 /* ── Root ────────────────────────────────────────────────────── */
 
 export default function Settings() {
-  const [activeNav, setActiveNav] = useState('Profile');
-  const [hovered,   setHovered]   = useState(null);
+  const [activeNav,   setActiveNav]   = useState('Profile');
+  const [hovered,     setHovered]     = useState(null);
+  const [hasUnsaved,  setHasUnsaved]  = useState(false);
+
+  useEffect(() => { setHasUnsaved(false); }, [activeNav]);
+
+  useEffect(() => {
+    const handler = e => { if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsaved]);
 
   return (
     <Layout title="Settings">
@@ -252,8 +273,8 @@ export default function Settings() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {activeNav === 'Profile'       && <ProfileSection />}
-          {activeNav === 'Notifications' && <NotificationsSection />}
+          {activeNav === 'Profile'       && <ProfileSection setHasUnsaved={setHasUnsaved} />}
+          {activeNav === 'Notifications' && <NotificationsSection setHasUnsaved={setHasUnsaved} />}
           {activeNav === 'Danger Zone'   && <DangerZoneSection />}
         </div>
 

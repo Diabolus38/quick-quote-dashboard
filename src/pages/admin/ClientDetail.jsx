@@ -109,6 +109,7 @@ export default function ClientDetail() {
   const [planSaved,      setPlanSaved]      = useState(false);
   const [lastActivity,   setLastActivity]   = useState(null);
   const [setupChecklist, setSetupChecklist] = useState(null);
+  const [selectedMonth,  setSelectedMonth]  = useState(null);
 
   useEffect(() => { fetchData(); }, [id]);
 
@@ -248,7 +249,9 @@ export default function ClientDetail() {
   const now            = new Date();
   const isActive       = client.active !== false;
   const planStyle      = PLAN_STYLE[client.plan] || PLAN_STYLE.starter;
-  const recentLeads    = leads.slice(0, 5);
+  const recentLeads    = selectedMonth
+    ? leads.filter(l => { const d = new Date(l.created_at); return d.getFullYear() === selectedMonth.year && d.getMonth() === selectedMonth.month; }).slice(0, 10)
+    : leads.slice(0, 5);
   const thisMonthLeads = leads.filter(l => {
     const d = new Date(l.created_at);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -398,6 +401,12 @@ export default function ClientDetail() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Recent Leads</span>
                   <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>{leads.length}</span>
+                  {selectedMonth && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: '#ecfccb', color: '#166534' }}>
+                      Showing {new Date(selectedMonth.year, selectedMonth.month).toLocaleString('default', { month: 'long' })} {selectedMonth.year}
+                      <span onClick={() => setSelectedMonth(null)} style={{ cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>×</span>
+                    </span>
+                  )}
                 </div>
               </div>
               {recentLeads.length === 0 ? (
@@ -485,10 +494,12 @@ export default function ClientDetail() {
                     <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '6px' }}>
                       {counts.map((count, i) => {
                         const heightPct = count > 0 ? Math.max(Math.round((count / maxCount) * 100), 4) : 0;
+                        const m = months[i];
+                        const isSelected = selectedMonth && selectedMonth.year === m.year && selectedMonth.month === m.month;
                         return (
-                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+                          <div key={i} onClick={() => setSelectedMonth(isSelected ? null : m)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', cursor: 'pointer' }}>
                             <span style={{ fontSize: '10px', fontWeight: '700', color: '#374151', marginBottom: '3px' }}>{count > 0 ? count : ''}</span>
-                            <div style={{ width: '100%', height: `${heightPct}%`, backgroundColor: LIME, borderRadius: '4px 4px 2px 2px', minHeight: count > 0 ? '4px' : '0' }} />
+                            <div style={{ width: '100%', height: `${heightPct}%`, backgroundColor: isSelected ? PRIMARY : LIME, borderRadius: '4px 4px 2px 2px', minHeight: count > 0 ? '4px' : '0', outline: isSelected ? `2px solid ${PRIMARY}` : 'none', outlineOffset: '2px' }} />
                           </div>
                         );
                       })}

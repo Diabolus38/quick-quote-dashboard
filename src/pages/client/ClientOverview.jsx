@@ -94,6 +94,11 @@ export default function ClientOverview() {
           <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>
             {profile?.full_name ? `Welcome back, ${profile.full_name.split(' ')[0]}.` : 'Welcome back.'} Here's your dashboard.
           </p>
+          {!loading && (
+            <span style={{ display: 'inline-flex', borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: '600', marginTop: '8px', backgroundColor: todayLeads.length > 0 ? '#ecfccb' : '#f3f4f6', color: todayLeads.length > 0 ? '#3f6212' : '#9ca3af' }}>
+              {todayLeads.length > 0 ? `You have received ${todayLeads.length} new lead${todayLeads.length === 1 ? '' : 's'} today` : 'No leads yet today'}
+            </span>
+          )}
         </div>
 
         {/* Stat cards */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
@@ -100,7 +100,7 @@ function SettingsSkeleton() {
 
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
-function BrandingSection({ clientId }) {
+function BrandingSection({ clientId, setHasUnsaved }) {
   const [companyName,    setCompanyName]    = useState('');
   const [primaryColor,   setPrimaryColor]   = useState('#166534');
   const [colorHex,       setColorHex]       = useState('#166534');
@@ -111,6 +111,7 @@ function BrandingSection({ clientId }) {
   const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
   const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem('qq360_last_saved_branding') || '');
+  const _ll = useRef(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -124,8 +125,13 @@ function BrandingSection({ clientId }) {
         setCompanyPhone(b.company_phone  || '');
         setCompanyAddress(b.company_address || '');
         setLoading(false);
+        setTimeout(() => { _ll.current = true; }, 50);
       });
   }, [clientId]);
+
+  useEffect(() => {
+    if (_ll.current) setHasUnsaved?.(true);
+  }, [companyName, primaryColor, colorHex, logoUrl, companyPhone, companyAddress]);
 
   if (loading) return <SettingsSkeleton />;
 
@@ -135,6 +141,7 @@ function BrandingSection({ clientId }) {
       { onConflict: 'client_id' }
     );
     flash();
+    setHasUnsaved?.(false);
     const ts = new Date().toISOString();
     localStorage.setItem('qq360_last_saved_branding', ts);
     setLastSavedBranding(ts);
@@ -234,7 +241,7 @@ function BrandingSection({ clientId }) {
 
 /* ── 2. Email Settings ───────────────────────────────────────── */
 
-function EmailSection({ clientId }) {
+function EmailSection({ clientId, setHasUnsaved }) {
   const [fromName,     setFromName]     = useState('');
   const [replyTo,      setReplyTo]      = useState('');
   const [subject,      setSubject]      = useState('');
@@ -244,6 +251,7 @@ function EmailSection({ clientId }) {
   const [testSending,  setTestSending]  = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [lastSavedEmail, setLastSavedEmail] = useState(() => localStorage.getItem('qq360_last_saved_email') || '');
+  const _ll = useRef(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -255,8 +263,13 @@ function EmailSection({ clientId }) {
         setSubject(es.subject       || '');
         setFooterText(es.footer_text || '');
         setLoading(false);
+        setTimeout(() => { _ll.current = true; }, 50);
       });
   }, [clientId]);
+
+  useEffect(() => {
+    if (_ll.current) setHasUnsaved?.(true);
+  }, [fromName, replyTo, subject, footerText]);
 
   if (loading) return <SettingsSkeleton />;
 
@@ -266,6 +279,7 @@ function EmailSection({ clientId }) {
       { onConflict: 'client_id' }
     );
     flash();
+    setHasUnsaved?.(false);
     const ts = new Date().toISOString();
     localStorage.setItem('qq360_last_saved_email', ts);
     setLastSavedEmail(ts);
@@ -356,12 +370,13 @@ const LANG_OPTIONS = [
   { code: 'FR', label: 'Français' },
 ];
 
-function LanguagesSection({ clientId }) {
+function LanguagesSection({ clientId, setHasUnsaved }) {
   const [enabled,         setEnabled]         = useState({ EN: true, SV: false, DE: false, FR: false });
   const [defaultLanguage, setDefaultLanguage] = useState('EN');
   const [saveMsg, flash] = useSaveMsg();
   const [loading, setLoading] = useState(true);
   const [lastSavedLangs, setLastSavedLangs] = useState(() => localStorage.getItem('qq360_last_saved_languages') || '');
+  const _ll = useRef(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -371,8 +386,13 @@ function LanguagesSection({ clientId }) {
         setEnabled(ls.enabled || { EN: true, SV: false, DE: false, FR: false });
         setDefaultLanguage(ls.default_language || 'EN');
         setLoading(false);
+        setTimeout(() => { _ll.current = true; }, 50);
       });
   }, [clientId]);
+
+  useEffect(() => {
+    if (_ll.current) setHasUnsaved?.(true);
+  }, [enabled, defaultLanguage]);
 
   if (loading) return <SettingsSkeleton />;
 
@@ -395,6 +415,7 @@ function LanguagesSection({ clientId }) {
       { onConflict: 'client_id' }
     );
     flash();
+    setHasUnsaved?.(false);
     const ts = new Date().toISOString();
     localStorage.setItem('qq360_last_saved_languages', ts);
     setLastSavedLangs(ts);
@@ -542,7 +563,7 @@ function EmbedCodeSection({ clientId }) {
 
 /* ── 5. Account ──────────────────────────────────────────────── */
 
-function AccountSection() {
+function AccountSection({ setHasUnsaved }) {
   const { profile } = useAuth();
   const [fullName,    setFullName]    = useState('');
   const [avatarUrl,   setAvatarUrl]   = useState('');
@@ -550,6 +571,7 @@ function AccountSection() {
   const [pwMsg,       setPwMsg]       = useState('');
   const [uploading,   setUploading]   = useState(false);
   const [dataReady,   setDataReady]   = useState(false);
+  const _ll = useRef(false);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -557,12 +579,18 @@ function AccountSection() {
       .then(({ data }) => {
         if (data) { setFullName(data.full_name || ''); setAvatarUrl(data.avatar_url || ''); }
         setDataReady(true);
+        setTimeout(() => { _ll.current = true; }, 50);
       });
   }, [profile?.id]);
+
+  useEffect(() => {
+    if (_ll.current) setHasUnsaved?.(true);
+  }, [fullName]);
 
   async function handleSave() {
     await supabase.from('profiles').update({ full_name: fullName }).eq('id', profile.id);
     flash();
+    setHasUnsaved?.(false);
   }
 
   async function handleResetPassword() {
@@ -720,6 +748,15 @@ export default function ClientSettingsPage() {
   const clientId = profile?.client_id;
 
   const [activeSection, setActiveSection] = useState('Branding');
+  const [hasUnsaved, setHasUnsaved] = useState(false);
+
+  useEffect(() => { setHasUnsaved(false); }, [activeSection]);
+
+  useEffect(() => {
+    const handler = e => { if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsaved]);
 
   return (
     <ClientLayout title="Settings">
@@ -741,11 +778,11 @@ export default function ClientSettingsPage() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} />}
-          {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} />}
-          {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} />}
+          {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} />}
+          {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} />}
+          {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} />}
           {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
-          {activeSection === 'Account'        && <AccountSection />}
+          {activeSection === 'Account'        && <AccountSection setHasUnsaved={setHasUnsaved} />}
           {activeSection === 'Danger Zone'    && <DangerZoneSection />}
         </div>
       </div>

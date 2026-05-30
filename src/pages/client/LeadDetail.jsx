@@ -249,6 +249,31 @@ export default function LeadDetail() {
               </p>
             </div>
 
+            {/* Lead Score */}
+            {(() => {
+              const price = Number(lead.estimated_price) || 0;
+              let score = 0;
+              if (price > 100000) score += 2; else if (price > 50000) score += 1;
+              if (lead.company)      score += 2;
+              if (lead.phone)        score += 1;
+              const st = (lead.status || '').replace(/\s+/g,'').toLowerCase();
+              if (st === 'closedwon' || st === 'inprogress') score += 2;
+              else if (st === 'contacted') score += 1;
+              if (lead.municipality) score += 2;
+              const dotColor = score <= 3 ? '#dc2626' : score <= 6 ? '#d97706' : '#16a34a';
+              return (
+                <div style={CARD}>
+                  <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lead Score</p>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                    {Array.from({ length: 10 }, (_, i) => (
+                      <span key={i} style={{ fontSize: '14px', color: i < score ? dotColor : '#e5e7eb' }}>{i < score ? '●' : '○'}</span>
+                    ))}
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: dotColor }}>{score}/10</p>
+                </div>
+              );
+            })()}
+
             {/* Actions */}
             <div style={CARD}>
               <button type="button" onClick={handleDownloadPDF} disabled={downloadingPDF}

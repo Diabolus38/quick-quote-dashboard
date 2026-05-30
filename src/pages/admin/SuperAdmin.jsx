@@ -512,7 +512,14 @@ export default function SuperAdmin() {
                                 ? <SmallBtn label="Deactivate" bg="#fee2e2" color="#dc2626" onClick={() => toggleActive(client.id, true)}  />
                                 : <SmallBtn label="Activate"   bg="#dcfce7" color="#166534" onClick={() => toggleActive(client.id, false)} />
                               }
-                              <SmallBtn label="Open Tool" bg="#f3f4f6" color="#374151" onClick={() => window.open(`https://estimator.quickquote360.com?clientId=${client.id}`, '_blank')} />
+                              <div style={{ position: 'relative', display: 'inline-block' }}
+                                onMouseEnter={e => { const t = e.currentTarget.querySelector('[data-tip]'); if (t) t.style.display = 'block'; }}
+                                onMouseLeave={e => { const t = e.currentTarget.querySelector('[data-tip]'); if (t) t.style.display = 'none'; }}>
+                                <SmallBtn label="Open Tool" bg="#f3f4f6" color="#374151" onClick={() => window.open(`https://estimator.quickquote360.com?clientId=${client.id}`, '_blank')} />
+                                <div data-tip style={{ display: 'none', position: 'absolute', top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 50, pointerEvents: 'none' }}>
+                                  Opens estimator in new tab
+                                </div>
+                              </div>
                             </div>
                           </td>
                         </tr>
