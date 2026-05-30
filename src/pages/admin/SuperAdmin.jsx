@@ -216,6 +216,9 @@ export default function SuperAdmin() {
       supabase.from('leads').select('id, client_id, name, created_at, status, estimated_price').order('created_at', { ascending: false }),
       supabase.from('profiles').select('id, client_id, role'),
     ]);
+    if (clientsRes.error)  console.error('Failed to fetch clients:', clientsRes.error);
+    if (leadsRes.error)    console.error('Failed to fetch leads:', leadsRes.error);
+    if (profilesRes.error) console.error('Failed to fetch profiles:', profilesRes.error);
     setClients(clientsRes.data || []);
     setLeads(leadsRes.data     || []);
     setLoading(false);

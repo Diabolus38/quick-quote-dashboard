@@ -67,20 +67,40 @@ function useSaveMsg() {
   return [saveMsg, flash];
 }
 
-function PDFContent({ clientId, initialSettings }) {
-  const pc = initialSettings?.pdf_content || {};
-  const companyName = initialSettings?.branding?.company_name || 'Your Company';
-
-  const [intro,      setIntro]      = useState(pc.introduction       || '');
-  const [systemDesc, setSystemDesc] = useState(pc.system_description || '');
-  const [serviceAg,  setServiceAg]  = useState(pc.service_agreement  || '');
-  const [payTerms,   setPayTerms]   = useState(pc.payment_terms      || '');
-  const [legal,      setLegal]      = useState(pc.legal_reservations || '');
-  const [sigName,    setSigName]    = useState(pc.signature_name     || '');
-  const [sigTitle,   setSigTitle]   = useState(pc.signature_title    || '');
-  const [sigPhone,   setSigPhone]   = useState(pc.signature_phone    || '');
-  const [sigEmail,   setSigEmail]   = useState(pc.signature_email    || '');
+function PDFContent({ clientId }) {
+  const [loading,    setLoading]    = useState(true);
+  const [companyName, setCompanyName] = useState('Your Company');
+  const [intro,      setIntro]      = useState('');
+  const [systemDesc, setSystemDesc] = useState('');
+  const [serviceAg,  setServiceAg]  = useState('');
+  const [payTerms,   setPayTerms]   = useState('');
+  const [legal,      setLegal]      = useState('');
+  const [sigName,    setSigName]    = useState('');
+  const [sigTitle,   setSigTitle]   = useState('');
+  const [sigPhone,   setSigPhone]   = useState('');
+  const [sigEmail,   setSigEmail]   = useState('');
   const [saveMsg, flash] = useSaveMsg();
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_settings').select('pdf_content, branding').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => {
+        const pc = data?.pdf_content || {};
+        setCompanyName(data?.branding?.company_name || 'Your Company');
+        setIntro(pc.introduction       || '');
+        setSystemDesc(pc.system_description || '');
+        setServiceAg(pc.service_agreement  || '');
+        setPayTerms(pc.payment_terms      || '');
+        setLegal(pc.legal_reservations || '');
+        setSigName(pc.signature_name     || '');
+        setSigTitle(pc.signature_title    || '');
+        setSigPhone(pc.signature_phone    || '');
+        setSigEmail(pc.signature_email    || '');
+        setLoading(false);
+      });
+  }, [clientId]);
+
+  if (loading) return <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>;
 
   async function handleSave() {
     await supabase.from('client_settings').update({
@@ -162,22 +182,9 @@ export default function PdfContent() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
 
-  const [settingsRow, setSettingsRow] = useState(null);
-  const [dataReady,   setDataReady]   = useState(false);
-
-  useEffect(() => {
-    if (!clientId) return;
-    supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle()
-      .then(({ data }) => { setSettingsRow(data); setDataReady(true); });
-  }, [clientId]);
-
   return (
     <ClientLayout title="PDF Content">
-      {!dataReady ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>
-      ) : (
-        <PDFContent clientId={clientId} initialSettings={settingsRow} />
-      )}
+      <PDFContent clientId={clientId} />
     </ClientLayout>
   );
 }

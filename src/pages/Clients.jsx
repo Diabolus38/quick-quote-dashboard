@@ -143,10 +143,14 @@ export default function Clients() {
 
   async function fetchAll() {
     setLoading(true);
-    const [{ data: clientData }, { data: leadsData }] = await Promise.all([
+    const [clientsRes, leadsRes] = await Promise.all([
       supabase.from('clients').select('*').order('created_at', { ascending: false }),
       supabase.from('leads').select('client_id, created_at'),
     ]);
+    if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
+    if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
+    const clientData = clientsRes.data;
+    const leadsData  = leadsRes.data;
     setClients(clientData || []);
     const counts = {};
     const lastDates = {};

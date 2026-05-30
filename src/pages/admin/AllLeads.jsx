@@ -110,6 +110,8 @@ export default function AllLeads() {
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('clients').select('id, name, plan').order('name'),
       ]);
+      if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
+      if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
       setLeads(leadsRes.data   || []);
       setClients(clientsRes.data || []);
       setLoading(false);

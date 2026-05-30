@@ -58,13 +58,27 @@ const ALL_MUNICIPALITIES = [
   'Östra Göinge','Överkalix','Övertorneå',
 ];
 
-function MunicipalitiesContent({ clientId, initialMunicipalities, initialSettings }) {
-  const ls = initialSettings?.language_settings || {};
-
-  const [search,          setSearch]          = useState('');
-  const [covered,         setCovered]         = useState(initialMunicipalities || []);
-  const [notCoveredMsg,   setNotCoveredMsg]   = useState(ls.not_covered_message || 'We currently do not cover your municipality.');
+function MunicipalitiesContent({ clientId }) {
+  const [loading,           setLoading]           = useState(true);
+  const [search,            setSearch]            = useState('');
+  const [covered,           setCovered]           = useState([]);
+  const [notCoveredMsg,     setNotCoveredMsg]     = useState('We currently do not cover your municipality.');
   const [notCoveredSaveMsg, setNotCoveredSaveMsg] = useState('');
+
+  useEffect(() => {
+    if (!clientId) return;
+    Promise.all([
+      supabase.from('client_settings').select('language_settings').eq('client_id', clientId).maybeSingle(),
+      supabase.from('client_municipalities').select('*').eq('client_id', clientId),
+    ]).then(([{ data: settings }, { data: muns }]) => {
+      const ls = settings?.language_settings || {};
+      setNotCoveredMsg(ls.not_covered_message || 'We currently do not cover your municipality.');
+      setCovered(muns || []);
+      setLoading(false);
+    });
+  }, [clientId]);
+
+  if (loading) return <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>;
 
   async function handleSaveNotCovered() {
     const { data: existing } = await supabase.from('client_settings').select('language_settings').eq('client_id', clientId).maybeSingle();
@@ -160,33 +174,9 @@ export default function Municipalities() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
 
-  const [settingsRow,    setSettingsRow]    = useState(null);
-  const [municipalities, setMunicipalities] = useState([]);
-  const [dataReady,      setDataReady]      = useState(false);
-
-  useEffect(() => {
-    if (!clientId) return;
-    Promise.all([
-      supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle(),
-      supabase.from('client_municipalities').select('*').eq('client_id', clientId),
-    ]).then(([{ data: settings }, { data: muns }]) => {
-      setSettingsRow(settings);
-      setMunicipalities(muns || []);
-      setDataReady(true);
-    });
-  }, [clientId]);
-
   return (
     <ClientLayout title="Municipalities">
-      {!dataReady ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>
-      ) : (
-        <MunicipalitiesContent
-          clientId={clientId}
-          initialMunicipalities={municipalities}
-          initialSettings={settingsRow}
-        />
-      )}
+      <MunicipalitiesContent clientId={clientId} />
     </ClientLayout>
   );
 }

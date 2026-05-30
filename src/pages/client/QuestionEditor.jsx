@@ -59,12 +59,14 @@ export default function QuestionEditor() {
   const [searchQ,     setSearchQ]     = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [previewLang, setPreviewLang] = useState('en');
+  const [retryKey,    setRetryKey]    = useState(0);
 
   /* ── Load ── */
   useEffect(() => {
     if (!clientId) return;
     async function load() {
       setLoading(true);
+      setError('');
       const { data, error: fetchErr } = await supabase
         .from('client_questions').select('*').eq('client_id', clientId);
       if (fetchErr) { setError('Failed to load questions.'); setLoading(false); return; }
@@ -75,7 +77,7 @@ export default function QuestionEditor() {
       setLoading(false);
     }
     load();
-  }, [clientId]);
+  }, [clientId, retryKey]);
 
   /* ── Update a single field ── */
   function update(key, field, value) {
@@ -138,6 +140,14 @@ export default function QuestionEditor() {
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#9ca3af', fontSize: '14px' }}>Loading questions…</div>
+        ) : error && Object.keys(questions).length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#dc2626', fontWeight: '500', fontFamily: FONT }}>{error}</p>
+            <button type="button" onClick={() => setRetryKey(k => k + 1)}
+              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, marginTop: '12px' }}>
+              Try Again
+            </button>
+          </div>
         ) : (
           <>
             {!previewMode && (

@@ -74,16 +74,29 @@ function isValidUrl(str) {
 
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
-function BrandingSection({ clientId, initialSettings }) {
-  const b = initialSettings?.branding || {};
-  const [companyName,    setCompanyName]    = useState(b.company_name    || '');
-  const [primaryColor,   setPrimaryColor]   = useState(b.primary_color   || '#166534');
-  const [colorHex,       setColorHex]       = useState(b.primary_color   || '#166534');
-  const [logoUrl,        setLogoUrl]        = useState(b.logo_url        || '');
-  const [companyPhone,   setCompanyPhone]   = useState(b.company_phone   || '');
-  const [companyAddress, setCompanyAddress] = useState(b.company_address || '');
+function BrandingSection({ clientId }) {
+  const [companyName,    setCompanyName]    = useState('');
+  const [primaryColor,   setPrimaryColor]   = useState('#166534');
+  const [colorHex,       setColorHex]       = useState('#166534');
+  const [logoUrl,        setLogoUrl]        = useState('');
+  const [companyPhone,   setCompanyPhone]   = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_settings').select('branding').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => {
+        const b = data?.branding || {};
+        setCompanyName(b.company_name    || '');
+        setPrimaryColor(b.primary_color  || '#166534');
+        setColorHex(b.primary_color      || '#166534');
+        setLogoUrl(b.logo_url            || '');
+        setCompanyPhone(b.company_phone  || '');
+        setCompanyAddress(b.company_address || '');
+      });
+  }, [clientId]);
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -186,15 +199,26 @@ function BrandingSection({ clientId, initialSettings }) {
 
 /* ── 2. Email Settings ───────────────────────────────────────── */
 
-function EmailSection({ clientId, initialSettings }) {
-  const es = initialSettings?.email_settings || {};
-  const [fromName,     setFromName]     = useState(es.from_name     || '');
-  const [replyTo,      setReplyTo]      = useState(es.reply_to      || '');
-  const [subject,      setSubject]      = useState(es.subject        || '');
-  const [footerText,   setFooterText]   = useState(es.footer_text   || '');
+function EmailSection({ clientId }) {
+  const [fromName,     setFromName]     = useState('');
+  const [replyTo,      setReplyTo]      = useState('');
+  const [subject,      setSubject]      = useState('');
+  const [footerText,   setFooterText]   = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [testMsg,      setTestMsg]      = useState('');
   const [testSending,  setTestSending]  = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_settings').select('email_settings').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => {
+        const es = data?.email_settings || {};
+        setFromName(es.from_name    || '');
+        setReplyTo(es.reply_to      || '');
+        setSubject(es.subject       || '');
+        setFooterText(es.footer_text || '');
+      });
+  }, [clientId]);
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -270,11 +294,20 @@ const LANG_OPTIONS = [
   { code: 'FR', label: 'Français' },
 ];
 
-function LanguagesSection({ clientId, initialSettings }) {
-  const ls = initialSettings?.language_settings || {};
-  const [enabled,         setEnabled]         = useState(ls.enabled         || { EN: true, SV: false, DE: false, FR: false });
-  const [defaultLanguage, setDefaultLanguage] = useState(ls.default_language || 'EN');
+function LanguagesSection({ clientId }) {
+  const [enabled,         setEnabled]         = useState({ EN: true, SV: false, DE: false, FR: false });
+  const [defaultLanguage, setDefaultLanguage] = useState('EN');
   const [saveMsg, flash] = useSaveMsg();
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_settings').select('language_settings').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => {
+        const ls = data?.language_settings || {};
+        setEnabled(ls.enabled || { EN: true, SV: false, DE: false, FR: false });
+        setDefaultLanguage(ls.default_language || 'EN');
+      });
+  }, [clientId]);
 
   function handleToggle(code) {
     setEnabled(prev => {
@@ -536,14 +569,6 @@ export default function ClientSettingsPage() {
   const clientId = profile?.client_id;
 
   const [activeSection, setActiveSection] = useState('Branding');
-  const [settingsRow,   setSettingsRow]   = useState(null);
-  const [dataReady,     setDataReady]     = useState(false);
-
-  useEffect(() => {
-    if (!clientId) return;
-    supabase.from('client_settings').select('*').eq('client_id', clientId).maybeSingle()
-      .then(({ data }) => { setSettingsRow(data); setDataReady(true); });
-  }, [clientId]);
 
   return (
     <ClientLayout title="Settings">
@@ -565,17 +590,11 @@ export default function ClientSettingsPage() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {!dataReady ? (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading settings…</div>
-          ) : (
-            <>
-              {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} initialSettings={settingsRow} />}
-              {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
-              {activeSection === 'Account'        && <AccountSection />}
-            </>
-          )}
+          {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} />}
+          {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} />}
+          {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} />}
+          {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
+          {activeSection === 'Account'        && <AccountSection />}
         </div>
       </div>
     </ClientLayout>

@@ -69,25 +69,20 @@ function useSaveMsg() {
   return [saveMsg, flash];
 }
 
-function PricingContent({ clientId, initialPricing }) {
-  const p  = initialPricing || {};
-  const bp = p.base_prices     || {};
-  const fc = p.fixed_costs     || {};
-  const pm = p.per_meter_costs || {};
-  const ao = p.addons          || {};
-
+function PricingContent({ clientId }) {
   const hh = ['1','2','3','4','5'];
-  const [baseGrid, setBaseGrid] = useState([
-    { key: 'bdt',    label: 'BDT',     values: hh.map(h => String(bp.bdt?.[h]    ?? '')) },
-    { key: 'wc',     label: 'WC only', values: hh.map(h => String(bp.wc?.[h]     ?? '')) },
-    { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(h => String(bp.wc_bdt?.[h] ?? '')) },
-  ]);
 
   function makeList(obj, entries) {
     return entries.map(([key, label]) => ({ key, label, value: String(obj[key] ?? '') }));
   }
 
-  const [fixedCosts, setFixedCosts] = useState(makeList(fc, [
+  const [loading,    setLoading]    = useState(true);
+  const [baseGrid,   setBaseGrid]   = useState([
+    { key: 'bdt',    label: 'BDT',     values: hh.map(() => '') },
+    { key: 'wc',     label: 'WC only', values: hh.map(() => '') },
+    { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(() => '') },
+  ]);
+  const [fixedCosts, setFixedCosts] = useState(makeList({}, [
     ['planning',           'Planning/Municipality Application'],
     ['establishment_zone1','Establishment Zone 1'],
     ['establishment_zone2','Establishment Zone 2'],
@@ -95,7 +90,7 @@ function PricingContent({ clientId, initialPricing }) {
     ['admin',              'Admin Fee'],
     ['inspection',         'Inspection of Existing Well'],
   ]));
-  const [perMeter, setPerMeter] = useState(makeList(pm, [
+  const [perMeter, setPerMeter] = useState(makeList({}, [
     ['gravity_pipe',   'Gravity Pipe per meter'],
     ['pressure_pipe',  'Pressure Pipe per meter'],
     ['protection_pipe','Protection Pipe per meter'],
@@ -103,7 +98,7 @@ function PricingContent({ clientId, initialPricing }) {
     ['makadam',        'Makadam per ton'],
     ['labor',          'Labor Rate per hour'],
   ]));
-  const [addOns, setAddOns] = useState(makeList(ao, [
+  const [addOns, setAddOns] = useState(makeList({}, [
     ['pump_well',             'Pump Well'],
     ['double_pump',           'Double Pump'],
     ['telescope_cover',       'Telescope + Well Cover'],
@@ -111,12 +106,58 @@ function PricingContent({ clientId, initialPricing }) {
     ['mass_removal',          'Mass Removal'],
     ['transport',             'Transport'],
   ]));
-
-  const [rotEnabled, setRotEnabled] = useState(p.rot_enabled    ?? false);
-  const [rotPercent,  setRotPercent] = useState(String(p.rot_percentage ?? 30));
-  const [currency,    setCurrency]   = useState(p.currency || 'SEK');
+  const [rotEnabled, setRotEnabled] = useState(false);
+  const [rotPercent,  setRotPercent] = useState('30');
+  const [currency,    setCurrency]   = useState('SEK');
   const [saveMsg, flash] = useSaveMsg();
   const [resetMsg, setResetMsg] = useState('');
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_pricing').select('*').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => {
+        const p  = data || {};
+        const bp = p.base_prices     || {};
+        const fc = p.fixed_costs     || {};
+        const pm = p.per_meter_costs || {};
+        const ao = p.addons          || {};
+        setBaseGrid([
+          { key: 'bdt',    label: 'BDT',     values: hh.map(h => String(bp.bdt?.[h]    ?? '')) },
+          { key: 'wc',     label: 'WC only', values: hh.map(h => String(bp.wc?.[h]     ?? '')) },
+          { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(h => String(bp.wc_bdt?.[h] ?? '')) },
+        ]);
+        setFixedCosts(makeList(fc, [
+          ['planning',           'Planning/Municipality Application'],
+          ['establishment_zone1','Establishment Zone 1'],
+          ['establishment_zone2','Establishment Zone 2'],
+          ['de_establishment',   'De-establishment'],
+          ['admin',              'Admin Fee'],
+          ['inspection',         'Inspection of Existing Well'],
+        ]));
+        setPerMeter(makeList(pm, [
+          ['gravity_pipe',   'Gravity Pipe per meter'],
+          ['pressure_pipe',  'Pressure Pipe per meter'],
+          ['protection_pipe','Protection Pipe per meter'],
+          ['cable',          'Electric Cable per meter'],
+          ['makadam',        'Makadam per ton'],
+          ['labor',          'Labor Rate per hour'],
+        ]));
+        setAddOns(makeList(ao, [
+          ['pump_well',             'Pump Well'],
+          ['double_pump',           'Double Pump'],
+          ['telescope_cover',       'Telescope + Well Cover'],
+          ['lawn_restoration_base', 'Lawn Restoration Base'],
+          ['mass_removal',          'Mass Removal'],
+          ['transport',             'Transport'],
+        ]));
+        setRotEnabled(p.rot_enabled    ?? false);
+        setRotPercent(String(p.rot_percentage ?? 30));
+        setCurrency(p.currency || 'SEK');
+        setLoading(false);
+      });
+  }, [clientId]);
+
+  if (loading) return <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>;
 
   function updateGrid(ri, ci, val) {
     setBaseGrid(prev => prev.map((row, r) => r === ri ? { ...row, values: row.values.map((v, c) => c === ci ? val : v) } : row));
@@ -241,22 +282,9 @@ export default function Pricing() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
 
-  const [pricingRow, setPricingRow] = useState(null);
-  const [dataReady,  setDataReady]  = useState(false);
-
-  useEffect(() => {
-    if (!clientId) return;
-    supabase.from('client_pricing').select('*').eq('client_id', clientId).maybeSingle()
-      .then(({ data }) => { setPricingRow(data); setDataReady(true); });
-  }, [clientId]);
-
   return (
     <ClientLayout title="Pricing">
-      {!dataReady ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', fontSize: '14px', fontFamily: FONT }}>Loading…</div>
-      ) : (
-        <PricingContent clientId={clientId} initialPricing={pricingRow} />
-      )}
+      <PricingContent clientId={clientId} />
     </ClientLayout>
   );
 }

@@ -87,6 +87,8 @@ export default function AdminOverview() {
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false }),
       ]);
+      if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
+      if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
       setClients(clientsRes.data || []);
       setLeads(leadsRes.data   || []);
       setLoading(false);

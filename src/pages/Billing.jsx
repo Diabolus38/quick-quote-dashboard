@@ -245,7 +245,15 @@ export default function Billing() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', gap: '16px', flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Billing</h1>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Revenue tracking and invoice management</p>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>
+              {(() => {
+                const defaultMonth = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`;
+                if (billingMonth === defaultMonth) return 'Revenue tracking and invoice management';
+                const [y, m] = billingMonth.split('-').map(Number);
+                const monthName = new Date(y, m - 1, 1).toLocaleString('default', { month: 'long' });
+                return `Showing billing data for ${monthName} ${y}`;
+              })()}
+            </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
