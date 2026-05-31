@@ -36,6 +36,7 @@ export default function ClientOverview() {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [activityFilter, setActivityFilter] = useState('All');
   const [soundEnabled,   setSoundEnabled]   = useState(true);
+  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
 
   function playChime() {
     try {
@@ -64,14 +65,13 @@ export default function ClientOverview() {
       .channel(`overview-leads-${profile.client_id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
         setLeads(prev => [payload.new, ...prev]);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 4000);
-        if (soundEnabled) playChime();
+        if (!dnd) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }
+        if (soundEnabled && !dnd) playChime();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [profile, soundEnabled]);
+  }, [profile, soundEnabled, dnd]);
 
   const now = new Date();
   const thisMonthLeads = leads.filter(l => {
@@ -121,9 +121,17 @@ export default function ClientOverview() {
             </span>
           )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }} onClick={() => setSoundEnabled(p => !p)}>
-            <span style={{ fontSize: '20px' }}>{soundEnabled ? '🔔' : '🔕'}</span>
-            <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Sound</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button type="button" onClick={() => setSoundEnabled(p => !p)}
+              title={soundEnabled ? 'Sound notifications on' : 'Sound notifications off'}
+              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
+              {soundEnabled ? '🔔' : '🔕'}
+            </button>
+            <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem('qq360_dnd', JSON.stringify(next)); }}
+              title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
+              style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#9ca3af', fontWeight: '600', fontFamily: FONT }}>
+              🌙 DND
+            </button>
           </div>
         </div>
 

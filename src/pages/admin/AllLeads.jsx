@@ -93,6 +93,7 @@ export default function AllLeads() {
   const [hovRow,       setHovRow]       = useState(null);
   const [newLeadToast, setNewLeadToast] = useState(null);
   const [soundEnabled,  setSoundEnabled]  = useState(true);
+  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
   const clientsRef = useRef([]);
 
   const [search,        setSearch]        = useState('');
@@ -110,6 +111,7 @@ export default function AllLeads() {
   const [quickNote,      setQuickNote]      = useState('');
   const [noteSaved,      setNoteSaved]      = useState(false);
   const [showColumnPicker, setShowColumnPicker] = useState(false);
+  const [focusedLeadId, setFocusedLeadId] = useState(null);
   const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'];
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
@@ -187,13 +189,12 @@ export default function AllLeads() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
         const lead = payload.new;
         setLeads(prev => [lead, ...prev]);
-        setNewLeadToast(`New lead from ${lead.name || 'Unknown'}`);
-        setTimeout(() => setNewLeadToast(null), 4000);
-        if (soundEnabled) playChime();
+        if (!dnd) { setNewLeadToast(`New lead from ${lead.name || 'Unknown'}`); setTimeout(() => setNewLeadToast(null), 4000); }
+        if (soundEnabled && !dnd) playChime();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [soundEnabled]);
+  }, [soundEnabled, dnd]);
 
   async function updateStatus(leadId, newStatus) {
     await supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
@@ -329,6 +330,11 @@ export default function AllLeads() {
               title={soundEnabled ? 'Sound notifications on' : 'Sound notifications off'}
               style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
               {soundEnabled ? '🔔' : '🔕'}
+            </button>
+            <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem('qq360_dnd', JSON.stringify(next)); }}
+              title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
+              style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#9ca3af', fontWeight: '600', fontFamily: FONT }}>
+              🌙 DND
             </button>
             <div style={{ position: 'relative' }} data-col-picker>
               <button type="button" onClick={e => { e.stopPropagation(); setShowColumnPicker(p => !p); }}
@@ -470,7 +476,15 @@ export default function AllLeads() {
               No leads yet across any client accounts
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto' }}
+            onKeyDown={e => {
+              if (!['ArrowDown','ArrowUp','Enter'].includes(e.key)) return;
+              e.preventDefault();
+              const idx = paginatedLeads.findIndex(l => l.id === focusedLeadId);
+              if (e.key === 'ArrowDown') setFocusedLeadId(paginatedLeads[Math.min(idx + 1, paginatedLeads.length - 1)]?.id ?? paginatedLeads[0]?.id);
+              else if (e.key === 'ArrowUp') setFocusedLeadId(paginatedLeads[Math.max(idx - 1, 0)]?.id);
+              else if (e.key === 'Enter' && focusedLeadId) navigate(`/admin/leads/${focusedLeadId}`);
+            }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#fafafa' }}>
@@ -495,9 +509,11 @@ export default function AllLeads() {
 
                     return (
                       <tr key={lead.id || i}
+                        tabIndex={0}
+                        onFocus={() => setFocusedLeadId(lead.id)}
                         onMouseEnter={() => setHovRow(lead.id)}
                         onMouseLeave={() => setHovRow(null)}
-                        style={{ backgroundColor: hovRow === lead.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
+                        style={{ backgroundColor: hovRow === lead.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4', outline: focusedLeadId === lead.id ? '2px solid #166534' : 'none', outlineOffset: '-2px' }}>
 
                         <td style={{ padding: '12px 16px' }}>
                           <input type="checkbox"

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
+import { calculateMRR, getPlanCounts } from '../utils/mrrUtils';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -82,19 +83,22 @@ export default function AdminOverview() {
   const [loading,   setLoading]   = useState(true);
   const [rankMode,    setRankMode]    = useState('leads');
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [refreshing,  setRefreshing]  = useState(false);
+
+  async function fetchData(silent = false) {
+    if (!silent) setLoading(true);
+    const [clientsRes, leadsRes] = await Promise.all([
+      supabase.from('clients').select('*').order('created_at', { ascending: false }),
+      supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false }),
+    ]);
+    if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
+    if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
+    setClients(clientsRes.data || []);
+    setLeads(leadsRes.data   || []);
+    if (!silent) setLoading(false);
+  }
 
   useEffect(() => {
-    async function fetchData() {
-      const [clientsRes, leadsRes] = await Promise.all([
-        supabase.from('clients').select('*').order('created_at', { ascending: false }),
-        supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false }),
-      ]);
-      if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
-      if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
-      setClients(clientsRes.data || []);
-      setLeads(leadsRes.data   || []);
-      setLoading(false);
-    }
     fetchData();
 
     const channel = supabase.channel('admin-overview-leads')
@@ -104,7 +108,13 @@ export default function AdminOverview() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    const interval = setInterval(() => {
+      fetchData(true);
+      setRefreshing(true);
+      setTimeout(() => setRefreshing(false), 2000);
+    }, 60000);
+
+    return () => { supabase.removeChannel(channel); clearInterval(interval); };
   }, []);
 
   /* ── Computed ── */
@@ -113,10 +123,8 @@ export default function AdminOverview() {
   const thisMonth  = now.getMonth();
   const thisYear   = now.getFullYear();
 
-  const starterCount = clients.filter(c => c.plan === 'starter').length;
-  const growthCount  = clients.filter(c => c.plan === 'growth').length;
-  const scaleCount   = clients.filter(c => c.plan === 'scale').length;
-  const mrr          = starterCount * 300 + growthCount * 600 + scaleCount * 1149;
+  const { starterCount, growthCount, scaleCount } = getPlanCounts(clients);
+  const mrr = calculateMRR(clients);
 
   const mrrGrowth = clients.filter(c => {
     const d = new Date(c.created_at);
@@ -289,7 +297,10 @@ export default function AdminOverview() {
           {/* Recent Leads */}
           <div style={{ ...CARD, flex: 1, padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Recent Leads</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Recent Leads</span>
+                <span title="Auto-refreshing every 60s" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: refreshing ? '#4ade80' : '#d1d5db', display: 'inline-block', transition: 'background-color 0.3s', flexShrink: 0 }} />
+              </div>
               <button type="button" onClick={() => navigate('/admin/leads')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: PRIMARY, fontWeight: '600', fontFamily: FONT, padding: 0 }}>
                 View all →

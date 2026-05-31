@@ -95,6 +95,8 @@ export default function AdminLeadDetail() {
   const [notFound, setNotFound] = useState(false);
   const [notes,    setNotes]    = useState('');
   const [saveMsg,  setSaveMsg]  = useState('');
+  const [prevLead, setPrevLead] = useState(null);
+  const [nextLead, setNextLead] = useState(null);
 
   useEffect(() => { fetchData(); }, [id]);
 
@@ -108,6 +110,12 @@ export default function AdminLeadDetail() {
       const { data: clientData } = await supabase.from('clients').select('*').eq('id', leadData.client_id).single();
       setClient(clientData || null);
     }
+    const [{ data: prev }, { data: next }] = await Promise.all([
+      supabase.from('leads').select('id').eq('client_id', leadData.client_id).lt('created_at', leadData.created_at).order('created_at', { ascending: false }).limit(1),
+      supabase.from('leads').select('id').eq('client_id', leadData.client_id).gt('created_at', leadData.created_at).order('created_at', { ascending: true }).limit(1),
+    ]);
+    setPrevLead(prev?.[0] || null);
+    setNextLead(next?.[0] || null);
     setLoading(false);
   }
 
@@ -158,10 +166,16 @@ export default function AdminLeadDetail() {
       <div style={{ fontFamily: FONT }}>
 
         {/* Back */}
-        <button type="button" onClick={() => navigate('/admin/leads')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: PRIMARY, fontSize: '13px', fontWeight: '600', padding: 0, marginBottom: '16px', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '4px' }}>
-          ← Back to Leads
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <button type="button" onClick={() => navigate('/admin/leads')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: PRIMARY, fontSize: '13px', fontWeight: '600', padding: 0, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            ← Back to Leads
+          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {prevLead && <button type="button" onClick={() => navigate(`/admin/leads/${prevLead.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PRIMARY, fontSize: '13px', fontWeight: '600', padding: 0, fontFamily: FONT }}>← Previous Lead</button>}
+            {nextLead && <button type="button" onClick={() => navigate(`/admin/leads/${nextLead.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: PRIMARY, fontSize: '13px', fontWeight: '600', padding: 0, fontFamily: FONT }}>Next Lead →</button>}
+          </div>
+        </div>
 
         {/* Client badge */}
         {client && (

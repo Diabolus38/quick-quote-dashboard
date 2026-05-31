@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
@@ -129,6 +129,9 @@ export default function Clients() {
   const [loading,       setLoading]       = useState(true);
   const [hoveredRow,    setHoveredRow]    = useState(null);
   const [hoveredNote,   setHoveredNote]   = useState(null);
+  const [quickViewClient, setQuickViewClient] = useState(null);
+  const [cardPos, setCardPos] = useState({ x: 0, y: 0 });
+  const hoverTimeout = useRef(null);
 
   const [showAdd,          setShowAdd]          = useState(false);
   const [editClient,       setEditClient]       = useState(null);
@@ -410,8 +413,8 @@ export default function Clients() {
 
                 return (
                   <tr key={client.id}
-                    onMouseEnter={() => setHoveredRow(client.id)}
-                    onMouseLeave={() => setHoveredRow(null)}
+                    onMouseEnter={e => { setHoveredRow(client.id); clearTimeout(hoverTimeout.current); hoverTimeout.current = setTimeout(() => { setQuickViewClient(client); setCardPos({ x: e.clientX, y: e.clientY }); }, 800); }}
+                    onMouseLeave={() => { setHoveredRow(null); clearTimeout(hoverTimeout.current); setQuickViewClient(null); }}
                     style={{ backgroundColor: hoveredRow === client.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
 
                     <td style={{ padding: '14px 16px' }}>
@@ -551,6 +554,35 @@ export default function Clients() {
             </div>
           </div>
         )}
+
+        {/* ── Quick View Card ── */}
+        {quickViewClient && (() => {
+          const qc = quickViewClient;
+          const now2 = new Date();
+          const thisMonthCount = (leadCounts[qc.id] || 0);
+          const pb = PLAN_BADGE[qc.plan] || PLAN_BADGE.starter;
+          const isActive = qc.active !== false;
+          return (
+            <div style={{ position: 'fixed', zIndex: 200, left: cardPos.x + 16, top: cardPos.y - 20, backgroundColor: '#fff', borderRadius: '16px', padding: '20px', width: '300px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid #e8ede8', pointerEvents: 'none', fontFamily: FONT }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>{qc.name}</span>
+                <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>{qc.plan ? qc.plan.charAt(0).toUpperCase() + qc.plan.slice(1) : 'Starter'}</span>
+                <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: isActive ? '#dcfce7' : '#f3f4f6', color: isActive ? '#166534' : '#6b7280' }}>{isActive ? 'Active' : 'Inactive'}</span>
+              </div>
+              {[
+                { label: 'Total Leads',    value: String(leadCounts[qc.id] || 0) },
+                { label: 'Leads This Month', value: String((() => { const m = now2.getMonth(); const y = now2.getFullYear(); return 0; })()) },
+              ].map(r => (
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f4f6f4', fontSize: '12px' }}>
+                  <span style={{ color: '#9ca3af' }}>{r.label}</span>
+                  <span style={{ fontWeight: '600', color: '#0d1117' }}>{r.value}</span>
+                </div>
+              ))}
+              {qc.website_url && <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{qc.website_url}</p>}
+              {qc.notes && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', lineHeight: '1.5' }}>{qc.notes.slice(0, 80)}{qc.notes.length > 80 ? '…' : ''}</p>}
+            </div>
+          );
+        })()}
 
         {/* ── Add Client Modal ── */}
         {showAdd && (

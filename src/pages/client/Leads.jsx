@@ -45,7 +45,9 @@ export default function Leads() {
   const [currentPage,  setCurrentPage]  = useState(1);
   const [showToast,    setShowToast]    = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
   const [showColPicker, setShowColPicker] = useState(false);
+  const [focusedLeadId, setFocusedLeadId] = useState(null);
 
   function playChime() {
     try {
@@ -84,9 +86,8 @@ export default function Leads() {
       .channel(`leads-page-${profile.client_id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
         setLeads(prev => [payload.new, ...prev]);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 4000);
-        if (soundEnabled) playChime();
+        if (!dnd) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }
+        if (soundEnabled && !dnd) playChime();
       })
       .subscribe();
 
@@ -193,6 +194,11 @@ export default function Leads() {
             style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
             {soundEnabled ? '🔔' : '🔕'}
           </button>
+          <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem('qq360_dnd', JSON.stringify(next)); }}
+            title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
+            style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#9ca3af', fontWeight: '600', fontFamily: FONT }}>
+            🌙 DND
+          </button>
           <button type="button" onClick={handleExportCSV} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#0d1117', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
             Export CSV
           </button>
@@ -270,7 +276,15 @@ export default function Leads() {
           const visCols = COLUMNS.filter(c => visibleCols.has(c));
           const gridTpl = visCols.map(c => COL_WIDTHS[c] || '120px').join(' ');
           return (
-            <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+            <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}
+              onKeyDown={e => {
+                if (!['ArrowDown','ArrowUp','Enter'].includes(e.key)) return;
+                e.preventDefault();
+                const idx = paginatedLeads.findIndex(l => l.id === focusedLeadId);
+                if (e.key === 'ArrowDown') setFocusedLeadId(paginatedLeads[Math.min(idx + 1, paginatedLeads.length - 1)]?.id ?? paginatedLeads[0]?.id);
+                else if (e.key === 'ArrowUp') setFocusedLeadId(paginatedLeads[Math.max(idx - 1, 0)]?.id);
+                else if (e.key === 'Enter' && focusedLeadId) navigate(`/client/leads/${focusedLeadId}`);
+              }}>
               <div style={{ display: 'grid', gridTemplateColumns: gridTpl, backgroundColor: '#f9fbf9', borderBottom: '1px solid #e8ede8', padding: '12px 20px' }}>
                 {visCols.map(col => <span key={col} style={{ fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{col}</span>)}
               </div>
@@ -285,8 +299,10 @@ export default function Leads() {
                   const sb = STATUS_BADGE[lead.status] || { bg: '#f3f4f6', color: '#6b7280' };
                   return (
                     <div key={lead.id}
+                      tabIndex={0}
+                      onFocus={() => setFocusedLeadId(lead.id)}
                       onMouseEnter={() => setHoveredRow(lead.id)} onMouseLeave={() => setHoveredRow(null)}
-                      style={{ display: 'grid', gridTemplateColumns: gridTpl, padding: '12px 20px', fontSize: '13.5px', color: '#4b5563', borderBottom: '1px solid #f4f6f4', backgroundColor: hoveredRow===lead.id ? '#f9fbf9' : '#fff', alignItems: 'center' }}>
+                      style={{ display: 'grid', gridTemplateColumns: gridTpl, padding: '12px 20px', fontSize: '13.5px', color: '#4b5563', borderBottom: '1px solid #f4f6f4', backgroundColor: hoveredRow===lead.id ? '#f9fbf9' : '#fff', alignItems: 'center', outline: focusedLeadId === lead.id ? '2px solid #166534' : 'none', outlineOffset: '-2px' }}>
                       {visibleCols.has('Date') && <span style={{ color: '#9ca3af', fontSize: '12px' }}>{formatDate(lead.created_at)}</span>}
                       {visibleCols.has('Name') && <span style={{ fontWeight: '600', color: '#0d1117', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name||'—'}</span>}
                       {visibleCols.has('Email') && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#4b5563' }}>{lead.email||'—'}</span>}

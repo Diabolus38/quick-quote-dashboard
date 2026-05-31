@@ -361,14 +361,25 @@ function PricingContent({ clientId }) {
                   </select>
                 </div>
               </div>
-              <div style={{ backgroundColor: '#0d1f12', borderRadius: '16px', padding: '28px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Estimated Price</p>
-                <p style={{ margin: 0, fontSize: '40px', fontWeight: '800', color: '#a3e635', letterSpacing: '-1px', lineHeight: 1 }}>
-                  {total > 0 ? `${total.toLocaleString()} ${currency}` : '—'}
-                </p>
-                <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-                  Base: {baseVal.toLocaleString()} + Establishment: {estCost.toLocaleString()}
-                </p>
+              <div style={{ backgroundColor: '#0d1f12', borderRadius: '16px', padding: '24px' }}>
+                {[
+                  { label: 'Base System Price', amount: baseVal },
+                  { label: `Establishment (${previewZone})`, amount: estCost },
+                  ...(rotEnabled ? [{ label: `ROT Deduction (${rotPercent}%)`, amount: -Math.round(baseVal * Number(rotPercent) / 100), negative: true }] : []),
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: '13px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>{item.label}</span>
+                    <span style={{ fontWeight: '600', color: item.negative ? '#f87171' : 'rgba(255,255,255,0.85)' }}>
+                      {item.negative ? '−' : ''}{Math.abs(item.amount).toLocaleString()} {currency}
+                    </span>
+                  </div>
+                ))}
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: '10px', paddingTop: '12px', textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total</p>
+                  <p style={{ margin: 0, fontSize: '36px', fontWeight: '800', color: '#a3e635', letterSpacing: '-1px', lineHeight: 1 }}>
+                    {total > 0 ? `${total.toLocaleString()} ${currency}` : '—'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

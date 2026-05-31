@@ -39,7 +39,7 @@ function SaveButton({ onClick, saveMsg, label = 'Save' }) {
 
 /* ── 1. Profile ──────────────────────────────────────────────── */
 
-function ProfileSection({ setHasUnsaved }) {
+function ProfileSection({ setHasUnsaved, setSaveRef }) {
   const { profile } = useAuth();
   const [fullName,      setFullName]      = useState('');
   const [saveMsg,       setSaveMsg]       = useState('');
@@ -84,6 +84,9 @@ function ProfileSection({ setHasUnsaved }) {
     setTimeout(() => setSaveMsg(''), 2000);
     setHasUnsaved?.(false);
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
 
   const inp = {
     width: '100%', boxSizing: 'border-box', height: '42px',
@@ -140,7 +143,7 @@ function ProfileSection({ setHasUnsaved }) {
 const NOTIF_KEY = 'qq360_admin_notifications';
 const NOTIF_DEFAULTS = { estimates: true, client: true, invoice: false };
 
-function NotificationsSection({ setHasUnsaved }) {
+function NotificationsSection({ setHasUnsaved, setSaveRef }) {
   const [toggles, setToggles] = useState(() => {
     try {
       const stored = localStorage.getItem(NOTIF_KEY);
@@ -158,6 +161,9 @@ function NotificationsSection({ setHasUnsaved }) {
     setHasUnsaved?.(false);
     _init.current = JSON.stringify(toggles);
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
 
   const rows = [
     { key: 'estimates', label: 'New estimate submitted', desc: 'Get notified when a client generates a new estimate' },
@@ -229,14 +235,26 @@ export default function Settings() {
   const [activeNav,   setActiveNav]   = useState('Profile');
   const [hovered,     setHovered]     = useState(null);
   const [hasUnsaved,  setHasUnsaved]  = useState(false);
+  const saveRef = useRef(null);
 
-  useEffect(() => { setHasUnsaved(false); }, [activeNav]);
+  useEffect(() => { setHasUnsaved(false); saveRef.current = null; }, [activeNav]);
 
   useEffect(() => {
     const handler = e => { if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; } };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [hasUnsaved]);
+
+  useEffect(() => {
+    const handler = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        saveRef.current?.();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <Layout title="Settings">
@@ -273,8 +291,8 @@ export default function Settings() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {activeNav === 'Profile'       && <ProfileSection setHasUnsaved={setHasUnsaved} />}
-          {activeNav === 'Notifications' && <NotificationsSection setHasUnsaved={setHasUnsaved} />}
+          {activeNav === 'Profile'       && <ProfileSection setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
+          {activeNav === 'Notifications' && <NotificationsSection setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeNav === 'Danger Zone'   && <DangerZoneSection />}
         </div>
 

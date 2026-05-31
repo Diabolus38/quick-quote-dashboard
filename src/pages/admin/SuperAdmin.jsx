@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { calculateMRR, getPlanCounts } from '../../utils/mrrUtils';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -252,10 +253,8 @@ export default function SuperAdmin() {
   const leadsToday    = leads.filter(l => new Date(l.created_at).toDateString() === today).length;
   const thisMonthNew  = clients.filter(c => { const d = new Date(c.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
 
-  const starterCount = clients.filter(c => c.plan === 'starter').length;
-  const growthCount  = clients.filter(c => c.plan === 'growth').length;
-  const scaleCount   = clients.filter(c => c.plan === 'scale').length;
-  const mrr = starterCount * 300 + growthCount * 600 + scaleCount * 1149;
+  const { starterCount, growthCount, scaleCount } = getPlanCounts(clients);
+  const mrr = calculateMRR(clients);
   const maxPlan = Math.max(starterCount, growthCount, scaleCount, 1);
 
   const startOfThisMonth  = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -100,7 +100,7 @@ function SettingsSkeleton() {
 
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
-function BrandingSection({ clientId, setHasUnsaved }) {
+function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [companyName,    setCompanyName]    = useState('');
   const [primaryColor,   setPrimaryColor]   = useState('#166534');
   const [colorHex,       setColorHex]       = useState('#166534');
@@ -135,6 +135,8 @@ function BrandingSection({ clientId, setHasUnsaved }) {
   }, [companyName, primaryColor, colorHex, logoUrl, companyPhone, companyAddress]);
 
   if (loading) return <SettingsSkeleton />;
+
+  useEffect(() => { setSaveRef?.(handleSave); });
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -260,7 +262,7 @@ function BrandingSection({ clientId, setHasUnsaved }) {
 
 /* ── 2. Email Settings ───────────────────────────────────────── */
 
-function EmailSection({ clientId, setHasUnsaved }) {
+function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [fromName,     setFromName]     = useState('');
   const [replyTo,      setReplyTo]      = useState('');
   const [subject,      setSubject]      = useState('');
@@ -303,6 +305,9 @@ function EmailSection({ clientId, setHasUnsaved }) {
     localStorage.setItem('qq360_last_saved_email', ts);
     setLastSavedEmail(ts);
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
 
   async function handleTestEmail() {
     if (!replyTo) return;
@@ -389,7 +394,7 @@ const LANG_OPTIONS = [
   { code: 'FR', label: 'Français' },
 ];
 
-function LanguagesSection({ clientId, setHasUnsaved }) {
+function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [enabled,         setEnabled]         = useState({ EN: true, SV: false, DE: false, FR: false });
   const [defaultLanguage, setDefaultLanguage] = useState('EN');
   const [saveMsg, flash] = useSaveMsg();
@@ -455,6 +460,9 @@ function LanguagesSection({ clientId, setHasUnsaved }) {
     setLastSavedLangs(ts);
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
+
   const enabledCodes = LANG_OPTIONS.filter(({ code }) => enabled[code]);
 
   return (
@@ -511,6 +519,7 @@ function EmbedCodeSection({ clientId }) {
   const [copiedIframe,  setCopiedIframe]  = useState(false);
   const [copiedWP,      setCopiedWP]      = useState(false);
   const [copiedLink,    setCopiedLink]    = useState(false);
+  const [qrSize,        setQrSize]        = useState(200);
   const scriptTag    = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
   const iframeTag    = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
   const shortcodeTag = `[quickquote360 client_id="${clientId || 'CLIENT_ID_HERE'}"]`;
@@ -603,11 +612,19 @@ function EmbedCodeSection({ clientId }) {
 
         <p style={{ margin: '24px 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>QR Code</p>
         <img
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(directLink)}`}
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(directLink)}`}
           alt="QR Code for estimator link"
           style={{ width: '160px', height: '160px', borderRadius: '8px', border: '1px solid #e8ede8', display: 'block', marginBottom: '12px' }}
         />
-        <button type="button" onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(directLink)}`, '_blank')}
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+          {[{ label: 'Small', size: 150 }, { label: 'Medium', size: 200 }, { label: 'Large', size: 300 }].map(opt => (
+            <button key={opt.size} type="button" onClick={() => setQrSize(opt.size)}
+              style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, border: qrSize === opt.size ? 'none' : '1px solid #e8ede8', backgroundColor: qrSize === opt.size ? '#0d1117' : '#fff', color: qrSize === opt.size ? '#fff' : '#4b5563' }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(directLink)}`, '_blank')}
           style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
           Download QR Code
         </button>
@@ -618,7 +635,7 @@ function EmbedCodeSection({ clientId }) {
 
 /* ── 5. Account ──────────────────────────────────────────────── */
 
-function AccountSection({ setHasUnsaved }) {
+function AccountSection({ setHasUnsaved, setSaveRef }) {
   const { profile } = useAuth();
   const [fullName,    setFullName]    = useState('');
   const [avatarUrl,   setAvatarUrl]   = useState('');
@@ -647,6 +664,9 @@ function AccountSection({ setHasUnsaved }) {
     flash();
     setHasUnsaved?.(false);
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
 
   async function handleResetPassword() {
     await supabase.auth.resetPasswordForEmail(profile.email);
@@ -831,14 +851,26 @@ export default function ClientSettingsPage() {
 
   const [activeSection, setActiveSection] = useState('Branding');
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const saveRef = useRef(null);
 
-  useEffect(() => { setHasUnsaved(false); }, [activeSection]);
+  useEffect(() => { setHasUnsaved(false); saveRef.current = null; }, [activeSection]);
 
   useEffect(() => {
     const handler = e => { if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; } };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [hasUnsaved]);
+
+  useEffect(() => {
+    const handler = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        saveRef.current?.();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <ClientLayout title="Settings">
@@ -861,11 +893,11 @@ export default function ClientSettingsPage() {
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} />}
-          {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} />}
-          {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} />}
+          {activeSection === 'Branding'       && <BrandingSection  key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
+          {activeSection === 'Email Settings' && <EmailSection     key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
+          {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
-          {activeSection === 'Account'        && <AccountSection setHasUnsaved={setHasUnsaved} />}
+          {activeSection === 'Account'        && <AccountSection setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeSection === 'Danger Zone'    && <DangerZoneSection />}
         </div>
       </div>
