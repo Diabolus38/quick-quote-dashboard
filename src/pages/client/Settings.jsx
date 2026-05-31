@@ -395,6 +395,7 @@ function LanguagesSection({ clientId, setHasUnsaved }) {
   const [saveMsg, flash] = useSaveMsg();
   const [loading, setLoading] = useState(true);
   const [lastSavedLangs, setLastSavedLangs] = useState(() => localStorage.getItem('qq360_last_saved_languages') || '');
+  const [questionCounts,  setQuestionCounts]  = useState({ EN: null, SV: null, DE: null, FR: null });
   const _ll = useRef(false);
 
   useEffect(() => {
@@ -406,6 +407,20 @@ function LanguagesSection({ clientId, setHasUnsaved }) {
         setDefaultLanguage(ls.default_language || 'EN');
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
+      });
+  }, [clientId]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_questions').select('label_en, label_sv, label_de, label_fr').eq('client_id', clientId)
+      .then(({ data }) => {
+        if (!data) return;
+        setQuestionCounts({
+          EN: data.filter(r => r.label_en?.trim()).length,
+          SV: data.filter(r => r.label_sv?.trim()).length,
+          DE: data.filter(r => r.label_de?.trim()).length,
+          FR: data.filter(r => r.label_fr?.trim()).length,
+        });
       });
   }, [clientId]);
 
@@ -452,15 +467,25 @@ function LanguagesSection({ clientId, setHasUnsaved }) {
       <div style={CARD}>
         <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>At least one language must always be enabled.</p>
         <div style={{ marginTop: '12px' }}>
-          {LANG_OPTIONS.map(({ code, label }, i) => (
-            <div key={code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < LANG_OPTIONS.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
-              <div>
-                <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{code}</span>
-                <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '8px', fontFamily: FONT }}>{label}</span>
+          {LANG_OPTIONS.map(({ code, label }, i) => {
+            const cnt = questionCounts[code];
+            const badgeBg    = cnt === null ? 'transparent' : cnt === 0 ? '#f3f4f6' : cnt >= 14 ? '#dcfce7' : '#fef9c3';
+            const badgeColor = cnt === null ? 'transparent' : cnt === 0 ? '#9ca3af' : cnt >= 14 ? '#166534' : '#d97706';
+            return (
+              <div key={code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < LANG_OPTIONS.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{code}</span>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{label}</span>
+                  {cnt !== null && (
+                    <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: '600', fontFamily: FONT, backgroundColor: badgeBg, color: badgeColor }}>
+                      {cnt}/14
+                    </span>
+                  )}
+                </div>
+                <Toggle value={!!enabled[code]} onChange={() => handleToggle(code)} />
               </div>
-              <Toggle value={!!enabled[code]} onChange={() => handleToggle(code)} />
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f4f6f4' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>Default Language</label>

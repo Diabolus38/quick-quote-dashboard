@@ -519,7 +519,23 @@ export default function Billing() {
 
           {/* Totals row */}
           {billingRows.length > 0 && (
-            <div style={{ padding: '16px 24px', borderTop: '2px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '32px', backgroundColor: '#fafafa' }}>
+            <div style={{ padding: '16px 24px', borderTop: '2px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px', backgroundColor: '#fafafa', flexWrap: 'wrap' }}>
+              {(() => {
+                const paidRows    = billingRows.filter(r => paidStatus[r.id]);
+                const pendingRows = billingRows.filter(r => !paidStatus[r.id]);
+                const outstanding = pendingRows.reduce((s, r) => s + r.total, 0);
+                return (
+                  <>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#166534' }}>
+                      Paid: {paidRows.length} client{paidRows.length !== 1 ? 's' : ''} · ${collectedRevenue.toLocaleString()} collected
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#d97706' }}>
+                      Pending: {pendingRows.length} client{pendingRows.length !== 1 ? 's' : ''} · ${outstanding.toLocaleString()} outstanding
+                    </span>
+                    <div style={{ width: '1px', height: '24px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+                  </>
+                );
+              })()}
               <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
                 MRR: <span style={{ color: '#0d1117' }}>${totalMRR.toLocaleString()}</span>
               </span>

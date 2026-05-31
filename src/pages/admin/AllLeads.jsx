@@ -92,6 +92,7 @@ export default function AllLeads() {
   const [loading,      setLoading]      = useState(true);
   const [hovRow,       setHovRow]       = useState(null);
   const [newLeadToast, setNewLeadToast] = useState(null);
+  const [soundEnabled,  setSoundEnabled]  = useState(true);
   const clientsRef = useRef([]);
 
   const [search,        setSearch]        = useState('');
@@ -166,6 +167,21 @@ export default function AllLeads() {
 
   useEffect(() => { clientsRef.current = clients; }, [clients]);
 
+  function playChime() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const play = (freq, startTime) => {
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq; osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
+        osc.start(startTime); osc.stop(startTime + 0.1);
+      };
+      play(520, ctx.currentTime); play(660, ctx.currentTime + 0.15);
+    } catch {}
+  }
+
   useEffect(() => {
     const channel = supabase.channel('admin-all-leads-rt')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
@@ -173,10 +189,11 @@ export default function AllLeads() {
         setLeads(prev => [lead, ...prev]);
         setNewLeadToast(`New lead from ${lead.name || 'Unknown'}`);
         setTimeout(() => setNewLeadToast(null), 4000);
+        if (soundEnabled) playChime();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [soundEnabled]);
 
   async function updateStatus(leadId, newStatus) {
     await supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
@@ -307,6 +324,11 @@ export default function AllLeads() {
             <button type="button" onClick={() => exportCSV(filtered, clientMap)}
               style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
               ↓ Export CSV
+            </button>
+            <button type="button" onClick={() => setSoundEnabled(p => !p)}
+              title={soundEnabled ? 'Sound notifications on' : 'Sound notifications off'}
+              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
+              {soundEnabled ? '🔔' : '🔕'}
             </button>
             <div style={{ position: 'relative' }} data-col-picker>
               <button type="button" onClick={e => { e.stopPropagation(); setShowColumnPicker(p => !p); }}

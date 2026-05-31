@@ -82,6 +82,7 @@ function PDFContent({ clientId }) {
   const [sigEmail,      setSigEmail]      = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem('qq360_last_saved_pdf') || '');
+  const [sectionVisible, setSectionVisible] = useState({ intro: true, systemDesc: true, serviceAg: true, payTerms: true, legal: true });
 
   useEffect(() => {
     if (!clientId) return;
@@ -166,6 +167,7 @@ function PDFContent({ clientId }) {
       {/* Right column: preview */}
       <div style={{ width: '340px', flexShrink: 0, position: 'sticky', top: '80px' }}>
         <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>PDF Preview</p>
+
         <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', fontSize: '12px', fontFamily: FONT }}>
           {/* Header */}
           <div style={{ backgroundColor: previewColor, borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -179,17 +181,41 @@ function PDFContent({ clientId }) {
             <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>customer@example.com</p>
           </div>
           {/* Introduction */}
-          <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
-            <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Introduction</p>
-            <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-              {intro || 'Your introduction text will appear here…'}
-            </p>
-          </div>
+          {sectionVisible.intro && (
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Introduction</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {intro || 'Your introduction text will appear here…'}
+              </p>
+            </div>
+          )}
           {/* Footer */}
           <div style={{ paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
             <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#0d1117' }}>{sigName || 'Signature Name'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigTitle || 'Title'}</p>
             <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
+          </div>
+        </div>
+
+        {/* Section Visibility Toggles */}
+        <div style={{ marginTop: '16px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Preview Options</p>
+          <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+            {[
+              { key: 'intro',      label: 'Introduction'      },
+              { key: 'systemDesc', label: 'System Description' },
+              { key: 'serviceAg',  label: 'Service Agreement'  },
+              { key: 'payTerms',   label: 'Payment Terms'      },
+              { key: 'legal',      label: 'Legal Reservations' },
+            ].map(({ key, label }, i, arr) => (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: i < arr.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                <span style={{ fontSize: '12px', color: '#374151', fontFamily: FONT }}>{label}</span>
+                <div onClick={() => setSectionVisible(prev => ({ ...prev, [key]: !prev[key] }))}
+                  style={{ width: '36px', height: '20px', borderRadius: '10px', backgroundColor: sectionVisible[key] ? PRIMARY : '#e5e7eb', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background-color 0.2s' }}>
+                  <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: sectionVisible[key] ? '19px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -191,7 +191,7 @@ export default function ClientOverview() {
         {/* Quick Actions */}
         <div style={{ ...CARD, marginTop: '24px' }}>
           <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Quick Actions</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             {[
               { key: 'leads',     icon: '📋', label: 'View All Leads',    path: '/client/leads'     },
               { key: 'pricing',   icon: '💰', label: 'Configure Pricing',  path: '/client/pricing'   },
@@ -214,6 +214,24 @@ export default function ClientOverview() {
               style={{ backgroundColor: hoveredAction === 'reports' ? '#f9faf9' : '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px', transition: 'background-color 0.12s' }}>
               <span style={{ fontSize: '22px' }}>📈</span>
               <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>View Reports</span>
+            </div>
+            <div
+              onClick={() => {
+                if (!leads.length) return;
+                const fmt = d => { const x = new Date(d); return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`; };
+                const headers = ['Date','Name','Email','Phone','Municipality','Price','Status'];
+                const rows = leads.map(l => [fmt(l.created_at), l.name||'', l.email||'', l.phone||'', l.municipality||'', l.estimated_price??'', l.status||'']);
+                const csv = [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+                a.download = `quickquote360-leads-${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+              }}
+              onMouseEnter={() => setHoveredAction('csv')}
+              onMouseLeave={() => setHoveredAction(null)}
+              style={{ backgroundColor: hoveredAction === 'csv' ? '#f9faf9' : '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px', transition: 'background-color 0.12s' }}>
+              <span style={{ fontSize: '22px' }}>📥</span>
+              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Download CSV</span>
             </div>
           </div>
         </div>

@@ -296,7 +296,11 @@ export default function QuestionEditor() {
                               <input type="text" placeholder={`Label in ${lang.name}`}
                                 value={q[`label_${lang.code}`] || ''}
                                 onChange={e => update(key, `label_${lang.code}`, e.target.value)}
+                                maxLength={120}
                                 style={inputStyle} />
+                              <div style={{ fontSize: '10px', textAlign: 'right', marginTop: '2px', color: (q[`label_${lang.code}`] || '').length >= 120 ? '#dc2626' : (q[`label_${lang.code}`] || '').length >= 96 ? '#d97706' : '#9ca3af' }}>
+                                {(q[`label_${lang.code}`] || '').length}/120
+                              </div>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -304,7 +308,11 @@ export default function QuestionEditor() {
                               <input type="text" placeholder={`Helper in ${lang.name}`}
                                 value={q[`helper_${lang.code}`] || ''}
                                 onChange={e => update(key, `helper_${lang.code}`, e.target.value)}
+                                maxLength={200}
                                 style={inputStyle} />
+                              <div style={{ fontSize: '10px', textAlign: 'right', marginTop: '2px', color: (q[`helper_${lang.code}`] || '').length >= 200 ? '#dc2626' : (q[`helper_${lang.code}`] || '').length >= 160 ? '#d97706' : '#9ca3af' }}>
+                                {(q[`helper_${lang.code}`] || '').length}/200
+                              </div>
                             </div>
                           </div>
                         ))}

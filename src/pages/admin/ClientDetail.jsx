@@ -490,6 +490,13 @@ export default function ClientDetail() {
                   leads.filter(l => { const d = new Date(l.created_at); return d.getFullYear() === year && d.getMonth() === month; }).length
                 );
                 const maxCount = Math.max(...counts, 1);
+                const allZero = counts.every(c => c === 0);
+                if (allZero) return (
+                  <div style={{ textAlign: 'center', padding: '28px 0' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+                    <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', fontFamily: FONT }}>No usage data yet</p>
+                  </div>
+                );
                 return (
                   <>
                     <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '6px' }}>

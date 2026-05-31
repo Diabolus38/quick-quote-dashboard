@@ -152,15 +152,25 @@ export default function AdminOverview() {
   const maxPlan     = Math.max(starterCount, growthCount, scaleCount, 1);
 
   const PLAN_FEE_OV = { starter: 300, growth: 600, scale: 1149 };
+  const conversionRatePerClient = {};
+  clients.forEach(c => {
+    const cl = leads.filter(l => l.client_id === c.id);
+    const won = cl.filter(l => (l.status || '').toLowerCase().replace(/\s+/g,'_') === 'closed_won');
+    conversionRatePerClient[c.id] = cl.length > 0 ? Math.round((won.length / cl.length) * 100) : 0;
+  });
   const top5Clients = [...clients]
     .sort((a, b) => rankMode === 'revenue'
       ? (PLAN_FEE_OV[b.plan] || 0) - (PLAN_FEE_OV[a.plan] || 0)
-      : (leadCountPerClient[b.id] || 0) - (leadCountPerClient[a.id] || 0))
+      : rankMode === 'conversion'
+        ? conversionRatePerClient[b.id] - conversionRatePerClient[a.id]
+        : (leadCountPerClient[b.id] || 0) - (leadCountPerClient[a.id] || 0))
     .slice(0, 5);
   const top5MaxCount = top5Clients.length > 0
     ? (rankMode === 'revenue'
         ? PLAN_FEE_OV[top5Clients[0].plan] || 1
-        : (leadCountPerClient[top5Clients[0].id] || 1))
+        : rankMode === 'conversion'
+          ? conversionRatePerClient[top5Clients[0].id] || 1
+          : (leadCountPerClient[top5Clients[0].id] || 1))
     : 1;
 
   const events = [
@@ -411,7 +421,7 @@ export default function AdminOverview() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Top Clients</p>
             <div style={{ display: 'flex', gap: '4px' }}>
-              {[{ key: 'leads', label: 'By Leads' }, { key: 'revenue', label: 'By Revenue' }].map(m => (
+              {[{ key: 'leads', label: 'By Leads' }, { key: 'revenue', label: 'By Revenue' }, { key: 'conversion', label: 'By Conversion' }].map(m => (
                 <button key={m.key} type="button" onClick={() => setRankMode(m.key)}
                   style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', backgroundColor: rankMode === m.key ? PRIMARY : '#f3f4f6', color: rankMode === m.key ? '#fff' : '#6b7280', fontFamily: FONT, transition: 'all 0.12s' }}>
                   {m.label}
@@ -422,8 +432,8 @@ export default function AdminOverview() {
           {top5Clients.length === 0 ? (
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No client data yet.</p>
           ) : top5Clients.map((client, idx) => {
-            const count    = rankMode === 'revenue' ? (PLAN_FEE_OV[client.plan] || 0) : (leadCountPerClient[client.id] || 0);
-            const display  = rankMode === 'revenue' ? `$${count.toLocaleString()}/mo` : String(count);
+            const count    = rankMode === 'revenue' ? (PLAN_FEE_OV[client.plan] || 0) : rankMode === 'conversion' ? conversionRatePerClient[client.id] || 0 : (leadCountPerClient[client.id] || 0);
+            const display  = rankMode === 'revenue' ? `$${count.toLocaleString()}/mo` : rankMode === 'conversion' ? `${count}%` : String(count);
             const pct      = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
             const rankColors = [
               { bg: '#d97706', color: '#fff' },

@@ -296,6 +296,12 @@ export default function SuperAdmin() {
     if ((leadCountPerClient[c.id] || 0) === 0) {
       systemAlerts.push({ key: `${c.id}_suggestion`, msg: `→ ${c.name} has no leads yet — they may need help with setup`, borderColor: '#9ca3af' });
     }
+    if (lastActivePerClient[c.id]) {
+      const daysSinceActive = Math.floor((Date.now() - new Date(lastActivePerClient[c.id]).getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceActive > 30) {
+        systemAlerts.push({ key: `${c.id}_quiet`, msg: `⏰ ${c.name} has not received a lead in ${daysSinceActive} days.`, borderColor: '#7c3aed' });
+      }
+    }
   });
 
   const clientMap = {};
