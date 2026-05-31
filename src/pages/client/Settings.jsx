@@ -188,7 +188,7 @@ function BrandingSection({ clientId, setHasUnsaved }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
             <button type="button" onClick={handleRestoreDefaults}
-              style={{ fontSize: '12px', color: '#9ca3af', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontFamily: FONT, textDecoration: 'underline' }}>
+              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#9ca3af', borderRadius: '10px', padding: '7px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: FONT }}>
               Restore Defaults
             </button>
             {restoreMsg && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{restoreMsg}</span>}
