@@ -131,6 +131,7 @@ export default function Clients() {
   const [hoveredNote,   setHoveredNote]   = useState(null);
   const [quickViewClient, setQuickViewClient] = useState(null);
   const [cardPos, setCardPos] = useState({ x: 0, y: 0 });
+  const [quickViewLeads, setQuickViewLeads] = useState(null);
   const hoverTimeout = useRef(null);
 
   const [showAdd,          setShowAdd]          = useState(false);
@@ -413,8 +414,8 @@ export default function Clients() {
 
                 return (
                   <tr key={client.id}
-                    onMouseEnter={e => { setHoveredRow(client.id); clearTimeout(hoverTimeout.current); hoverTimeout.current = setTimeout(() => { setQuickViewClient(client); setCardPos({ x: e.clientX, y: e.clientY }); }, 800); }}
-                    onMouseLeave={() => { setHoveredRow(null); clearTimeout(hoverTimeout.current); setQuickViewClient(null); }}
+                    onMouseEnter={e => { setHoveredRow(client.id); const ex = e.clientX; const ey = e.clientY; clearTimeout(hoverTimeout.current); hoverTimeout.current = setTimeout(() => { setQuickViewClient(client); setCardPos({ x: ex, y: ey }); setQuickViewLeads(null); supabase.from('leads').select('name, created_at, status').eq('client_id', client.id).order('created_at', { ascending: false }).limit(3).then(({ data }) => setQuickViewLeads(data || [])); }, 800); }}
+                    onMouseLeave={() => { setHoveredRow(null); clearTimeout(hoverTimeout.current); setQuickViewClient(null); setQuickViewLeads(null); }}
                     style={{ backgroundColor: hoveredRow === client.id ? '#f9faf9' : '#fff', borderBottom: '1px solid #f4f6f4' }}>
 
                     <td style={{ padding: '14px 16px' }}>
@@ -580,6 +581,23 @@ export default function Clients() {
               ))}
               {qc.website_url && <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{qc.website_url}</p>}
               {qc.notes && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', lineHeight: '1.5' }}>{qc.notes.slice(0, 80)}{qc.notes.length > 80 ? '…' : ''}</p>}
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f4f6f4' }}>
+                <p style={{ margin: '0 0 6px', fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Recent Leads</p>
+                {quickViewLeads === null ? (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Loading leads...</p>
+                ) : quickViewLeads.length === 0 ? (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>No leads yet.</p>
+                ) : quickViewLeads.map((lead, li) => {
+                  const rawS = (lead.status || 'new').toLowerCase().replace(/\s+/g,'_');
+                  const sb = { new: { bg: '#dbeafe', color: '#1d4ed8' }, contacted: { bg: '#fef9c3', color: '#854d0e' }, in_progress: { bg: '#ede9fe', color: '#7c3aed' }, closed_won: { bg: '#dcfce7', color: '#166534' }, closed_lost: { bg: '#fee2e2', color: '#991b1b' } }[rawS] || { bg: '#f3f4f6', color: '#6b7280' };
+                  return (
+                    <div key={li} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                      <span style={{ fontSize: '12px', color: '#0d1117', fontFamily: FONT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>{lead.name || '—'}</span>
+                      <span style={{ padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: '600', backgroundColor: sb.bg, color: sb.color, flexShrink: 0 }}>{lead.status || 'New'}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })()}

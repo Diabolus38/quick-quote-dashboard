@@ -245,6 +245,7 @@ export default function ClientOverview() {
         </div>
 
         {/* Recent Activity */}
+        <style>{`@keyframes pulseRing { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 4px rgba(163,230,53,0.3); } }`}</style>
         <div style={{ ...CARD, marginTop: '24px' }}>
           <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
           <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
@@ -279,7 +280,7 @@ export default function ClientOverview() {
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid #f4f6f4' : 'none', cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0, animation: i === 0 ? 'pulseRing 2s ease-in-out infinite' : 'none' }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{lead.name || '—'}</p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{timeAgoStr}</p>

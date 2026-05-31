@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
+import { calculateMRR } from '../utils/mrrUtils';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -220,7 +221,7 @@ export default function Billing() {
   const maxChartTotal = Math.max(...chartData.map(d => d.total), 1);
 
   /* ── Computed totals ── */
-  const totalMRR      = billingRows.reduce((s, r) => s + r.fee, 0);
+  const totalMRR      = calculateMRR(clients);
   const totalOverages = billingRows.reduce((s, r) => s + r.overageCharge, 0);
   const totalRevenue  = totalMRR + totalOverages;
   const activeCount   = clients.filter(c => c.active !== false).length;
@@ -496,11 +497,21 @@ export default function Billing() {
                                     return rowLeads.filter(l => { const ld = new Date(l.created_at); return ld.getDate() === day; }).length;
                                   });
                                   const maxDay = Math.max(...dailyCounts, 1);
+                                  const showLabels = daysInMonth <= 15;
                                   return (
-                                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '40px' }}>
-                                      {dailyCounts.map((count, d) => (
-                                        <div key={d} style={{ width: '8px', height: count > 0 ? `${Math.max(Math.round((count / maxDay) * 36), 2)}px` : '2px', backgroundColor: count > 0 ? 'rgba(22,101,52,0.6)' : '#f3f4f6', borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
-                                      ))}
+                                    <div>
+                                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '40px' }}>
+                                        {dailyCounts.map((count, d) => (
+                                          <div key={d} style={{ width: '8px', height: count > 0 ? `${Math.max(Math.round((count / maxDay) * 36), 2)}px` : '2px', backgroundColor: count > 0 ? 'rgba(22,101,52,0.6)' : '#f3f4f6', borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
+                                        ))}
+                                      </div>
+                                      {showLabels && (
+                                        <div style={{ display: 'flex', gap: '2px', marginTop: '2px' }}>
+                                          {dailyCounts.map((_, d) => (
+                                            <div key={d} style={{ width: '8px', fontSize: '8px', color: '#9ca3af', textAlign: 'center', flexShrink: 0 }}>{d + 1}</div>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })()}

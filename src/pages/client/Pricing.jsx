@@ -390,22 +390,43 @@ function PricingContent({ clientId }) {
 }
 
 function ConfigStatusCard() {
-  const sections = [
-    { key: 'qq360_last_saved_branding',      label: 'Brand'    },
-    { key: 'qq360_last_saved_pricing',        label: 'Pricing'  },
-    { key: 'qq360_last_saved_pdf',            label: 'PDF'      },
-    { key: 'qq360_last_saved_municipalities', label: 'Areas'    },
-    { key: 'qq360_last_saved_questions',      label: 'Questions'},
-  ];
-  const timestamps = sections.map(s => localStorage.getItem(s.key));
-  const count = timestamps.filter(Boolean).length;
+  const { profile } = useAuth();
+  const clientId = profile?.client_id;
+  const [dots, setDots] = useState([
+    !!localStorage.getItem('qq360_last_saved_branding'),
+    !!localStorage.getItem('qq360_last_saved_pricing'),
+    !!localStorage.getItem('qq360_last_saved_pdf'),
+    !!localStorage.getItem('qq360_last_saved_municipalities'),
+    !!localStorage.getItem('qq360_last_saved_questions'),
+  ]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    Promise.all([
+      supabase.from('client_settings').select('branding, pdf_content').eq('client_id', clientId).maybeSingle(),
+      supabase.from('client_pricing').select('base_prices').eq('client_id', clientId).maybeSingle(),
+      supabase.from('client_municipalities').select('id').eq('client_id', clientId).limit(1),
+      supabase.from('client_questions').select('label_en').eq('client_id', clientId),
+    ]).then(([{ data: s }, { data: p }, { data: m }, { data: q }]) => {
+      setDots([
+        !!(s?.branding?.company_name),
+        !!(p?.base_prices && Object.values(p.base_prices).some(r => typeof r === 'object' && Object.values(r).some(v => Number(v) > 0))),
+        !!(s?.pdf_content?.introduction),
+        (m || []).length > 0,
+        (q || []).some(x => x.label_en?.trim()),
+      ]);
+    }).catch(() => {});
+  }, [clientId]);
+
+  const labels = ['Brand', 'Pricing', 'PDF', 'Areas', 'Questions'];
+  const count = dots.filter(Boolean).length;
   return (
     <div style={{ ...CARD, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', gap: '16px' }}>
-        {sections.map((s, i) => (
-          <div key={s.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: timestamps[i] ? '#16a34a' : '#e5e7eb' }} />
-            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{s.label}</span>
+        {labels.map((label, i) => (
+          <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dots[i] ? '#16a34a' : '#e5e7eb' }} />
+            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{label}</span>
           </div>
         ))}
       </div>

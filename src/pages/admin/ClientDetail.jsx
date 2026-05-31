@@ -119,7 +119,7 @@ export default function ClientDetail() {
       supabase.from('clients').select('*').eq('id', id).single(),
       supabase.from('leads').select('*').eq('client_id', id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('updated_at').eq('client_id', id).single(),
-      supabase.from('client_settings').select('branding, email_settings').eq('client_id', id).maybeSingle(),
+      supabase.from('client_settings').select('branding, email_settings, pdf_content').eq('client_id', id).maybeSingle(),
       supabase.from('client_pricing').select('base_prices').eq('client_id', id).maybeSingle(),
       supabase.from('client_questions').select('id').eq('client_id', id).limit(1),
       supabase.from('client_municipalities').select('id').eq('client_id', id).limit(1),
@@ -138,6 +138,7 @@ export default function ClientDetail() {
       questions:     (questionsData || []).length > 0,
       municipalities:(munisData || []).length > 0,
       emailSettings: !!(settingsData?.email_settings?.from_name),
+      pdfContent:    !!(settingsData?.pdf_content?.introduction),
     });
     try {
       const stored = localStorage.getItem('qq360_notes_history_' + id);
@@ -590,6 +591,7 @@ export default function ClientDetail() {
                   { label: 'Questions customized',     ok: setupChecklist.questions      },
                   { label: 'Municipalities added',     ok: setupChecklist.municipalities },
                   { label: 'Email settings configured', ok: setupChecklist.emailSettings  },
+                  { label: 'PDF content configured',   ok: setupChecklist.pdfContent     },
                 ].map(({ label, ok }, i, arr) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: i < arr.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
                     <span style={{ fontSize: '13px', color: '#6b7280' }}>{label}</span>

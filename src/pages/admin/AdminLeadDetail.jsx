@@ -258,6 +258,9 @@ export default function AdminLeadDetail() {
               <p style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Internal Notes</p>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add internal notes about this lead…"
                 style={{ width: '100%', minHeight: '120px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '12px 14px', fontSize: '13.5px', fontFamily: FONT, resize: 'vertical', outline: 'none', color: '#374151' }} />
+              <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', textAlign: 'right', fontFamily: FONT }}>
+                {notes.trim() ? notes.trim().split(/\s+/).filter(Boolean).length : 0} words
+              </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
                 <button type="button" onClick={saveNotes}
                   style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>

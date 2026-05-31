@@ -186,6 +186,10 @@ export default function Leads() {
                     {col}
                   </label>
                 ))}
+                <button type="button" onClick={() => { const d = new Set(DEFAULT_VIS_ARR); setVisibleCols(d); localStorage.setItem('qq360_client_leads_columns', JSON.stringify([...d])); }}
+                  style={{ background: 'none', border: 'none', borderTop: '1px solid #f4f6f4', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '8px 16px', width: '100%', textAlign: 'left', marginTop: '4px', fontFamily: FONT }}>
+                  Reset to defaults
+                </button>
               </div>
             )}
           </div>

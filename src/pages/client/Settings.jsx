@@ -263,6 +263,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 /* ── 2. Email Settings ───────────────────────────────────────── */
 
 function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
+  const { profile } = useAuth();
   const [fromName,     setFromName]     = useState('');
   const [replyTo,      setReplyTo]      = useState('');
   const [subject,      setSubject]      = useState('');
@@ -310,14 +311,14 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   useEffect(() => { setSaveRef?.(handleSave); });
 
   async function handleTestEmail() {
-    if (!replyTo) return;
+    if (!profile?.email) return;
     setTestSending(true);
     try {
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: replyTo,
+          email: profile.email,
           name: fromName,
           subject: 'Test Email from QuickQuote360',
           body: `This is a test email to confirm your email settings are working correctly. From Name: ${fromName}. Reply-To: ${replyTo}. If you received this email your settings are configured correctly.`,
@@ -357,9 +358,9 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
       <LastSaved ts={lastSavedEmail} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-        <button type="button" onClick={handleTestEmail} disabled={testSending || !replyTo}
-          style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: (testSending || !replyTo) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: !replyTo ? 0.5 : 1 }}>
-          {testSending ? 'Sending…' : 'Send Test Email'}
+        <button type="button" onClick={handleTestEmail} disabled={testSending || !profile?.email}
+          style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: (testSending || !profile?.email) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: !profile?.email ? 0.5 : 1 }}>
+          {testSending ? 'Sending…' : 'Send Test to My Email'}
         </button>
         {testMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: testMsg.includes('sent') ? '#16a34a' : '#dc2626', fontFamily: FONT }}>{testMsg}</span>}
       </div>
@@ -817,22 +818,43 @@ function DangerZoneSection() {
 /* ── Configuration Status ───────────────────────────────────── */
 
 function ConfigStatusCard() {
-  const sections = [
-    { key: 'qq360_last_saved_branding',      label: 'Brand'    },
-    { key: 'qq360_last_saved_pricing',        label: 'Pricing'  },
-    { key: 'qq360_last_saved_pdf',            label: 'PDF'      },
-    { key: 'qq360_last_saved_municipalities', label: 'Areas'    },
-    { key: 'qq360_last_saved_questions',      label: 'Questions'},
-  ];
-  const timestamps = sections.map(s => localStorage.getItem(s.key));
-  const count = timestamps.filter(Boolean).length;
+  const { profile } = useAuth();
+  const clientId = profile?.client_id;
+  const [dots, setDots] = useState([
+    !!localStorage.getItem('qq360_last_saved_branding'),
+    !!localStorage.getItem('qq360_last_saved_pricing'),
+    !!localStorage.getItem('qq360_last_saved_pdf'),
+    !!localStorage.getItem('qq360_last_saved_municipalities'),
+    !!localStorage.getItem('qq360_last_saved_questions'),
+  ]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    Promise.all([
+      supabase.from('client_settings').select('branding, pdf_content').eq('client_id', clientId).maybeSingle(),
+      supabase.from('client_pricing').select('base_prices').eq('client_id', clientId).maybeSingle(),
+      supabase.from('client_municipalities').select('id').eq('client_id', clientId).limit(1),
+      supabase.from('client_questions').select('label_en').eq('client_id', clientId),
+    ]).then(([{ data: s }, { data: p }, { data: m }, { data: q }]) => {
+      setDots([
+        !!(s?.branding?.company_name),
+        !!(p?.base_prices && Object.values(p.base_prices).some(r => typeof r === 'object' && Object.values(r).some(v => Number(v) > 0))),
+        !!(s?.pdf_content?.introduction),
+        (m || []).length > 0,
+        (q || []).some(x => x.label_en?.trim()),
+      ]);
+    }).catch(() => {});
+  }, [clientId]);
+
+  const labels = ['Brand', 'Pricing', 'PDF', 'Areas', 'Questions'];
+  const count = dots.filter(Boolean).length;
   return (
     <div style={{ ...CARD, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', gap: '16px' }}>
-        {sections.map((s, i) => (
-          <div key={s.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: timestamps[i] ? '#16a34a' : '#e5e7eb' }} />
-            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{s.label}</span>
+        {labels.map((label, i) => (
+          <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dots[i] ? '#16a34a' : '#e5e7eb' }} />
+            <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{label}</span>
           </div>
         ))}
       </div>

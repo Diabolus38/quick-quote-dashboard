@@ -132,8 +132,7 @@ export default function AllLeads() {
   useEffect(() => {
     if (previewLead) {
       setQuickNote(previewLead.notes || '');
-      const t = setTimeout(() => setPanelVisible(true), 10);
-      return () => clearTimeout(t);
+      setPanelVisible(true);
     } else {
       setPanelVisible(false);
     }
@@ -349,6 +348,10 @@ export default function AllLeads() {
                       {col}
                     </label>
                   ))}
+                  <button type="button" onClick={() => { const d = new Set(ALL_COLS); setVisibleColumns(d); localStorage.setItem('qq360_leads_columns', JSON.stringify([...d])); }}
+                    style={{ background: 'none', border: 'none', borderTop: '1px solid #f4f6f4', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '8px 16px', width: '100%', textAlign: 'left', marginTop: '4px', fontFamily: FONT }}>
+                    Reset to defaults
+                  </button>
                 </div>
               )}
             </div>
@@ -599,11 +602,13 @@ export default function AllLeads() {
       </div>
 
       {/* ── Lead Preview Panel ── */}
-      {previewLead && (
-        <>
+      <>
+        {panelVisible && (
           <div onClick={closePanel}
             style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 199 }} />
-          <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100vh', backgroundColor: '#fff', zIndex: 200, boxShadow: '-4px 0 32px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', fontFamily: FONT, overflowY: 'auto', transform: panelVisible ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 0.25s ease' }}>
+        )}
+        <div style={{ position: 'fixed', top: 0, right: 0, width: '480px', height: '100vh', backgroundColor: '#fff', zIndex: 200, boxShadow: '-4px 0 32px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', fontFamily: FONT, overflowY: 'auto', transform: panelVisible ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+        {previewLead && (<>
             <div style={{ padding: '24px 28px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div>
                 <p style={{ margin: '0 0 2px', fontSize: '18px', fontWeight: '700', color: '#0d1117' }}>{previewLead.name || '—'}</p>
@@ -657,9 +662,10 @@ export default function AllLeads() {
                 View Full Details →
               </button>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
+    </>
     </Layout>
   );
 }
