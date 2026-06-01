@@ -158,18 +158,48 @@ export default function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'INITIAL_SESSION') return;
-        if (session?.user) {
-          setUser(session.user);
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-          setLoading(false);
-          if (profileData?.client_id) {
-            initializeClientData(profileData.client_id);
+
+        if (event === 'TOKEN_REFRESHED') {
+          if (session?.user) setUser(session.user);
+          return;
+        }
+
+        if (event === 'SIGNED_IN') {
+          if (initialized.current) {
+            if (session?.user) setUser(session.user);
+            return;
           }
-        } else {
+          if (session?.user) {
+            setUser(session.user);
+            const profileData = await fetchProfile(session.user.id);
+            setProfile(profileData);
+            setLoading(false);
+            initialized.current = true;
+            if (profileData?.client_id) {
+              initializeClientData(profileData.client_id);
+            }
+          }
+          return;
+        }
+
+        if (event === 'USER_UPDATED') {
+          if (session?.user) {
+            setUser(session.user);
+            const profileData = await fetchProfile(session.user.id);
+            setProfile(profileData);
+            setLoading(false);
+            if (profileData?.client_id) {
+              initializeClientData(profileData.client_id);
+            }
+          }
+          return;
+        }
+
+        if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
           setLoading(false);
+          initialized.current = false;
         }
       }
     );
