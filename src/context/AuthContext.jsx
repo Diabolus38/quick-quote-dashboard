@@ -44,7 +44,7 @@
  * );
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
@@ -57,6 +57,7 @@ export default function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const initialized = useRef(false);
 
   async function fetchProfile(userId) {
     const { data, error } = await supabase
@@ -140,12 +141,14 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     // Check existing session on mount
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (initialized.current) return;
       if (session?.user) {
         setUser(session.user);
         const profileData = await fetchProfile(session.user.id);
         setProfile(profileData);
+        initialized.current = true;
         if (profileData?.client_id) {
-          await initializeClientData(profileData.client_id);
+          initializeClientData(profileData.client_id);
         }
       }
       setLoading(false);
@@ -154,18 +157,20 @@ export default function AuthProvider({ children }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (event === 'INITIAL_SESSION') return;
         if (session?.user) {
           setUser(session.user);
           const profileData = await fetchProfile(session.user.id);
           setProfile(profileData);
+          setLoading(false);
           if (profileData?.client_id) {
-            await initializeClientData(profileData.client_id);
+            initializeClientData(profileData.client_id);
           }
         } else {
           setUser(null);
           setProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 

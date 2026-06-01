@@ -118,7 +118,7 @@ export default function ClientDetail() {
     setLoading(true);
     const [{ data: clientData, error: clientErr }, { data: leadsData }, { data: profileData }, { data: settingsData }, { data: pricingData }, { data: questionsData }, { data: munisData }] = await Promise.all([
       supabase.from('clients').select('*').eq('id', id).single(),
-      supabase.from('leads').select('*').eq('client_id', id).order('created_at', { ascending: false }),
+      supabase.from('leads').select('id, client_id, created_at, name, email, estimated_price, status, notes, answers, municipality, phone, company, language').eq('client_id', id).order('created_at', { ascending: false }),
       supabase.from('profiles').select('updated_at').eq('client_id', id).single(),
       supabase.from('client_settings').select('branding, email_settings, pdf_content').eq('client_id', id).maybeSingle(),
       supabase.from('client_pricing').select('base_prices').eq('client_id', id).maybeSingle(),

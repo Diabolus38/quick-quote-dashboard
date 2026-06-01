@@ -70,38 +70,24 @@ export default function Billing() {
   useEffect(() => {
     async function fetchData() {
       const [year, month] = billingMonth.split('-').map(Number);
-      const monthStart = new Date(year, month - 1, 1).toISOString();
-      const monthEnd   = new Date(year, month, 1).toISOString();
+      const monthStart  = new Date(year, month - 1, 1).toISOString();
+      const monthEnd    = new Date(year, month, 1).toISOString();
+      const ytdStart    = new Date(year, 0, 1).toISOString();
+      const windowStart = new Date(year, month - 6, 1).toISOString();
 
-      const [clientsRes, leadsRes] = await Promise.all([
+      const [clientsRes, leadsRes, ytdRes, chartRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('leads').select('id, client_id, created_at, status').gte('created_at', monthStart).lt('created_at', monthEnd),
+        supabase.from('leads').select('id, client_id, created_at').gte('created_at', ytdStart).lt('created_at', monthEnd),
+        supabase.from('leads').select('id, client_id, created_at').gte('created_at', windowStart).lt('created_at', monthEnd),
       ]);
-      setClients(clientsRes.data || []);
-      setLeads(leadsRes.data   || []);
+      setClients(clientsRes.data  || []);
+      setLeads(leadsRes.data      || []);
+      setYtdLeads(ytdRes.data     || []);
+      setChartLeads(chartRes.data || []);
       setLoading(false);
     }
     fetchData();
-  }, [billingMonth]);
-
-  useEffect(() => {
-    const [year, month] = billingMonth.split('-').map(Number);
-    const ytdStart = new Date(year, 0, 1).toISOString();
-    const ytdEnd   = new Date(year, month, 1).toISOString();
-    supabase.from('leads').select('id, client_id, created_at')
-      .gte('created_at', ytdStart)
-      .lt('created_at', ytdEnd)
-      .then(({ data }) => setYtdLeads(data || []));
-  }, [billingMonth]);
-
-  useEffect(() => {
-    const [selYear, selMonthNum] = billingMonth.split('-').map(Number);
-    const windowStart = new Date(selYear, selMonthNum - 6, 1);
-    const windowEnd   = new Date(selYear, selMonthNum, 1);
-    supabase.from('leads').select('id, client_id, created_at')
-      .gte('created_at', windowStart.toISOString())
-      .lt('created_at', windowEnd.toISOString())
-      .then(({ data }) => setChartLeads(data || []));
   }, [billingMonth]);
 
   function exportDetailedBillingCSV(rows) {

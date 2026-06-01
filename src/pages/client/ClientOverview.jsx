@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -38,6 +38,11 @@ export default function ClientOverview() {
   const [soundEnabled,   setSoundEnabled]   = useState(true);
   const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
   const [shareStatsMsg,  setShareStatsMsg]  = useState('');
+  const soundEnabledRef = useRef(soundEnabled);
+  const dndRef = useRef(dnd);
+
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+  useEffect(() => { dndRef.current = dnd; }, [dnd]);
 
   function playChime() {
     try {
@@ -59,20 +64,20 @@ export default function ClientOverview() {
 
   useEffect(() => {
     if (!profile?.client_id) return;
-    supabase.from('leads').select('*').eq('client_id', profile.client_id).order('created_at', { ascending: false })
+    supabase.from('leads').select('id, client_id, created_at, name, email, municipality, estimated_price, status').eq('client_id', profile.client_id).order('created_at', { ascending: false })
       .then(({ data }) => { setLeads(data || []); setLoading(false); });
 
     const channel = supabase
       .channel(`overview-leads-${profile.client_id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
         setLeads(prev => [payload.new, ...prev]);
-        if (!dnd) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }
-        if (soundEnabled && !dnd) playChime();
+        if (!dndRef.current) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }
+        if (soundEnabledRef.current && !dndRef.current) playChime();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [profile, soundEnabled, dnd]);
+  }, [profile?.client_id]);
 
   const now = new Date();
   const thisMonthLeads = leads.filter(l => {

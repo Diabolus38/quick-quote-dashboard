@@ -100,7 +100,7 @@ export default function Leads() {
   async function fetchLeads() {
     setLoading(true);
     const { data, error } = await supabase
-      .from('leads').select('*').eq('client_id', profile.client_id).order('created_at', { ascending: false });
+      .from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes').eq('client_id', profile.client_id).order('created_at', { ascending: false });
     if (!error && data) setLeads(data);
     setLoading(false);
   }

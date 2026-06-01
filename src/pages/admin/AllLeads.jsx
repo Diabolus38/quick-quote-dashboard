@@ -165,7 +165,7 @@ export default function AllLeads() {
   useEffect(() => {
     async function fetchData() {
       const [leadsRes, clientsRes] = await Promise.all([
-        supabase.from('leads').select('*').order('created_at', { ascending: false }),
+        supabase.from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes').order('created_at', { ascending: false }).limit(500),
         supabase.from('clients').select('id, name, plan').order('name'),
       ]);
       if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
