@@ -99,14 +99,6 @@ export default function ClientLayout({ title, subtitle, children }) {
           </div>
         </div>
 
-        {/* 2. Search Bar */}
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '8px 12px', backgroundColor: '#f9faf9' }}>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round"><circle cx="6" cy="6" r="4.5" /><line x1="9.5" y1="9.5" x2="13" y2="13" /></svg>
-            <input type="text" placeholder="Search..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} style={{ border: 'none', outline: 'none', background: 'none', fontSize: '13px', color: '#374151', width: '100%', fontFamily: FONT }} />
-          </div>
-        </div>
-
         {/* OVERVIEW Section */}
         <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overview</span>
