@@ -106,7 +106,6 @@ export default function Layout({ title, subtitle, children }) {
 
         {/* 6. Bottom Nav */}
         <div style={{ padding: '8px 10px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
-          <BottomNavItem icon="💬" label="Get Help" onClick={() => window.open('https://quickquote360.com/faq/', '_blank', 'noopener,noreferrer')} />
           <BottomNavItem icon="⚙" label="Settings"  onClick={() => navigate('/admin/settings')} />
           <BottomNavItem icon="↩" label="Logout"    onClick={async () => { await signOut(); navigate('/login'); }} />
         </div>
