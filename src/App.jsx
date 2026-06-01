@@ -3,6 +3,7 @@ import AuthProvider from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalErrorHandler from './components/GlobalErrorHandler';
+import ConfigStatusProvider from './context/ConfigStatusContext';
 
 // Public
 import LoginPage      from './LoginPage';
@@ -41,6 +42,7 @@ export default function App() {
       <GlobalErrorHandler />
       <BrowserRouter>
         <AuthProvider>
+          <ConfigStatusProvider>
           <Routes>
             {/* ── Public ── */}
             <Route path="/"                element={<ErrorBoundary><Navigate to="/login" replace /></ErrorBoundary>} />
@@ -73,6 +75,7 @@ export default function App() {
             <Route path="/client/pdf"            element={<ErrorBoundary><ProtectedRoute requiredRole="client"><PdfContent /></ProtectedRoute></ErrorBoundary>} />
             <Route path="/client/municipalities" element={<ErrorBoundary><ProtectedRoute requiredRole="client"><Municipalities /></ProtectedRoute></ErrorBoundary>} />
           </Routes>
+          </ConfigStatusProvider>
         </AuthProvider>
         <CookieBanner />
       </BrowserRouter>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
 
@@ -225,34 +226,7 @@ function PDFContent({ clientId }) {
 }
 
 function ConfigStatusCard() {
-  const { profile } = useAuth();
-  const clientId = profile?.client_id;
-  const [dots, setDots] = useState([
-    !!localStorage.getItem('qq360_last_saved_branding'),
-    !!localStorage.getItem('qq360_last_saved_pricing'),
-    !!localStorage.getItem('qq360_last_saved_pdf'),
-    !!localStorage.getItem('qq360_last_saved_municipalities'),
-    !!localStorage.getItem('qq360_last_saved_questions'),
-  ]);
-
-  useEffect(() => {
-    if (!clientId) return;
-    Promise.all([
-      supabase.from('client_settings').select('branding, pdf_content').eq('client_id', clientId).maybeSingle(),
-      supabase.from('client_pricing').select('base_prices').eq('client_id', clientId).maybeSingle(),
-      supabase.from('client_municipalities').select('id').eq('client_id', clientId).limit(1),
-      supabase.from('client_questions').select('label_en').eq('client_id', clientId),
-    ]).then(([{ data: s }, { data: p }, { data: m }, { data: q }]) => {
-      setDots([
-        !!(s?.branding?.company_name),
-        !!(p?.base_prices && Object.values(p.base_prices).some(r => typeof r === 'object' && Object.values(r).some(v => Number(v) > 0))),
-        !!(s?.pdf_content?.introduction),
-        (m || []).length > 0,
-        (q || []).some(x => x.label_en?.trim()),
-      ]);
-    }).catch(() => {});
-  }, [clientId]);
-
+  const { dots } = useConfigStatus();
   const navigate = useNavigate();
   const labels = ['Brand', 'Pricing', 'PDF', 'Areas', 'Questions'];
   const destinations = ['/client/settings', '/client/pricing', '/client/pdf', '/client/municipalities', '/client/questions'];
