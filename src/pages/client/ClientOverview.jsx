@@ -200,7 +200,7 @@ export default function ClientOverview() {
         {/* Quick Actions */}
         <div style={{ ...CARD, marginTop: '24px' }}>
           <p style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Quick Actions</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {[
               { key: 'leads',     icon: '📋', label: 'View All Leads',    path: '/client/leads'     },
               { key: 'pricing',   icon: '💰', label: 'Configure Pricing',  path: '/client/pricing'   },
@@ -238,7 +238,7 @@ export default function ClientOverview() {
               }}
               onMouseEnter={() => setHoveredAction('csv')}
               onMouseLeave={() => setHoveredAction(null)}
-              style={{ backgroundColor: hoveredAction === 'csv' ? '#f9faf9' : '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px', transition: 'background-color 0.12s' }}>
+              style={{ backgroundColor: hoveredAction === 'csv' ? '#f9faf9' : '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px', transition: 'background-color 0.12s', gridColumn: 'span 2' }}>
               <span style={{ fontSize: '22px' }}>📥</span>
               <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Download CSV</span>
             </div>

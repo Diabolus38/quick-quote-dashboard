@@ -347,6 +347,7 @@ export default function Billing() {
               ytdTotal += fee + overage * rate;
             });
           }
+          const bestMonthEntry = chartData.reduce((best, d) => d.total > best.total ? d : best, { total: 0, label: '' });
           return (
             <div style={{ ...CARD, marginBottom: '28px' }}>
               <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Revenue Projections</p>
@@ -359,6 +360,18 @@ export default function Billing() {
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Year to Date</p>
                   <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${ytdTotal.toLocaleString()}</p>
+                </div>
+                <div style={{ width: '1px', height: '60px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Best Month</p>
+                  {bestMonthEntry.total > 0 ? (
+                    <>
+                      <p style={{ margin: '0 0 2px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${bestMonthEntry.total.toLocaleString()}</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{bestMonthEntry.label}</p>
+                    </>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#9ca3af', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>—</p>
+                  )}
                 </div>
               </div>
             </div>

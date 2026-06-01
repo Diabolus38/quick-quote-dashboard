@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
@@ -106,7 +107,7 @@ function MunicipalitiesContent({ clientId }) {
   }
 
   const filtered = ALL_MUNICIPALITIES.filter(m =>
-    m.toLowerCase().includes(search.toLowerCase()) && !covered.find(c => c.municipality === m)
+    m.toLowerCase().includes(search.toLowerCase())
   );
   const showDropdown = search.length > 0 && filtered.length > 0;
 
@@ -137,14 +138,18 @@ function MunicipalitiesContent({ clientId }) {
             style={{ width: '100%', boxSizing: 'border-box', height: '42px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 16px', fontSize: '13.5px', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
           {showDropdown && (
             <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', boxShadow: '0 4px 16px rgba(13,31,18,0.10)', zIndex: 10, overflow: 'hidden' }}>
-              {filtered.map(m => (
-                <div key={m} onClick={() => addMunicipality(m)}
-                  style={{ padding: '10px 16px', fontSize: '13.5px', color: '#374151', cursor: 'pointer', fontFamily: FONT }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f6f4'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  {m}
-                </div>
-              ))}
+              {filtered.map(m => {
+                const alreadyAdded = !!covered.find(c => c.municipality === m);
+                return (
+                  <div key={m} onClick={() => !alreadyAdded && addMunicipality(m)}
+                    style={{ padding: '10px 16px', fontSize: '13.5px', color: alreadyAdded ? '#9ca3af' : '#374151', cursor: alreadyAdded ? 'default' : 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.backgroundColor = '#f4f6f4'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                    <span>{m}</span>
+                    {alreadyAdded && <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Already added</span>}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -215,8 +220,11 @@ function ConfigStatusCard() {
     }).catch(() => {});
   }, [clientId]);
 
+  const navigate = useNavigate();
   const labels = ['Brand', 'Pricing', 'PDF', 'Areas', 'Questions'];
+  const destinations = ['/client/settings', '/client/pricing', '/client/pdf', '/client/municipalities', '/client/questions'];
   const count = dots.filter(Boolean).length;
+  const firstUndone = dots.findIndex(d => !d);
   return (
     <div style={{ ...CARD, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', gap: '16px' }}>
@@ -227,7 +235,17 @@ function ConfigStatusCard() {
           </div>
         ))}
       </div>
-      <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+        {count < 5 ? (
+          <button type="button" onClick={() => navigate(destinations[firstUndone])}
+            style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '8px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+            Complete Setup →
+          </button>
+        ) : (
+          <span style={{ color: '#16a34a', fontWeight: '600', fontSize: '13px', fontFamily: FONT }}>✓ All set!</span>
+        )}
+      </div>
     </div>
   );
 }

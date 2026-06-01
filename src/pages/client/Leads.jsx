@@ -48,6 +48,7 @@ export default function Leads() {
   const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
   const [showColPicker, setShowColPicker] = useState(false);
   const [focusedLeadId, setFocusedLeadId] = useState(null);
+  const [hoveredDay, setHoveredDay] = useState(null);
 
   function playChime() {
     try {
@@ -231,10 +232,18 @@ export default function Leads() {
               const bg = count === 0 ? '#f3f4f6' : count <= 2 ? '#bbf7d0' : count <= 5 ? '#4ade80' : '#166534';
               const color = count >= 6 ? '#fff' : count >= 3 ? '#fff' : '#374151';
               const label = d.toLocaleDateString('en-GB', { weekday: 'short' });
+              const dateLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
               return (
-                <div key={i} style={{ flex: 1, height: '64px', borderRadius: '10px', backgroundColor: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                <div key={i} style={{ flex: 1, height: '64px', borderRadius: '10px', backgroundColor: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', position: 'relative', cursor: 'default' }}
+                  onMouseEnter={() => setHoveredDay(i)} onMouseLeave={() => setHoveredDay(null)}>
                   <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', color }}>{label}</span>
                   <span style={{ fontSize: '18px', fontWeight: '800', color }}>{count}</span>
+                  {hoveredDay === i && (
+                    <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, marginBottom: '4px', pointerEvents: 'none', textAlign: 'center' }}>
+                      <div style={{ fontWeight: '600' }}>{dateLabel}</div>
+                      <div style={{ opacity: 0.75 }}>{count === 0 ? 'No leads' : `${count} lead${count !== 1 ? 's' : ''}`}</div>
+                    </div>
+                  )}
                 </div>
               );
             })}

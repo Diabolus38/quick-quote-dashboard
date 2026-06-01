@@ -85,21 +85,21 @@ export default function AdminOverview() {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [refreshing,  setRefreshing]  = useState(false);
 
-  async function fetchData(silent = false) {
-    if (!silent) setLoading(true);
-    const [clientsRes, leadsRes] = await Promise.all([
-      supabase.from('clients').select('*').order('created_at', { ascending: false }),
-      supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false }),
-    ]);
-    if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
-    if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
-    setClients(clientsRes.data || []);
-    setLeads(leadsRes.data   || []);
-    if (!silent) setLoading(false);
+  async function fetchData(leadsOnly = false) {
+    if (!leadsOnly) setLoading(true);
+    if (!leadsOnly) {
+      const clientsRes = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+      if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
+      setClients(clientsRes.data || []);
+    }
+    const leadsRes = await supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false });
+    if (leadsRes.error) console.error('Failed to fetch leads:', leadsRes.error);
+    setLeads(leadsRes.data || []);
+    if (!leadsOnly) setLoading(false);
   }
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
 
     const channel = supabase.channel('admin-overview-leads')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {

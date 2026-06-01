@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
@@ -75,8 +76,11 @@ function ConfigStatusCard() {
     }).catch(() => {});
   }, [clientId]);
 
+  const navigate = useNavigate();
   const labels = ['Brand', 'Pricing', 'PDF', 'Areas', 'Questions'];
+  const destinations = ['/client/settings', '/client/pricing', '/client/pdf', '/client/municipalities', '/client/questions'];
   const count = dots.filter(Boolean).length;
+  const firstUndone = dots.findIndex(d => !d);
   return (
     <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '16px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', gap: '16px' }}>
@@ -87,7 +91,17 @@ function ConfigStatusCard() {
           </div>
         ))}
       </div>
-      <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+        {count < 5 ? (
+          <button type="button" onClick={() => navigate(destinations[firstUndone])}
+            style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '8px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+            Complete Setup →
+          </button>
+        ) : (
+          <span style={{ color: '#16a34a', fontWeight: '600', fontSize: '13px', fontFamily: FONT }}>✓ All set!</span>
+        )}
+      </div>
     </div>
   );
 }

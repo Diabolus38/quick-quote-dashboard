@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
@@ -666,6 +667,7 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
   const [saveMsg,     flash]          = useSaveMsg();
   const [pwMsg,       setPwMsg]       = useState('');
   const [uploading,   setUploading]   = useState(false);
+  const [uploadErr,   setUploadErr]   = useState('');
   const [dataReady,   setDataReady]   = useState(false);
   const _ll = useRef(false);
 
@@ -701,6 +703,16 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
   async function handleAvatarUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !profile?.id) return;
+    if (!file.type.startsWith('image/')) {
+      setUploadErr('Please select an image file.');
+      setTimeout(() => setUploadErr(''), 3000);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadErr('Image must be smaller than 5MB');
+      setTimeout(() => setUploadErr(''), 3000);
+      return;
+    }
     setUploading(true);
     const ext  = file.name.split('.').pop();
     const path = `${profile.id}/avatar.${ext}`;
@@ -743,6 +755,7 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
               <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={uploading} />
             </label>
             <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>JPG, PNG or GIF. Max 5 MB.</p>
+            {uploadErr && <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{uploadErr}</p>}
           </div>
         </div>
       </div>
@@ -841,6 +854,7 @@ function DangerZoneSection() {
 /* ── Configuration Status ───────────────────────────────────── */
 
 function ConfigStatusCard() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const clientId = profile?.client_id;
   const [dots, setDots] = useState([
@@ -870,7 +884,9 @@ function ConfigStatusCard() {
   }, [clientId]);
 
   const labels = ['Brand', 'Pricing', 'PDF', 'Areas', 'Questions'];
+  const destinations = ['/client/settings', '/client/pricing', '/client/pdf', '/client/municipalities', '/client/questions'];
   const count = dots.filter(Boolean).length;
+  const firstUndone = dots.findIndex(d => !d);
   return (
     <div style={{ ...CARD, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', gap: '16px' }}>
@@ -881,7 +897,17 @@ function ConfigStatusCard() {
           </div>
         ))}
       </div>
-      <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{count} of 5 sections configured</span>
+        {count < 5 ? (
+          <button type="button" onClick={() => navigate(destinations[firstUndone])}
+            style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '8px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+            Complete Setup →
+          </button>
+        ) : (
+          <span style={{ color: '#16a34a', fontWeight: '600', fontSize: '13px', fontFamily: FONT }}>✓ All set!</span>
+        )}
+      </div>
     </div>
   );
 }

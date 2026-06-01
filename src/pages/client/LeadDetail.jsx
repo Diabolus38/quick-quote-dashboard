@@ -306,6 +306,15 @@ export default function LeadDetail() {
               else if (st === 'contacted') score += 1;
               if (lead.municipality) score += 2;
               const dotColor = score <= 3 ? '#dc2626' : score <= 6 ? '#d97706' : '#16a34a';
+              const criteria = [
+                { label: price > 100000 ? '+2 High value' : '+2 High value (>100k)', pts: 2, earned: price > 100000 },
+                { label: price > 50000 && price <= 100000 ? '+1 Good value' : '+1 Good value (50-100k)', pts: 1, earned: price > 50000 && price <= 100000 },
+                { label: '+2 Has company', pts: 2, earned: !!lead.company },
+                { label: '+1 Has phone', pts: 1, earned: !!lead.phone },
+                { label: '+2 Active status', pts: 2, earned: st === 'closedwon' || st === 'inprogress' },
+                { label: '+1 Contacted', pts: 1, earned: st === 'contacted' },
+                { label: '+2 Has municipality', pts: 2, earned: !!lead.municipality },
+              ];
               return (
                 <div style={CARD}>
                   <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lead Score</p>
@@ -314,7 +323,14 @@ export default function LeadDetail() {
                       <span key={i} style={{ fontSize: '14px', color: i < score ? dotColor : '#e5e7eb' }}>{i < score ? '●' : '○'}</span>
                     ))}
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: dotColor }}>{score}/10</p>
+                  <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: dotColor }}>{score}/10</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+                    {criteria.map(c => (
+                      <span key={c.label} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '600', backgroundColor: c.earned ? '#dcfce7' : '#f3f4f6', color: c.earned ? '#166534' : '#9ca3af' }}>
+                        {c.earned ? c.label : `${c.label.split(' ').slice(0,2).join(' ')} (missing)`}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               );
             })()}

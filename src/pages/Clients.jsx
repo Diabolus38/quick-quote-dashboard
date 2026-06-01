@@ -143,6 +143,7 @@ export default function Clients() {
   const [bulkSubject,      setBulkSubject]      = useState('');
   const [bulkBody,         setBulkBody]         = useState('');
   const [bulkProgress,     setBulkProgress]     = useState(null);
+  const [bulkTemplate,     setBulkTemplate]     = useState('custom');
 
   const [search,       setSearch]       = useState('');
   const [planFilter,   setPlanFilter]   = useState('All');
@@ -634,6 +635,27 @@ export default function Clients() {
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '36px', width: '560px', maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', fontFamily: FONT, boxSizing: 'border-box' }}>
               <h2 style={{ margin: '0 0 24px', fontSize: '20px', fontWeight: '700', color: '#0d1117' }}>Send Email to {selectedClients.size} Clients</h2>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ ...LBL, marginBottom: '8px' }}>Template</label>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+                  {[
+                    { key: 'checkin', label: 'Check In' },
+                    { key: 'upgrade', label: 'Plan Upgrade' },
+                    { key: 'custom',  label: 'Custom' },
+                  ].map(t => (
+                    <button key={t.key} type="button" disabled={bulkProgress !== null}
+                      onClick={() => {
+                        setBulkTemplate(t.key);
+                        if (t.key === 'checkin') { setBulkSubject('Checking in from QuickQuote360'); setBulkBody('Hi [name], just checking in to see how things are going with your estimator tool. Let us know if you need any help!'); }
+                        else if (t.key === 'upgrade') { setBulkSubject('Upgrade your QuickQuote360 plan'); setBulkBody('Hi [name], we noticed you are approaching your monthly estimate limit. Consider upgrading to get more estimates and features. Visit dashboard.quickquote360.com to upgrade.'); }
+                        else { setBulkSubject(''); setBulkBody(''); }
+                      }}
+                      style={{ padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, border: bulkTemplate === t.key ? 'none' : '1px solid #e8ede8', backgroundColor: bulkTemplate === t.key ? '#0d1117' : '#fff', color: bulkTemplate === t.key ? '#fff' : '#4b5563' }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div style={{ marginBottom: '16px' }}>
                 <label style={LBL}>Subject</label>
                 <input type="text" value={bulkSubject} onChange={e => setBulkSubject(e.target.value)} placeholder="Email subject" style={INP} disabled={bulkProgress !== null} />

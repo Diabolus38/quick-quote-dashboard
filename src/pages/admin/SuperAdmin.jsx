@@ -335,8 +335,30 @@ export default function SuperAdmin() {
     const clientRows = clients.map(c => [c.id, c.name || '', c.email || '', c.plan || '', c.active !== false ? 'Yes' : 'No', c.created_at || '']);
     const leadHeaders = ['ID','Client ID','Client Name','Customer Name','Email','Phone','Municipality','Estimated Price','Status','Language','Created At'];
     const leadRows = leads.map(l => [l.id, l.client_id || '', clientMap[l.client_id] || '', l.name || '', l.email || '', l.phone || '', l.municipality || '', l.estimated_price ?? '', l.status || '', l.language || '', l.created_at || '']);
+    const PLAN_FEE_EX = { starter: 300, growth: 600, scale: 1149 };
+    const PLAN_LIMIT_EX = { starter: 30, growth: 75, scale: Infinity };
+    const OVERAGE_RATE_EX = { starter: 25, growth: 18, scale: 0 };
+    const now2 = new Date();
+    const monthLeads = {};
+    leads.forEach(l => {
+      const d = new Date(l.created_at);
+      if (d.getMonth() === now2.getMonth() && d.getFullYear() === now2.getFullYear()) {
+        monthLeads[l.client_id] = (monthLeads[l.client_id] || 0) + 1;
+      }
+    });
+    const billingHeaders = ['Client Name','Plan','Monthly Fee','Leads This Month','Overage Count','Overage Charge','Total Due'];
+    const billingRows = clients.map(c => {
+      const plan = c.plan || 'starter';
+      const fee  = PLAN_FEE_EX[plan] || 300;
+      const limit = PLAN_LIMIT_EX[plan] ?? 30;
+      const rate  = OVERAGE_RATE_EX[plan] ?? 25;
+      const used  = monthLeads[c.id] || 0;
+      const overage = limit === Infinity ? 0 : Math.max(0, used - limit);
+      const overageCharge = overage * rate;
+      return [c.name || '', plan, fee, used, overage, overageCharge, fee + overageCharge];
+    });
     const toCSV = rows => rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const csv = `${toCSV([clientHeaders, ...clientRows])}\n\n${toCSV([leadHeaders, ...leadRows])}`;
+    const csv = `${toCSV([clientHeaders, ...clientRows])}\n\n${toCSV([leadHeaders, ...leadRows])}\n\n${toCSV([billingHeaders, ...billingRows])}`;
     const blob = new Blob([csv], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
