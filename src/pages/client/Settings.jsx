@@ -135,9 +135,10 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     if (_ll.current) setHasUnsaved?.(true);
   }, [companyName, primaryColor, colorHex, logoUrl, companyPhone, companyAddress]);
 
-  if (loading) return <SettingsSkeleton />;
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
+
+  if (loading) return <SettingsSkeleton />;
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -294,6 +295,9 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
     if (_ll.current) setHasUnsaved?.(true);
   }, [fromName, replyTo, subject, footerText]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
+
   if (loading) return <SettingsSkeleton />;
 
   async function handleSave() {
@@ -307,9 +311,6 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
     localStorage.setItem('qq360_last_saved_email', ts);
     setLastSavedEmail(ts);
   }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setSaveRef?.(handleSave); });
 
   async function handleTestEmail() {
     if (!profile?.email) return;
@@ -437,6 +438,9 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
     if (_ll.current) setHasUnsaved?.(true);
   }, [enabled, defaultLanguage]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
+
   if (loading) return <SettingsSkeleton />;
 
   function handleToggle(code) {
@@ -463,9 +467,6 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
     localStorage.setItem('qq360_last_saved_languages', ts);
     setLastSavedLangs(ts);
   }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setSaveRef?.(handleSave); });
 
   const enabledCodes = LANG_OPTIONS.filter(({ code }) => enabled[code]);
 

@@ -20,22 +20,25 @@ export default function OnboardingBanner() {
     if (localStorage.getItem(dismissKey)) return;
 
     async function fetchStatus() {
-      const [settingsRes, pricingRes] = await Promise.all([
+      const [settingsRes, pricingRes, clientRes] = await Promise.all([
         supabase.from('client_settings').select('branding').eq('client_id', profile.client_id).single(),
         supabase.from('client_pricing').select('base_prices').eq('client_id', profile.client_id).single(),
+        supabase.from('clients').select('website_url').eq('id', profile.client_id).single(),
       ]);
 
       const branding   = settingsRes.data?.branding;
       const basePrices = pricingRes.data?.base_prices;
+      const websiteUrl = clientRes.data?.website_url;
 
-      const brandingDone = !!(branding && branding.company_name);
-      const pricingDone  = !!(basePrices && Object.values(basePrices).some(v => Number(v) > 0));
+      const brandingDone  = !!(branding && branding.company_name);
+      const pricingDone   = !!(basePrices && Object.values(basePrices).some(v => Number(v) > 0));
+      const installedDone = !!(websiteUrl && websiteUrl.trim());
 
       const items = [
-        { label: 'Set up your branding',    done: brandingDone, route: '/client/settings'  },
-        { label: 'Configure your pricing',  done: pricingDone,  route: '/client/pricing'   },
-        { label: 'Customize your questions', done: false,        route: '/client/questions' },
-        { label: 'Install on your website', done: false,        route: '/client/settings'  },
+        { label: 'Set up your branding',    done: brandingDone,  route: '/client/settings'  },
+        { label: 'Configure your pricing',  done: pricingDone,   route: '/client/pricing'   },
+        { label: 'Customize your questions', done: false,         route: '/client/questions' },
+        { label: 'Install on your website', done: installedDone, route: '/client/settings'  },
       ];
 
       if (items.every(i => i.done)) return;
