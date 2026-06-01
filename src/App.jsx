@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
+import GlobalErrorHandler from './components/GlobalErrorHandler';
 
 // Public
 import LoginPage      from './LoginPage';
@@ -35,42 +37,45 @@ import Municipalities  from './pages/client/Municipalities';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* ── Public ── */}
-          <Route path="/"                element={<Navigate to="/login" replace />} />
-          <Route path="/login"           element={<LoginPage />} />
-          <Route path="/signup"          element={<SignupPage />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/terms"           element={<TermsOfService />} />
-          <Route path="/privacy"         element={<PrivacyPolicy />} />
+    <ErrorBoundary>
+      <GlobalErrorHandler />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* ── Public ── */}
+            <Route path="/"                element={<ErrorBoundary><Navigate to="/login" replace /></ErrorBoundary>} />
+            <Route path="/login"           element={<ErrorBoundary><LoginPage /></ErrorBoundary>} />
+            <Route path="/signup"          element={<ErrorBoundary><SignupPage /></ErrorBoundary>} />
+            <Route path="/forgot-password" element={<ErrorBoundary><ForgotPassword /></ErrorBoundary>} />
+            <Route path="/terms"           element={<ErrorBoundary><TermsOfService /></ErrorBoundary>} />
+            <Route path="/privacy"         element={<ErrorBoundary><PrivacyPolicy /></ErrorBoundary>} />
 
-          {/* ── Super-admin protected ── */}
-          <Route path="/admin"             element={<ProtectedRoute requiredRole="super_admin"><AdminOverview /></ProtectedRoute>} />
-          <Route path="/admin/clients"     element={<ProtectedRoute requiredRole="super_admin"><Clients /></ProtectedRoute>} />
-          <Route path="/admin/clients/:id" element={<ProtectedRoute requiredRole="super_admin"><ClientDetail /></ProtectedRoute>} />
-          <Route path="/admin/super"       element={<ProtectedRoute requiredRole="super_admin"><SuperAdmin /></ProtectedRoute>} />
-          <Route path="/admin/leads"       element={<ProtectedRoute requiredRole="super_admin"><AllLeads /></ProtectedRoute>} />
-          <Route path="/admin/leads/:id"   element={<ProtectedRoute requiredRole="super_admin"><AdminLeadDetail /></ProtectedRoute>} />
-          <Route path="/admin/estimates"   element={<ProtectedRoute requiredRole="super_admin"><Estimates /></ProtectedRoute>} />
-          <Route path="/admin/billing"     element={<ProtectedRoute requiredRole="super_admin"><Billing /></ProtectedRoute>} />
-          <Route path="/admin/settings"    element={<ProtectedRoute requiredRole="super_admin"><Settings /></ProtectedRoute>} />
+            {/* ── Super-admin protected ── */}
+            <Route path="/admin"             element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><AdminOverview /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/clients"     element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Clients /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/clients/:id" element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><ClientDetail /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/super"       element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><SuperAdmin /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/leads"       element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><AllLeads /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/leads/:id"   element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><AdminLeadDetail /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/estimates"   element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Estimates /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/billing"     element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Billing /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/settings"    element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Settings /></ProtectedRoute></ErrorBoundary>} />
 
-          {/* ── Client protected ── */}
-          <Route path="/client"             element={<ProtectedRoute requiredRole="client"><ClientOverview /></ProtectedRoute>} />
-          <Route path="/client/leads"       element={<ProtectedRoute requiredRole="client"><Leads /></ProtectedRoute>} />
-          <Route path="/client/leads/:id"   element={<ProtectedRoute requiredRole="client"><LeadDetail /></ProtectedRoute>} />
-          <Route path="/client/estimates"   element={<ProtectedRoute requiredRole="client"><ClientEstimates /></ProtectedRoute>} />
-          <Route path="/client/customers"   element={<ProtectedRoute requiredRole="client"><ClientCustomers /></ProtectedRoute>} />
-          <Route path="/client/settings"    element={<ProtectedRoute requiredRole="client"><ClientSettings /></ProtectedRoute>} />
-          <Route path="/client/questions"      element={<ProtectedRoute requiredRole="client"><QuestionEditor /></ProtectedRoute>} />
-          <Route path="/client/pricing"        element={<ProtectedRoute requiredRole="client"><Pricing /></ProtectedRoute>} />
-          <Route path="/client/pdf"            element={<ProtectedRoute requiredRole="client"><PdfContent /></ProtectedRoute>} />
-          <Route path="/client/municipalities" element={<ProtectedRoute requiredRole="client"><Municipalities /></ProtectedRoute>} />
-        </Routes>
-      </AuthProvider>
-      <CookieBanner />
-    </BrowserRouter>
+            {/* ── Client protected ── */}
+            <Route path="/client"             element={<ErrorBoundary><ProtectedRoute requiredRole="client"><ClientOverview /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/leads"       element={<ErrorBoundary><ProtectedRoute requiredRole="client"><Leads /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/leads/:id"   element={<ErrorBoundary><ProtectedRoute requiredRole="client"><LeadDetail /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/estimates"   element={<ErrorBoundary><ProtectedRoute requiredRole="client"><ClientEstimates /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/customers"   element={<ErrorBoundary><ProtectedRoute requiredRole="client"><ClientCustomers /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/settings"    element={<ErrorBoundary><ProtectedRoute requiredRole="client"><ClientSettings /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/questions"      element={<ErrorBoundary><ProtectedRoute requiredRole="client"><QuestionEditor /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/pricing"        element={<ErrorBoundary><ProtectedRoute requiredRole="client"><Pricing /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/pdf"            element={<ErrorBoundary><ProtectedRoute requiredRole="client"><PdfContent /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/client/municipalities" element={<ErrorBoundary><ProtectedRoute requiredRole="client"><Municipalities /></ProtectedRoute></ErrorBoundary>} />
+          </Routes>
+        </AuthProvider>
+        <CookieBanner />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
