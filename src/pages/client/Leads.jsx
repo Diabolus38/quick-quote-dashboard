@@ -168,6 +168,18 @@ export default function Leads() {
       )}
       <div style={{ fontFamily: FONT }}>
 
+        {/* DND Banner */}
+        {dnd && (
+          <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT }}>
+            <span>🌙</span>
+            <span style={{ flex: 1 }}>Do Not Disturb is on — lead notifications are muted.</span>
+            <button type="button" onClick={() => { setDnd(false); localStorage.setItem('qq360_dnd', 'false'); }}
+              style={{ background: 'none', border: '1px solid #d97706', color: '#854d0e', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              Turn off
+            </button>
+          </div>
+        )}
+
         {/* Top row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
           <div>

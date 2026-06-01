@@ -236,6 +236,7 @@ export default function Settings() {
   const [hovered,     setHovered]     = useState(null);
   const [hasUnsaved,  setHasUnsaved]  = useState(false);
   const saveRef = useRef(null);
+  const [cmdSToast, setCmdSToast] = useState(false);
 
   useEffect(() => { setHasUnsaved(false); saveRef.current = null; }, [activeNav]);
 
@@ -250,6 +251,8 @@ export default function Settings() {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         saveRef.current?.();
+        setCmdSToast(true);
+        setTimeout(() => setCmdSToast(false), 2000);
       }
     };
     window.addEventListener('keydown', handler);
@@ -258,6 +261,11 @@ export default function Settings() {
 
   return (
     <Layout title="Settings">
+      {cmdSToast && (
+        <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '10px', padding: '10px 18px', fontSize: '12px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontFamily: FONT }}>
+          Saved with ⌘S
+        </div>
+      )}
       <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
 
         {/* Side nav */}

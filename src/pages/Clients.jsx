@@ -590,6 +590,10 @@ export default function Clients() {
               {qc.website_url && <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{qc.website_url}</p>}
               {qc.notes && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', lineHeight: '1.5' }}>{qc.notes.slice(0, 80)}{qc.notes.length > 80 ? '…' : ''}</p>}
               <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f4f6f4' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Usage this month</p>
+                <UsageBar count={leadCounts[qc.id] || 0} plan={qc.plan} />
+              </div>
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f4f6f4' }}>
                 <p style={{ margin: '0 0 6px', fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Recent Leads</p>
                 {quickViewLeads === null ? (
                   <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Loading leads...</p>

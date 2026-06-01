@@ -164,7 +164,8 @@ export default function AdminLeadDetail() {
 
   return (
     <Layout title="Lead Detail">
-      <div style={{ fontFamily: FONT }}>
+      <style>{`@media print { body * { visibility: hidden; } #admin-lead-print-area, #admin-lead-print-area * { visibility: visible; } #admin-lead-print-area { position: absolute; left: 0; top: 0; } }`}</style>
+      <div id="admin-lead-print-area" style={{ fontFamily: FONT }}>
 
         {/* Back */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -362,6 +363,14 @@ export default function AdminLeadDetail() {
                   <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600', backgroundColor: '#fee2e2', padding: '2px 8px', borderRadius: '20px' }}>Current</span>
                 </div>
               )}
+            </div>
+
+            {/* Actions */}
+            <div style={CARD}>
+              <button type="button" onClick={() => window.print()}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', width: '100%', marginBottom: '8px', fontFamily: FONT }}>
+                Print
+              </button>
             </div>
 
           </div>

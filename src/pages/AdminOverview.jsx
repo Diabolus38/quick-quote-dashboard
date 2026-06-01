@@ -81,9 +81,10 @@ export default function AdminOverview() {
   const [clients,   setClients]   = useState([]);
   const [leads,     setLeads]     = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [rankMode,    setRankMode]    = useState('leads');
-  const [hoveredCard, setHoveredCard] = useState(null);
-  const [refreshing,  setRefreshing]  = useState(false);
+  const [rankMode,         setRankMode]         = useState('leads');
+  const [hoveredCard,      setHoveredCard]      = useState(null);
+  const [refreshing,       setRefreshing]       = useState(false);
+  const [searchTopClients, setSearchTopClients] = useState('');
 
   async function fetchData(leadsOnly = false) {
     if (!leadsOnly) setLoading(true);
@@ -440,9 +441,23 @@ export default function AdminOverview() {
               ))}
             </div>
           </div>
-          {top5Clients.length === 0 ? (
+          {clients.length > 5 && (
+            <input type="text" value={searchTopClients} onChange={e => setSearchTopClients(e.target.value)} placeholder="Search clients…"
+              style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', width: '100%', boxSizing: 'border-box', outline: 'none', fontFamily: FONT, marginBottom: '12px' }} />
+          )}
+          {(() => {
+            const visibleClients = searchTopClients.trim()
+              ? top5Clients.filter(c => (c.name || '').toLowerCase().includes(searchTopClients.toLowerCase()))
+              : top5Clients;
+            return visibleClients;
+          })().length === 0 ? (
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No client data yet.</p>
-          ) : top5Clients.map((client, idx) => {
+          ) : (() => {
+            const visibleClients = searchTopClients.trim()
+              ? top5Clients.filter(c => (c.name || '').toLowerCase().includes(searchTopClients.toLowerCase()))
+              : top5Clients;
+            return visibleClients;
+          })().map((client, idx) => {
             const count    = rankMode === 'revenue' ? (PLAN_FEE_OV[client.plan] || 0) : rankMode === 'conversion' ? conversionRatePerClient[client.id] || 0 : (leadCountPerClient[client.id] || 0);
             const display  = rankMode === 'revenue' ? `$${count.toLocaleString()}/mo` : rankMode === 'conversion' ? `${count}%` : String(count);
             const pct      = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
@@ -479,3 +494,4 @@ export default function AdminOverview() {
     </Layout>
   );
 }
+

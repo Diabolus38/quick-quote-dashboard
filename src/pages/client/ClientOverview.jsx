@@ -250,7 +250,7 @@ export default function ClientOverview() {
         <div style={{ ...CARD, marginTop: '24px' }}>
           <p style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Recent Activity</p>
           <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
-            {['All', 'Won', 'Active'].map(f => (
+            {['All', 'Won', 'Active', 'Today'].map(f => (
               <button key={f} type="button" onClick={() => setActivityFilter(f)}
                 style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: activityFilter === f ? 'none' : '1px solid #e8ede8', backgroundColor: activityFilter === f ? PRIMARY : '#fff', color: activityFilter === f ? '#fff' : '#4b5563', fontFamily: FONT, transition: 'all 0.12s' }}>
                 {f}
@@ -258,16 +258,20 @@ export default function ClientOverview() {
             ))}
           </div>
           {(() => {
+            const todayStr = new Date().toDateString();
             const filtered = activityFilter === 'Won'
               ? leads.filter(l => l.status === 'Closed Won')
               : activityFilter === 'Active'
               ? leads.filter(l => ['New','Contacted','In Progress'].includes(l.status))
+              : activityFilter === 'Today'
+              ? leads.filter(l => new Date(l.created_at).toDateString() === todayStr)
               : leads;
             return filtered.slice(0, 5);
           })().length === 0 ? (
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '16px 0', fontFamily: FONT }}>No leads yet.</p>
           ) : (() => {
-            const filtered = activityFilter === 'Won' ? leads.filter(l => l.status === 'Closed Won') : activityFilter === 'Active' ? leads.filter(l => ['New','Contacted','In Progress'].includes(l.status)) : leads;
+            const todayStr2 = new Date().toDateString();
+            const filtered = activityFilter === 'Won' ? leads.filter(l => l.status === 'Closed Won') : activityFilter === 'Active' ? leads.filter(l => ['New','Contacted','In Progress'].includes(l.status)) : activityFilter === 'Today' ? leads.filter(l => new Date(l.created_at).toDateString() === todayStr2) : leads;
             return filtered.slice(0, 5);
           })().map((lead, i, arr) => {
             const statusKey = (lead.status || '').toLowerCase().replace(/\s+/g, '_');

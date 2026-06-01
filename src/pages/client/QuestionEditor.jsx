@@ -363,10 +363,15 @@ export default function QuestionEditor() {
             {hasChanges && !previewMode && (
               <div style={{ position: 'fixed', bottom: 0, left: '240px', right: 0, backgroundColor: '#ffffff', borderTop: '1px solid #e8ede8', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -2px 12px rgba(0,0,0,0.06)', fontFamily: FONT }}>
                 <span style={{ fontSize: '13px', color: '#9ca3af' }}>You have unsaved changes</span>
-                <button type="button" onClick={handleSave} disabled={saving}
-                  style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : '#166534', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
-                  {saving ? 'Saving…' : 'Save All Questions'}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" onClick={handleSave} disabled={saving}
+                    style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : '#166534', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
+                    {saving ? 'Saving…' : 'Save All Questions'}
+                  </button>
+                  <span style={{ backgroundColor: '#f3f4f6', color: '#9ca3af', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: '600', fontFamily: FONT }}>
+                    {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘S' : 'Ctrl+S'}
+                  </span>
+                </div>
               </div>
             )}
           </>

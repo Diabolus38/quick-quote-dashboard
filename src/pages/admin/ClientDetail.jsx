@@ -414,7 +414,21 @@ export default function ClientDetail() {
 
             {/* Communication Log */}
             <div style={{ ...CARD, marginTop: '16px' }}>
-              <p style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Communication Log</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Communication Log</p>
+                {commLog.length > 0 && (
+                  <button type="button" onClick={() => {
+                    const fmt = ts => { const d = new Date(ts); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+                    const csv = ['Type,Sent At,Sent By', ...commLog.map(e => `"${e.type}","${fmt(e.sentAt)}","${e.sentBy}"`)].join('\n');
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+                    a.download = `comm-log-${id}-${new Date().toISOString().slice(0,10)}.csv`;
+                    a.click();
+                  }} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                    Export Log
+                  </button>
+                )}
+              </div>
               {commLog.length === 0 ? (
                 <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No communications logged yet.</p>
               ) : commLog.map((entry, i) => {

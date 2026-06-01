@@ -924,6 +924,7 @@ export default function ClientSettingsPage() {
   const [hasUnsaved, setHasUnsaved] = useState(false);
   const saveRef = useRef(null);
   const [navDone, setNavDone] = useState({});
+  const [cmdSToast, setCmdSToast] = useState(false);
 
   useEffect(() => { setHasUnsaved(false); saveRef.current = null; }, [activeSection]);
 
@@ -953,6 +954,8 @@ export default function ClientSettingsPage() {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         saveRef.current?.();
+        setCmdSToast(true);
+        setTimeout(() => setCmdSToast(false), 2000);
       }
     };
     window.addEventListener('keydown', handler);
@@ -961,6 +964,11 @@ export default function ClientSettingsPage() {
 
   return (
     <ClientLayout title="Settings">
+      {cmdSToast && (
+        <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '10px', padding: '10px 18px', fontSize: '12px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontFamily: FONT }}>
+          Saved with ⌘S
+        </div>
+      )}
       <ConfigStatusCard />
       <div style={{ fontFamily: FONT, display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
 

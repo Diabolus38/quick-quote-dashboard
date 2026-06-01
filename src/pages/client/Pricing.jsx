@@ -305,6 +305,18 @@ function PricingContent({ clientId }) {
             </div>
           </FieldRow>
         )}
+        {rotEnabled && (() => {
+          const pct = Number(rotPercent) || 0;
+          const deduction = Math.round(100000 * pct / 100);
+          const customerPays = 100000 - deduction;
+          return (
+            <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#166534', lineHeight: '1.6', marginTop: '12px', fontFamily: FONT }}>
+              <strong>Example:</strong> A job priced at 100,000 kr with {pct}% ROT deduction.<br />
+              Customer pays: <strong>{customerPays.toLocaleString()} kr</strong><br />
+              Tax deduction: <strong>{deduction.toLocaleString()} kr</strong>
+            </div>
+          );
+        })()}
         <p style={{ margin: '14px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', fontFamily: FONT }}>
           ROT deduction (Rot-avdrag) is a Swedish tax deduction for labor costs on repair, conversion, and extension work. Customers can deduct 30% of labor costs directly from their invoice.
         </p>

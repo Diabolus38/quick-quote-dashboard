@@ -94,6 +94,8 @@ export default function AllLeads() {
   const [newLeadToast, setNewLeadToast] = useState(null);
   const [soundEnabled,  setSoundEnabled]  = useState(true);
   const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
+  const [flaggedLeads, setFlaggedLeads] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_flagged_leads') || '[]'); } catch { return []; } });
+  const [flaggedFilter, setFlaggedFilter] = useState(false);
   const clientsRef = useRef([]);
 
   const [search,        setSearch]        = useState('');
@@ -150,6 +152,14 @@ export default function AllLeads() {
   function closePanel() {
     setPanelVisible(false);
     setTimeout(() => setPreviewLead(null), 250);
+  }
+
+  function toggleFlag(leadId) {
+    setFlaggedLeads(prev => {
+      const next = prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId];
+      localStorage.setItem('qq360_flagged_leads', JSON.stringify(next));
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -247,7 +257,8 @@ export default function AllLeads() {
     const matchStatus  = statusFilter === 'All' || rawStatus === statusFilter.toLowerCase().replace(/\s+/g, '_');
     const created      = new Date(l.created_at);
     const matchDate    = dateFilter === 'All Time' || (dateFilter === 'This Week' && created >= weekStart) || (dateFilter === 'This Month' && created >= monthStart);
-    return matchSearch && matchClient && matchStatus && matchDate;
+    const matchFlagged = !flaggedFilter || flaggedLeads.includes(l.id);
+    return matchSearch && matchClient && matchStatus && matchDate && matchFlagged;
   });
 
   /* ── Pagination ── */
@@ -304,6 +315,18 @@ export default function AllLeads() {
         </div>
       )}
       <div style={{ fontFamily: FONT }}>
+
+        {/* DND Banner */}
+        {dnd && (
+          <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT }}>
+            <span>🌙</span>
+            <span style={{ flex: 1 }}>Do Not Disturb is on — lead notifications are muted.</span>
+            <button type="button" onClick={() => { setDnd(false); localStorage.setItem('qq360_dnd', 'false'); }}
+              style={{ background: 'none', border: '1px solid #d97706', color: '#854d0e', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              Turn off
+            </button>
+          </div>
+        )}
 
         {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
@@ -435,6 +458,12 @@ export default function AllLeads() {
               </button>
             ))}
           </div>
+
+          {/* Flagged filter */}
+          <button type="button" onClick={() => setFlaggedFilter(p => !p)}
+            style={{ border: flaggedFilter ? 'none' : '1px solid #e8ede8', backgroundColor: flaggedFilter ? '#dc2626' : '#fff', color: flaggedFilter ? '#fff' : '#4b5563', borderRadius: '10px', padding: '8px 12px', fontSize: '12.5px', fontWeight: flaggedFilter ? '600' : '500', cursor: 'pointer', fontFamily: FONT }}>
+            🚩 Flagged Only
+          </button>
         </div>
 
         {/* ── Bulk Action Bar ── */}
@@ -630,8 +659,15 @@ export default function AllLeads() {
                 <p style={{ margin: '0 0 2px', fontSize: '18px', fontWeight: '700', color: '#0d1117' }}>{previewLead.name || '—'}</p>
                 <p style={{ margin: 0, fontSize: '12.5px', color: '#9ca3af' }}>Lead Preview</p>
               </div>
-              <button type="button" onClick={closePanel}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#9ca3af', padding: '4px', lineHeight: 1, fontFamily: FONT }}>×</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button type="button" onClick={() => toggleFlag(previewLead.id)}
+                  title={flaggedLeads.includes(previewLead.id) ? 'Unflag lead' : 'Flag lead'}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: '4px', lineHeight: 1, opacity: flaggedLeads.includes(previewLead.id) ? 1 : 0.35 }}>
+                  {flaggedLeads.includes(previewLead.id) ? '🚩' : '🏳'}
+                </button>
+                <button type="button" onClick={closePanel}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', color: '#9ca3af', padding: '4px', lineHeight: 1, fontFamily: FONT }}>×</button>
+              </div>
             </div>
             <div style={{ padding: '24px 28px', flex: 1 }}>
               {(() => {
