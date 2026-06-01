@@ -136,7 +136,8 @@ export default function Leads() {
     return matchSearch && matchFilter;
   });
 
-  const PAGE_SIZE = 20;
+  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_leads_page_size'); return s ? Number(s) : 25; });
+  const PAGE_SIZE = pageSize;
   const totalPages = Math.ceil(filteredLeads.length / PAGE_SIZE);
   const paginatedLeads = filteredLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
@@ -327,9 +328,15 @@ export default function Leads() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px' }}>
-            <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-              Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredLeads.length)} of {filteredLeads.length} leads
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem('qq360_leads_page_size', n); setCurrentPage(1); }}
+                style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#374151', cursor: 'pointer' }}>
+                {[10,25,50,100].map(n => <option key={n} value={n}>{n} per page</option>)}
+              </select>
+              <span style={{ fontSize: '13px', color: '#9ca3af' }}>
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredLeads.length)} of {filteredLeads.length} leads
+              </span>
+            </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
                 style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.4 : 1, fontFamily: FONT }}>

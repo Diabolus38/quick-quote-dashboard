@@ -440,7 +440,18 @@ export default function SuperAdmin() {
                   <thead>
                     <tr style={{ backgroundColor: '#f9fbf9' }}>
                       {['Client','Plan','Revenue','Estimates Used','Usage Bar','Last Active','Status','Embed','Actions'].map(h => (
-                        <th key={h} style={TH}>{h}</th>
+                        <th key={h} style={TH}>
+                          {h === 'Revenue' ? (
+                            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              onMouseEnter={e => e.currentTarget.querySelector('[data-tip]').style.display = 'block'}
+                              onMouseLeave={e => e.currentTarget.querySelector('[data-tip]').style.display = 'none'}>
+                              {h}
+                              <span data-tip style={{ display: 'none', position: 'absolute', top: 'calc(100% + 6px)', left: 0, backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 50, fontWeight: '400', textTransform: 'none', letterSpacing: 0, pointerEvents: 'none' }}>
+                                Monthly subscription fee. Does not include overages.
+                              </span>
+                            </div>
+                          ) : h}
+                        </th>
                       ))}
                     </tr>
                   </thead>

@@ -110,6 +110,7 @@ export default function ClientDetail() {
   const [lastActivity,   setLastActivity]   = useState(null);
   const [setupChecklist, setSetupChecklist] = useState(null);
   const [selectedMonth,  setSelectedMonth]  = useState(null);
+  const [commLog,        setCommLog]        = useState([]);
 
   useEffect(() => { fetchData(); }, [id]);
 
@@ -144,7 +145,19 @@ export default function ClientDetail() {
       const stored = localStorage.getItem('qq360_notes_history_' + id);
       setNotesHistory(stored ? JSON.parse(stored) : []);
     } catch { setNotesHistory([]); }
+    try {
+      const log = localStorage.getItem('qq360_comm_log_' + id);
+      setCommLog(log ? JSON.parse(log) : []);
+    } catch { setCommLog([]); }
     setLoading(false);
+  }
+
+  function pushCommLog(type) {
+    setCommLog(prev => {
+      const next = [{ type, sentAt: new Date().toISOString(), sentBy: 'admin' }, ...prev];
+      localStorage.setItem('qq360_comm_log_' + id, JSON.stringify(next));
+      return next;
+    });
   }
 
   async function handleDeactivate() {
@@ -168,6 +181,7 @@ export default function ClientDetail() {
       redirectTo: `${window.location.origin}/login`,
     });
     setResetMsg(error ? 'Failed to send reset email.' : `Reset email sent to ${client.email}`);
+    if (!error) pushCommLog('reset');
     setTimeout(() => setResetMsg(''), 3000);
   }
 
@@ -185,6 +199,7 @@ export default function ClientDetail() {
         }),
       });
       setWelcomeMsg(res.ok ? 'Sent!' : 'Failed');
+      if (res.ok) pushCommLog('welcome');
     } catch {
       setWelcomeMsg('Failed');
     }
@@ -395,6 +410,27 @@ export default function ClientDetail() {
                   })}
                 </div>
               )}
+            </div>
+
+            {/* Communication Log */}
+            <div style={{ ...CARD, marginTop: '16px' }}>
+              <p style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Communication Log</p>
+              {commLog.length === 0 ? (
+                <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No communications logged yet.</p>
+              ) : commLog.map((entry, i) => {
+                const dot = entry.type === 'welcome' ? '#16a34a' : entry.type === 'invoice' ? '#1d4ed8' : '#d97706';
+                const label = entry.type === 'welcome' ? 'Welcome Email' : entry.type === 'invoice' ? 'Invoice Email' : 'Password Reset';
+                const diff = Date.now() - new Date(entry.sentAt).getTime();
+                const mins = Math.floor(diff / 60000);
+                const ago = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.floor(mins/60)}h ago` : `${Math.floor(mins/1440)}d ago`;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: i < commLog.length - 1 ? '1px solid #f4f6f4' : 'none' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: dot, flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>{label}</span>
+                    <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT, flexShrink: 0 }}>{ago}</span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Recent Leads */}

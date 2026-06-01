@@ -81,6 +81,13 @@ function PricingContent({ clientId }) {
     return entries.map(([key, label]) => ({ key, label, value: String(obj[key] ?? '') }));
   }
 
+  const [hoveredRowLabel, setHoveredRowLabel] = useState(null);
+  const ROW_TOOLTIPS = {
+    bdt:    'Biological Drain Field Treatment',
+    wc:     'Water Closet waste only — no grey water',
+    wc_bdt: 'Full system: WC + grey water treatment',
+  };
+
   const [loading,    setLoading]    = useState(true);
   const [baseGrid,   setBaseGrid]   = useState([
     { key: 'bdt',    label: 'BDT',     values: hh.map(() => '') },
@@ -263,7 +270,15 @@ function PricingContent({ clientId }) {
             ))}
             {baseGrid.map((row, ri) => (
               <>
-                <div key={row.key} style={{ fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT }}>{row.label}</div>
+                <div key={row.key} style={{ position: 'relative', fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT, cursor: 'default' }}
+                  onMouseEnter={() => setHoveredRowLabel(row.key)} onMouseLeave={() => setHoveredRowLabel(null)}>
+                  {row.label}
+                  {hoveredRowLabel === row.key && (
+                    <div style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '8px', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }}>
+                      {ROW_TOOLTIPS[row.key]}
+                    </div>
+                  )}
+                </div>
                 {hh.map((_, ci) => <PriceInput key={ci} value={row.values[ci]} onChange={val => updateGrid(ri, ci, val)} />)}
               </>
             ))}

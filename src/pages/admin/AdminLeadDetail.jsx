@@ -94,7 +94,8 @@ export default function AdminLeadDetail() {
   const [loading,  setLoading]  = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [notes,    setNotes]    = useState('');
-  const [saveMsg,  setSaveMsg]  = useState('');
+  const [saveMsg,       setSaveMsg]       = useState('');
+  const [copiedContact, setCopiedContact] = useState(false);
   const [prevLead, setPrevLead] = useState(null);
   const [nextLead, setNextLead] = useState(null);
 
@@ -220,7 +221,15 @@ export default function AdminLeadDetail() {
 
             {/* Contact Details */}
             <div style={CARD}>
-              <p style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Contact Details</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Contact Details</p>
+                <button type="button" onClick={() => {
+                  const text = [`Name: ${lead.name || '—'}`, `Email: ${lead.email || '—'}`, `Phone: ${lead.phone || '—'}`, `Company: ${lead.company || '—'}`, `Municipality: ${lead.municipality || '—'}`].join('\n');
+                  navigator.clipboard.writeText(text).then(() => { setCopiedContact(true); setTimeout(() => setCopiedContact(false), 2000); });
+                }} style={{ background: 'none', border: 'none', color: copiedContact ? '#16a34a' : PRIMARY, fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, padding: 0 }}>
+                  {copiedContact ? 'Copied!' : 'Copy All'}
+                </button>
+              </div>
               <DetailRow label="Name"         value={lead.name}         />
               <DetailRow label="Email"        value={lead.email}        />
               <DetailRow label="Phone"        value={lead.phone}        />

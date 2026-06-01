@@ -402,6 +402,8 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [loading, setLoading] = useState(true);
   const [lastSavedLangs, setLastSavedLangs] = useState(() => localStorage.getItem('qq360_last_saved_languages') || '');
   const [questionCounts,  setQuestionCounts]  = useState({ EN: null, SV: null, DE: null, FR: null });
+  const [copyEnMsg, setCopyEnMsg] = useState('');
+  const [copyEnWorking, setCopyEnWorking] = useState(false);
   const _ll = useRef(false);
 
   useEffect(() => {
@@ -505,6 +507,27 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
             ))}
           </select>
         </div>
+      </div>
+
+      <div style={{ marginTop: '16px' }}>
+        <button type="button" disabled={copyEnWorking} onClick={async () => {
+          if (!window.confirm('Copy all English labels and helper text to Swedish, German, and French? This will overwrite any existing translations.')) return;
+          setCopyEnWorking(true);
+          setCopyEnMsg('Copying...');
+          const { data: rows } = await supabase.from('client_questions').select('id, question_key, label_en, helper_en').eq('client_id', clientId);
+          if (rows && rows.length > 0) {
+            await supabase.from('client_questions').upsert(
+              rows.map(r => ({ id: r.id, client_id: clientId, question_key: r.question_key, label_sv: r.label_en, label_de: r.label_en, label_fr: r.label_en, helper_sv: r.helper_en, helper_de: r.helper_en, helper_fr: r.helper_en })),
+              { onConflict: 'client_id,question_key' }
+            );
+          }
+          setCopyEnWorking(false);
+          setCopyEnMsg('All done! English labels copied to all languages.');
+          setTimeout(() => setCopyEnMsg(''), 3000);
+        }} style={{ backgroundColor: PRIMARY, color: '#fff', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: copyEnWorking ? 'not-allowed' : 'pointer', fontFamily: FONT, border: 'none', opacity: copyEnWorking ? 0.7 : 1 }}>
+          Copy EN to all languages
+        </button>
+        {copyEnMsg && <p style={{ margin: '8px 0 0', fontSize: '13px', color: copyEnMsg.includes('done') ? '#16a34a' : '#374151', fontWeight: '600', fontFamily: FONT }}>{copyEnMsg}</p>}
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
@@ -874,8 +897,24 @@ export default function ClientSettingsPage() {
   const [activeSection, setActiveSection] = useState('Branding');
   const [hasUnsaved, setHasUnsaved] = useState(false);
   const saveRef = useRef(null);
+  const [navDone, setNavDone] = useState({});
 
   useEffect(() => { setHasUnsaved(false); saveRef.current = null; }, [activeSection]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_settings').select('branding, email_settings, language_settings').eq('client_id', clientId).maybeSingle()
+      .then(({ data: s }) => {
+        setNavDone({
+          'Branding':       !!(s?.branding?.company_name),
+          'Email Settings': !!(s?.email_settings?.from_name),
+          'Languages':      !!(s?.language_settings?.enabled && Object.values(s.language_settings.enabled).some(Boolean)),
+          'Embed Code':     true,
+          'Account':        !!(profile?.full_name),
+          'Danger Zone':    false,
+        });
+      }).catch(() => {});
+  }, [clientId, profile?.full_name]);
 
   useEffect(() => {
     const handler = e => { if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; } };
@@ -906,8 +945,9 @@ export default function ClientSettingsPage() {
             const active = activeSection === item;
             return (
               <button key={item} type="button" onClick={() => setActiveSection(item)}
-                style={{ width: '100%', textAlign: 'left', padding: active ? '9px 11px' : '9px 14px', marginBottom: '2px', fontSize: '13.5px', fontWeight: active ? '600' : '400', color: active ? PRIMARY : '#6b7280', backgroundColor: active ? '#f0fdf4' : 'transparent', border: 'none', borderLeft: active ? `3px solid ${PRIMARY}` : '3px solid transparent', borderRadius: active ? '0 8px 8px 0' : '8px', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.12s' }}>
-                {item}
+                style={{ width: '100%', textAlign: 'left', padding: active ? '9px 11px' : '9px 14px', marginBottom: '2px', fontSize: '13.5px', fontWeight: active ? '600' : '400', color: active ? PRIMARY : '#6b7280', backgroundColor: active ? '#f0fdf4' : 'transparent', border: 'none', borderLeft: active ? `3px solid ${PRIMARY}` : '3px solid transparent', borderRadius: active ? '0 8px 8px 0' : '8px', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>{item}</span>
+                {navDone[item] && <span style={{ color: '#16a34a', fontSize: '11px', fontWeight: '700', marginLeft: '6px', flexShrink: 0 }}>✓</span>}
               </button>
             );
           })}

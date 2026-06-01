@@ -37,6 +37,7 @@ export default function ClientOverview() {
   const [activityFilter, setActivityFilter] = useState('All');
   const [soundEnabled,   setSoundEnabled]   = useState(true);
   const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
+  const [shareStatsMsg,  setShareStatsMsg]  = useState('');
 
   function playChime() {
     try {
@@ -321,17 +322,26 @@ export default function ClientOverview() {
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{value}</span>
                 </div>
               ))}
-              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => {
-                  const csv = ['Stat Name,Value', ...statsRows.map(r => `"${r.label}","${r.value}"`)].join('\n');
-                  const a = document.createElement('a');
-                  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-                  a.download = `quickquote360-stats-${new Date().toISOString().slice(0, 10)}.csv`;
-                  a.click();
-                }}
-                  style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-                  Download Stats
-                </button>
+              <div style={{ marginTop: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button type="button" onClick={() => {
+                    const date = new Date().toLocaleDateString('en-GB');
+                    const text = [`QuickQuote360 Stats Summary`, date, '', ...statsRows.map(r => `${r.label}: ${r.value}`)].join('\n');
+                    navigator.clipboard.writeText(text).then(() => { setShareStatsMsg('Copied to clipboard!'); setTimeout(() => setShareStatsMsg(''), 2000); });
+                  }} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                    Share Stats
+                  </button>
+                  <button type="button" onClick={() => {
+                    const csv = ['Stat Name,Value', ...statsRows.map(r => `"${r.label}","${r.value}"`)].join('\n');
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+                    a.download = `quickquote360-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+                    a.click();
+                  }} style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                    Download Stats
+                  </button>
+                </div>
+                {shareStatsMsg && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#16a34a', fontWeight: '600', textAlign: 'right', fontFamily: FONT }}>{shareStatsMsg}</p>}
               </div>
             </div>
           </div>

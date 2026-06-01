@@ -240,7 +240,7 @@ export default function AllLeads() {
 
   const filtered = leads.filter(l => {
     const q            = search.toLowerCase();
-    const matchSearch  = !q || (l.name || '').toLowerCase().includes(q) || (l.email || '').toLowerCase().includes(q) || (l.phone || '').toLowerCase().includes(q) || (l.municipality || '').toLowerCase().includes(q) || (l.company || '').toLowerCase().includes(q) || (l.answers?.wastewaterType || '').toLowerCase().includes(q);
+    const matchSearch  = !q || (l.name || '').toLowerCase().includes(q) || (l.email || '').toLowerCase().includes(q) || (l.phone || '').toLowerCase().includes(q) || (l.municipality || '').toLowerCase().includes(q) || (l.company || '').toLowerCase().includes(q) || (l.answers?.wastewaterType || '').toLowerCase().includes(q) || (l.id || '').toLowerCase().includes(q);
     const matchClient  = clientFilter === 'all' || l.client_id === clientFilter;
     const rawStatus    = (l.status || 'new').toLowerCase().replace(/\s+/g, '_');
     const matchStatus  = statusFilter === 'All' || rawStatus === statusFilter.toLowerCase().replace(/\s+/g, '_');
@@ -250,7 +250,8 @@ export default function AllLeads() {
   });
 
   /* ── Pagination ── */
-  const PAGE_SIZE    = 25;
+  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_admin_leads_page_size'); return s ? Number(s) : 25; });
+  const PAGE_SIZE    = pageSize;
   const totalPages   = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedLeads = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
@@ -583,9 +584,15 @@ export default function AllLeads() {
         {/* ── Pagination ── */}
         {filtered.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
-            <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
-              Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} leads
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem('qq360_admin_leads_page_size', n); setCurrentPage(1); }}
+                style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#374151', cursor: 'pointer' }}>
+                {[10,25,50,100].map(n => <option key={n} value={n}>{n} per page</option>)}
+              </select>
+              <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
+                Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} leads
+              </span>
+            </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
                 style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 16px', fontSize: '13px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: currentPage === 1 ? 0.4 : 1 }}>
