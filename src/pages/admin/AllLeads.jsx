@@ -195,7 +195,7 @@ export default function AllLeads() {
   }
 
   useEffect(() => {
-    const channel = supabase.channel('admin-all-leads-rt')
+    const channel = supabase.channel(`admin-all-leads-rt-${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
         const lead = payload.new;
         setLeads(prev => [lead, ...prev]);

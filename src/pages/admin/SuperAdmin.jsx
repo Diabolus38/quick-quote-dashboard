@@ -194,14 +194,7 @@ export default function SuperAdmin() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  useEffect(() => {
-    const channel = supabase.channel('superadmin-leads')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
-        setLeads(prev => [payload.new, ...prev]);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+  function handleRefresh() { fetchAll(); }
 
   async function checkHealth() {
     setHealthStatus({ api: 'checking', frontend: 'checking', dashboard: 'checking' });
@@ -231,7 +224,7 @@ export default function SuperAdmin() {
     setLoading(true);
     const [clientsRes, leadsRes, profilesRes] = await Promise.all([
       supabase.from('clients').select('id, name, email, plan, active, created_at').order('created_at', { ascending: false }),
-      supabase.from('leads').select('id, client_id, name, created_at, status, estimated_price').order('created_at', { ascending: false }),
+      supabase.from('leads').select('id, client_id, name, created_at, status, estimated_price').order('created_at', { ascending: false }).limit(500),
       supabase.from('profiles').select('id, client_id, role'),
     ]);
     if (clientsRes.error)  console.error('Failed to fetch clients:', clientsRes.error);
@@ -396,6 +389,10 @@ export default function SuperAdmin() {
             <button type="button" onClick={exportAllData}
               style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
               ↓ Export All Data
+            </button>
+            <button type="button" onClick={handleRefresh}
+              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '10px 16px', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT }}>
+              Refresh
             </button>
             <button type="button" onClick={() => setShowModal(true)}
               style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>

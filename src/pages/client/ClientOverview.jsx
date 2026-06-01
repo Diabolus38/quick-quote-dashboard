@@ -68,7 +68,7 @@ export default function ClientOverview() {
       .then(({ data }) => { setLeads(data || []); setLoading(false); });
 
     const channel = supabase
-      .channel(`overview-leads-${profile.client_id}`)
+      .channel(`overview-leads-${profile.client_id}-${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
         setLeads(prev => [payload.new, ...prev]);
         if (!dndRef.current) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }

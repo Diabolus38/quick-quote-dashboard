@@ -84,7 +84,7 @@ export default function Leads() {
     fetchLeads();
 
     const channel = supabase
-      .channel(`leads-page-${profile.client_id}`)
+      .channel(`leads-page-${profile.client_id}-${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: `client_id=eq.${profile.client_id}` }, payload => {
         setLeads(prev => [payload.new, ...prev]);
         if (!dnd) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }

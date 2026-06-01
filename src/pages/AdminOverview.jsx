@@ -83,13 +83,12 @@ export default function AdminOverview() {
   const [loading,   setLoading]   = useState(true);
   const [rankMode,         setRankMode]         = useState('leads');
   const [hoveredCard,      setHoveredCard]      = useState(null);
-  const [refreshing,       setRefreshing]       = useState(false);
   const [searchTopClients, setSearchTopClients] = useState('');
 
   async function fetchData(leadsOnly = false) {
     if (!leadsOnly) setLoading(true);
     if (!leadsOnly) {
-      const clientsRes = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+      const clientsRes = await supabase.from('clients').select('id, name, email, plan, active, created_at, website_url, notes').order('created_at', { ascending: false });
       if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
       setClients(clientsRes.data || []);
     }
@@ -102,20 +101,14 @@ export default function AdminOverview() {
   useEffect(() => {
     fetchData(false);
 
-    const channel = supabase.channel('admin-overview-leads')
+    const channel = supabase.channel(`admin-overview-leads-${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, payload => {
         const newLead = payload.new;
         setLeads(prev => [newLead, ...prev]);
       })
       .subscribe();
 
-    const interval = setInterval(() => {
-      fetchData(true);
-      setRefreshing(true);
-      setTimeout(() => setRefreshing(false), 2000);
-    }, 60000);
-
-    return () => { supabase.removeChannel(channel); clearInterval(interval); };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   /* ── Computed ── */
@@ -300,7 +293,6 @@ export default function AdminOverview() {
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Recent Leads</span>
-                <span title="Auto-refreshing every 60s" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: refreshing ? '#4ade80' : '#d1d5db', display: 'inline-block', transition: 'background-color 0.3s', flexShrink: 0 }} />
               </div>
               <button type="button" onClick={() => navigate('/admin/leads')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: PRIMARY, fontWeight: '600', fontFamily: FONT, padding: 0 }}>
