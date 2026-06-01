@@ -20,10 +20,6 @@ const TOOLS_ITEMS = [
   { icon: '◈', label: 'Super Admin', route: '/admin/super' },
 ];
 
-const ADMIN_ACCOUNT_ITEMS = [
-  { icon: '⚙', label: 'Settings', route: '/admin/settings' },
-];
-
 function getInitials(name) {
   if (!name) return 'AD';
   const parts = name.trim().split(' ').filter(Boolean);
@@ -92,14 +88,6 @@ export default function Layout({ title, subtitle, children }) {
             </nav>
           </>
         )}
-
-        {/* ACCOUNT Section */}
-        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Account</span>
-        </div>
-        <nav style={{ flexShrink: 0 }}>
-          {ADMIN_ACCOUNT_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} isAdmin />)}
-        </nav>
 
         {/* 5. Spacer */}
         <div style={{ flex: 1 }} />
