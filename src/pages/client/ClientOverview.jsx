@@ -74,7 +74,7 @@ export default function ClientOverview() {
         if (!dndRef.current) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }
         if (soundEnabledRef.current && !dndRef.current) playChime();
       })
-      .subscribe();
+      .subscribe((status) => { if (status === 'CHANNEL_ERROR') { console.warn('ClientOverview realtime channel error - will retry'); } });
 
     return () => { supabase.removeChannel(channel); };
   }, [profile?.client_id]);

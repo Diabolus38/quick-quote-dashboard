@@ -106,7 +106,7 @@ export default function AdminOverview() {
         const newLead = payload.new;
         setLeads(prev => [newLead, ...prev]);
       })
-      .subscribe();
+      .subscribe((status) => { if (status === 'CHANNEL_ERROR') { console.warn('AdminOverview realtime channel error - will retry'); } });
 
     return () => { supabase.removeChannel(channel); };
   }, []);

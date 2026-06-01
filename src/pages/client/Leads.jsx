@@ -90,7 +90,7 @@ export default function Leads() {
         if (!dnd) { setShowToast(true); setTimeout(() => setShowToast(false), 4000); }
         if (soundEnabled && !dnd) playChime();
       })
-      .subscribe();
+      .subscribe((status) => { if (status === 'CHANNEL_ERROR') { console.warn('Leads realtime channel error - will retry'); } });
 
     return () => { supabase.removeChannel(channel); };
   }, [profile]);

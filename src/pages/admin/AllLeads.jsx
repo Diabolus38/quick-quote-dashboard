@@ -202,7 +202,7 @@ export default function AllLeads() {
         if (!dnd) { setNewLeadToast(`New lead from ${lead.name || 'Unknown'}`); setTimeout(() => setNewLeadToast(null), 4000); }
         if (soundEnabled && !dnd) playChime();
       })
-      .subscribe();
+      .subscribe((status) => { if (status === 'CHANNEL_ERROR') { console.warn('AllLeads realtime channel error - will retry'); } });
     return () => { supabase.removeChannel(channel); };
   }, [soundEnabled, dnd]);
 

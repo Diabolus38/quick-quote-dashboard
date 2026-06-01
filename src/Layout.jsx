@@ -37,6 +37,7 @@ export default function Layout({ title, subtitle, children }) {
   const isSuperAdmin         = profile?.role === 'super_admin';
   const initials             = getInitials(profile?.full_name);
   const [showNotif,     setShowNotif]     = useState(false);
+  const [showHelp,      setShowHelp]      = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
 
   return (
@@ -104,9 +105,37 @@ export default function Layout({ title, subtitle, children }) {
         {/* 5. Spacer */}
         <div style={{ flex: 1 }} />
 
+        {/* Help Card */}
+        {showHelp && (
+          <div style={{ backgroundColor: '#f0fdf4', borderRadius: '12px', margin: '8px 10px', padding: '14px', border: '1px solid #bbf7d0', position: 'relative' }}>
+            <button type="button" onClick={() => setShowHelp(false)}
+              style={{ position: 'absolute', top: '8px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '14px', lineHeight: 1, padding: '2px' }}>
+              ×
+            </button>
+            <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: '#166534', fontFamily: FONT }}>Get Help</p>
+            <div style={{ marginBottom: '8px' }}>
+              <span>📧 </span>
+              <a href="mailto:support@quickquote360.com" target="_blank" rel="noopener noreferrer"
+                style={{ color: '#166534', fontSize: '12px', textDecoration: 'none' }}>
+                support@quickquote360.com
+              </a>
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <span>📖 </span>
+              <a href="https://quickquote360.com" target="_blank" rel="noopener noreferrer"
+                style={{ color: '#166534', fontSize: '12px', textDecoration: 'none' }}>
+                Documentation
+              </a>
+            </div>
+            <div>
+              <span style={{ fontSize: '11px', color: '#9ca3af' }}>💬 Response within 24 hours</span>
+            </div>
+          </div>
+        )}
+
         {/* 6. Bottom Nav */}
         <div style={{ padding: '8px 10px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
-          <BottomNavItem icon="💬" label="Get Help" onClick={() => window.open('mailto:support@quickquote360.com')} />
+          <BottomNavItem icon="💬" label="Get Help" onClick={() => setShowHelp(p => !p)} />
           <BottomNavItem icon="⚙" label="Settings"  onClick={() => navigate('/admin/settings')} />
           <BottomNavItem icon="↩" label="Logout"    onClick={async () => { await signOut(); navigate('/login'); }} />
         </div>
