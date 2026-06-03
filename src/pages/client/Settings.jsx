@@ -238,6 +238,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
             </div>
             <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} disabled={logoUploading} />
           </label>
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Recommended: PNG or SVG, 200x200px minimum, transparent background, max 2MB.</p>
           {logoUploadErr && <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{logoUploadErr}</p>}
           {logoUrl && isValidUrl(logoUrl) && (
             <img src={logoUrl} alt="Logo preview"
@@ -805,7 +806,7 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
               {uploading ? 'Uploading…' : 'Upload Photo'}
               <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={uploading} />
             </label>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>JPG, PNG or GIF. Max 5 MB.</p>
+            <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Recommended: JPG or PNG, 200x200px, square crop works best, max 5MB.</p>
             {uploadErr && <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{uploadErr}</p>}
           </div>
         </div>

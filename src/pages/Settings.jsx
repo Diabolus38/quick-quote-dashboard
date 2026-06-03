@@ -117,6 +117,7 @@ function ProfileSection({ setHasUnsaved, setSaveRef }) {
           </label>
           {avatarSaveMsg && <span style={{ fontSize: '13px', fontWeight: '600', color: avatarSaveMsg.includes('failed') || avatarSaveMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT }}>{avatarSaveMsg}</span>}
         </div>
+        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Recommended: JPG or PNG, 200x200px, square crop works best, max 5MB.</p>
       </div>
 
       <div style={CARD}>
