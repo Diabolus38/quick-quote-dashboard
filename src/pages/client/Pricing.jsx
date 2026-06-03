@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -453,9 +454,23 @@ function ConfigStatusCard() {
 export default function Pricing() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [planEmailSent, setPlanEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
+      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [clientId]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   return (
     <ClientLayout title="Pricing">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
       <ConfigStatusCard />
       <PricingContent clientId={clientId} />
     </ClientLayout>

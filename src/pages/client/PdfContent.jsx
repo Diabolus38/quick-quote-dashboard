@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -187,7 +188,43 @@ function PDFContent({ clientId }) {
             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
               <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Introduction</p>
               <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                {intro || 'Your introduction text will appear here…'}
+                {intro || 'Introduction text will appear here...'}
+              </p>
+            </div>
+          )}
+          {/* System Description */}
+          {sectionVisible.systemDesc && (
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>System Description</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {systemDesc || 'System description will appear here...'}
+              </p>
+            </div>
+          )}
+          {/* Service Agreement */}
+          {sectionVisible.serviceAg && (
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Service Agreement</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {serviceAg || 'Service agreement text will appear here...'}
+              </p>
+            </div>
+          )}
+          {/* Payment Terms */}
+          {sectionVisible.payTerms && (
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Payment Terms</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {payTerms || 'Payment terms will appear here...'}
+              </p>
+            </div>
+          )}
+          {/* Legal */}
+          {sectionVisible.legal && (
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Legal</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {legal || 'Legal text will appear here...'}
               </p>
             </div>
           )}
@@ -195,6 +232,7 @@ function PDFContent({ clientId }) {
           <div style={{ paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
             <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#0d1117' }}>{sigName || 'Signature Name'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigTitle || 'Title'}</p>
+            <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigPhone || ''}</p>
             <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
           </div>
         </div>
@@ -260,9 +298,23 @@ function ConfigStatusCard() {
 export default function PdfContent() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [planEmailSent, setPlanEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
+      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [clientId]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   return (
     <ClientLayout title="PDF Content">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
       <ConfigStatusCard />
       <PDFContent clientId={clientId} />
     </ClientLayout>

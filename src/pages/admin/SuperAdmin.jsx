@@ -461,7 +461,7 @@ export default function SuperAdmin() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f9fbf9' }}>
-                      {['Client','Plan','Revenue','Estimates Used','Usage Bar','Last Active','Status','Embed','Actions'].map(h => (
+                      {['Client','Plan','Trial','Revenue','Estimates Used','Usage Bar','Last Active','Status','Embed','Actions'].map(h => (
                         <th key={h} style={TH}>
                           {h === 'Revenue' ? (
                             <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
@@ -510,6 +510,16 @@ export default function SuperAdmin() {
                             <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>
                               {client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : 'Free'}
                             </span>
+                          </td>
+
+                          {/* Trial */}
+                          <td style={TD}>
+                            {client.plan === 'scale' && (() => {
+                              const days = (Date.now() - new Date(client.created_at).getTime()) / (1000 * 60 * 60 * 24);
+                              if (days > 14) return null;
+                              const left = Math.max(0, Math.ceil(14 - days));
+                              return <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#854d0e' }}>Trial {left}d left</span>;
+                            })()}
                           </td>
 
                           {/* Revenue */}

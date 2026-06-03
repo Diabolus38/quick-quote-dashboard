@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useConfigStatus } from '../../context/ConfigStatusContext';
 import ClientLayout from '../../ClientLayout';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -96,6 +97,19 @@ export default function QuestionEditor() {
   const [retryKey,    setRetryKey]    = useState(0);
   const [lastSavedQ,  setLastSavedQ]  = useState(() => localStorage.getItem('qq360_last_saved_questions') || '');
   const [resetBanner, setResetBanner] = useState(false);
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [planEmailSent, setPlanEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
+      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [clientId]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   /* ── Load ── */
   useEffect(() => {
@@ -163,6 +177,7 @@ export default function QuestionEditor() {
 
   return (
     <ClientLayout title="Question Editor">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
       <ConfigStatusCard />
       <div style={{ fontFamily: FONT }}>
 

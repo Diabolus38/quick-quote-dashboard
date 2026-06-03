@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
 import OnboardingBanner from '../../components/OnboardingBanner';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -38,10 +39,23 @@ export default function ClientOverview() {
   const [soundEnabled,   setSoundEnabled]   = useState(true);
   const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
   const [shareStatsMsg,  setShareStatsMsg]  = useState('');
+  const [trialExpired,   setTrialExpired]   = useState(false);
+  const [planEmailSent,  setPlanEmailSent]  = useState(false);
   const soundEnabledRef = useRef(soundEnabled);
   const dndRef = useRef(dnd);
 
   useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
+  useEffect(() => {
+    if (!profile?.client_id) return;
+    supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).single()
+      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [profile?.client_id]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
   useEffect(() => { dndRef.current = dnd; }, [dnd]);
 
   function playChime() {
@@ -105,6 +119,7 @@ export default function ClientOverview() {
 
   return (
     <ClientLayout title="Overview">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
       {showToast && (
         <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '12px', padding: '14px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
           New lead just came in!

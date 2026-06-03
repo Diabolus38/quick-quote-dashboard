@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { PLAN_LIMITS } from './utils/planConfig';
+import BugReportModal from './components/BugReportModal';
 
 const FONT          = "'Plus Jakarta Sans', system-ui, sans-serif";
 const LIME          = '#a3e635';
@@ -41,6 +42,7 @@ export default function ClientLayout({ title, subtitle, children }) {
   const initials             = getInitials(profile?.full_name);
 
   const [showNotif,      setShowNotif]      = useState(false);
+  const [showBugReport,  setShowBugReport]  = useState(false);
   const [leadsThisMonth, setLeadsThisMonth] = useState(0);
   const [planLimit,      setPlanLimit]      = useState(30);
   const [sidebarSearch,  setSidebarSearch]  = useState('');
@@ -129,6 +131,7 @@ export default function ClientLayout({ title, subtitle, children }) {
         {/* Bottom Nav */}
         <div style={{ padding: '8px 10px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
           <BottomNavItem icon="💬" label="Get Help" onClick={() => window.open('https://quickquote360.com/faq/', '_blank', 'noopener,noreferrer')} />
+          <BottomNavItem icon="🐛" label="Report a Bug" onClick={() => setShowBugReport(true)} />
           <BottomNavItem icon="⚙" label="Settings"  onClick={() => navigate('/client/settings')} />
           <BottomNavItem icon="↩" label="Logout"    onClick={() => signOut()} />
         </div>
@@ -178,6 +181,8 @@ export default function ClientLayout({ title, subtitle, children }) {
           )}
         </div>
       </aside>
+
+      <BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} />
 
       {/* ── Main area ── */}
       <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

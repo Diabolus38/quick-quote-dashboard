@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -114,7 +115,7 @@ function MunicipalitiesContent({ clientId }) {
 
   async function addMunicipality(name) {
     const { data } = await supabase.from('client_municipalities')
-      .insert({ client_id: clientId, municipality: name, zone: 1 })
+      .insert({ client_id: clientId, municipality: name, zone: '', custom_price: 0 })
       .select().single();
     if (data) setCovered(prev => [...prev, data]);
     setSearch('');
@@ -125,9 +126,15 @@ function MunicipalitiesContent({ clientId }) {
     setCovered(prev => prev.filter(c => c.id !== rowId));
   }
 
-  async function changeZone(rowId, zone) {
-    await supabase.from('client_municipalities').update({ zone }).eq('id', rowId);
-    setCovered(prev => prev.map(c => c.id === rowId ? { ...c, zone } : c));
+  async function updateZone(rowId, zoneName) {
+    await supabase.from('client_municipalities').update({ zone: zoneName }).eq('id', rowId);
+    setCovered(prev => prev.map(c => c.id === rowId ? { ...c, zone: zoneName } : c));
+  }
+
+  async function updatePrice(rowId, price) {
+    const num = Number(price) || 0;
+    await supabase.from('client_municipalities').update({ custom_price: num }).eq('id', rowId);
+    setCovered(prev => prev.map(c => c.id === rowId ? { ...c, custom_price: num } : c));
   }
 
   return (
@@ -161,12 +168,20 @@ function MunicipalitiesContent({ clientId }) {
           ) : covered.map(c => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
               <span style={{ flex: 1, fontSize: '13.5px', color: '#0d1117', fontWeight: '500', fontFamily: FONT }}>{c.municipality}</span>
-              {[1, 2, 3].map(z => (
-                <button key={z} type="button" onClick={() => changeZone(c.id, z)}
-                  style={{ padding: '4px 14px', fontSize: '12px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer', fontFamily: FONT, border: c.zone === z ? 'none' : '1px solid #e8ede8', backgroundColor: c.zone === z ? (z === 1 ? PRIMARY : z === 2 ? '#1d4ed8' : '#7c3aed') : '#fff', color: c.zone === z ? '#fff' : '#6b7280' }}>
-                  Zone {z}
-                </button>
-              ))}
+              <input
+                type="text"
+                defaultValue={c.zone || ''}
+                placeholder="Zone name"
+                onBlur={e => updateZone(c.id, e.target.value)}
+                style={{ width: '110px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff' }} />
+              <input
+                type="number"
+                defaultValue={c.custom_price || 0}
+                placeholder="0"
+                min="0"
+                onBlur={e => updatePrice(c.id, e.target.value)}
+                style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff', textAlign: 'right' }} />
+              <span style={{ fontSize: '12px', color: '#6b7280', fontFamily: FONT }}>kr</span>
               <button type="button" onClick={() => removeRow(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#dc2626', lineHeight: 1, padding: '0 4px' }}>×</button>
             </div>
           ))}
@@ -227,9 +242,23 @@ function ConfigStatusCard() {
 export default function Municipalities() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [planEmailSent, setPlanEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
+      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [clientId]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   return (
     <ClientLayout title="Municipalities">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
       <ConfigStatusCard />
       <MunicipalitiesContent clientId={clientId} />
     </ClientLayout>

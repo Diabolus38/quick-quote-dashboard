@@ -115,6 +115,7 @@ export default function AllLeads() {
   const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [focusedLeadId, setFocusedLeadId] = useState(null);
   const [hoveredDay, setHoveredDay] = useState(null);
+  const [heatmapRange, setHeatmapRange] = useState('7days');
   const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'];
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
@@ -394,32 +395,80 @@ export default function AllLeads() {
           ))}
         </div>
 
-        {/* ── Last 7 Days Heatmap ── */}
+        {/* ── Heatmap ── */}
         <div style={{ ...CARD, marginBottom: '16px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Last 7 Days</p>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {Array.from({ length: 7 }, (_, i) => {
-              const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (6 - i));
+          <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>
+            {heatmapRange === '7days' ? 'Last 7 Days' : heatmapRange === '30days' ? 'Last 30 Days' : (() => { const [hy, hm] = heatmapRange.split('-').map(Number); return new Date(hy, hm - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' }); })()}
+          </p>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            {[{ key: '7days', label: '7 Days' }, { key: '30days', label: '30 Days' }, ...Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (i + 1)); return { key: `${d.getFullYear()}-${d.getMonth() + 1}`, label: d.toLocaleString('default', { month: 'short', year: 'numeric' }) }; })].map(pill => (
+              <button key={pill.key} type="button" onClick={() => setHeatmapRange(pill.key)}
+                style={{ border: heatmapRange === pill.key ? 'none' : '1px solid #e8ede8', backgroundColor: heatmapRange === pill.key ? PRIMARY : '#fff', color: heatmapRange === pill.key ? '#fff' : '#4b5563', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                {pill.label}
+              </button>
+            ))}
+          </div>
+          {(() => {
+            const getDayData = (d) => {
               const count = leads.filter(l => { const ld = new Date(l.created_at); ld.setHours(0,0,0,0); return ld.getTime() === d.getTime(); }).length;
               const bg = count === 0 ? '#f3f4f6' : count <= 2 ? '#bbf7d0' : count <= 5 ? '#4ade80' : '#166534';
               const color = count >= 3 ? '#fff' : '#374151';
-              const label = d.toLocaleDateString('en-GB', { weekday: 'short' });
-              const dateLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+              return { count, bg, color };
+            };
+            const tooltip = (dKey, count, label) => hoveredDay === dKey ? (
+              <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, marginBottom: '4px', pointerEvents: 'none', textAlign: 'center' }}>
+                <div style={{ fontWeight: '600' }}>{label}</div>
+                <div style={{ opacity: 0.75 }}>{count === 0 ? 'No leads' : `${count} lead${count !== 1 ? 's' : ''}`}</div>
+              </div>
+            ) : null;
+            if (heatmapRange === '7days') {
               return (
-                <div key={i} style={{ flex: 1, height: '64px', borderRadius: '10px', backgroundColor: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', position: 'relative', cursor: 'default' }}
-                  onMouseEnter={() => setHoveredDay(i)} onMouseLeave={() => setHoveredDay(null)}>
-                  <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', color }}>{label}</span>
-                  <span style={{ fontSize: '18px', fontWeight: '800', color }}>{count}</span>
-                  {hoveredDay === i && (
-                    <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, marginBottom: '4px', pointerEvents: 'none', textAlign: 'center' }}>
-                      <div style={{ fontWeight: '600' }}>{dateLabel}</div>
-                      <div style={{ opacity: 0.75 }}>{count === 0 ? 'No leads' : `${count} lead${count !== 1 ? 's' : ''}`}</div>
-                    </div>
-                  )}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (6 - i)); return d; }).map(d => {
+                    const dKey = d.toDateString(); const { count, bg, color } = getDayData(d);
+                    return (
+                      <div key={dKey} style={{ flex: 1, height: '64px', borderRadius: '10px', backgroundColor: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', position: 'relative', cursor: 'default' }}
+                        onMouseEnter={() => setHoveredDay(dKey)} onMouseLeave={() => setHoveredDay(null)}>
+                        <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', color }}>{d.toLocaleDateString('en-GB', { weekday: 'short' })}</span>
+                        <span style={{ fontSize: '18px', fontWeight: '800', color }}>{count}</span>
+                        {tooltip(dKey, count, d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }))}
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })}
-          </div>
+            }
+            let days = [];
+            let chunkSize = 6;
+            if (heatmapRange === '30days') {
+              days = Array.from({ length: 30 }, (_, i) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (29 - i)); return d; });
+            } else {
+              const [hy, hm] = heatmapRange.split('-').map(Number);
+              days = Array.from({ length: new Date(hy, hm, 0).getDate() }, (_, i) => new Date(hy, hm - 1, i + 1));
+              chunkSize = 7;
+            }
+            const rows = [];
+            for (let i = 0; i < days.length; i += chunkSize) rows.push(days.slice(i, i + chunkSize));
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {rows.map((row, ri) => (
+                  <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '10px', color: '#9ca3af', width: '36px', textAlign: 'right', flexShrink: 0, fontFamily: FONT }}>{row[0].toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    <div style={{ display: 'flex', flex: 1, gap: '4px' }}>
+                      {row.map(d => { const dKey = d.toDateString(); const { count, bg, color } = getDayData(d); return (
+                        <div key={dKey} style={{ flex: 1, height: '48px', borderRadius: '8px', backgroundColor: bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', position: 'relative', cursor: 'default', minWidth: '24px' }}
+                          onMouseEnter={() => setHoveredDay(dKey)} onMouseLeave={() => setHoveredDay(null)}>
+                          <span style={{ fontSize: '9px', fontWeight: '600', color }}>{d.getDate()}</span>
+                          <span style={{ fontSize: '14px', fontWeight: '800', color }}>{count}</span>
+                          {tooltip(dKey, count, d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }))}
+                        </div>
+                      ); })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Search + Filters ── */}

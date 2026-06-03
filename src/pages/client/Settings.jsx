@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -445,6 +446,7 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [questionCounts,  setQuestionCounts]  = useState({ EN: null, SV: null, DE: null, FR: null });
   const [copyEnMsg, setCopyEnMsg] = useState('');
   const [copyEnWorking, setCopyEnWorking] = useState(false);
+  const [langToggleErr, setLangToggleErr] = useState('');
   const _ll = useRef(false);
 
   useEffect(() => {
@@ -486,7 +488,11 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
     setEnabled(prev => {
       const next = { ...prev, [code]: !prev[code] };
       const anyOn = Object.values(next).some(Boolean);
-      if (!anyOn) return prev;
+      if (!anyOn) {
+        setLangToggleErr('At least one language must be enabled.');
+        setTimeout(() => setLangToggleErr(''), 2000);
+        return prev;
+      }
       if (!next[defaultLanguage]) {
         const firstEnabled = Object.keys(next).find(k => next[k]);
         if (firstEnabled) setDefaultLanguage(firstEnabled);
@@ -538,6 +544,7 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
               </div>
             );
           })}
+          {langToggleErr && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{langToggleErr}</p>}
         </div>
         <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f4f6f4' }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>Default Language</label>
@@ -943,6 +950,19 @@ export default function ClientSettingsPage() {
   const saveRef = useRef(null);
   const [navDone, setNavDone] = useState({});
   const [cmdSToast, setCmdSToast] = useState(false);
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [planEmailSent, setPlanEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
+      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [clientId]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('tab') === 'embed') {
@@ -988,6 +1008,7 @@ export default function ClientSettingsPage() {
 
   return (
     <ClientLayout title="Settings">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
       {cmdSToast && (
         <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '10px', padding: '10px 18px', fontSize: '12px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontFamily: FONT }}>
           Saved with ⌘S

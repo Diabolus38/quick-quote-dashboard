@@ -253,11 +253,22 @@ export default function Clients() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
+  function isOnTrial(c) {
+    if (c.plan !== 'scale') return false;
+    const days = (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    return days <= 14;
+  }
+  function trialDaysLeft(c) {
+    const days = (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(14 - days));
+  }
+
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
     const matchSearch = !q || (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.website_url || '').toLowerCase().includes(q) || (c.notes || '').toLowerCase().includes(q);
     const matchPlan   = planFilter === 'All' || (c.plan || 'starter').toLowerCase() === planFilter.toLowerCase();
-    const matchStatus = statusFilter === 'All' || (statusFilter === 'Active' ? c.active !== false : c.active === false);
+    const matchStatus = statusFilter === 'All'
+      || (statusFilter === 'Active' ? c.active !== false : statusFilter === 'Inactive' ? c.active === false : isOnTrial(c));
     return matchSearch && matchPlan && matchStatus;
   });
 
@@ -348,7 +359,7 @@ export default function Clients() {
 
           {/* Status filter */}
           <div style={{ display: 'flex', gap: '6px' }}>
-            {['All','Active','Inactive'].map(s => (
+            {['All','Active','Inactive','Trials'].map(s => (
               <button key={s} type="button" onClick={() => setStatusFilter(s)}
                 style={{ border: statusFilter === s ? 'none' : '1px solid #e8ede8', backgroundColor: statusFilter === s ? '#374151' : '#fff', color: statusFilter === s ? '#fff' : '#4b5563', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: statusFilter === s ? '600' : '500', cursor: 'pointer', fontFamily: FONT }}>
                 {s}
@@ -473,6 +484,11 @@ export default function Clients() {
                       <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>
                         {client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : 'Starter'}
                       </span>
+                      {isOnTrial(client) && (
+                        <span style={{ display: 'inline-block', marginLeft: '4px', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#854d0e' }}>
+                          Trial · {trialDaysLeft(client)}d left
+                        </span>
+                      )}
                     </td>
 
                     {/* Usage */}
