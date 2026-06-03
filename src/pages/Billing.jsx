@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
 import { calculateMRR } from '../utils/mrrUtils';
+import { PLAN_FEES, PLAN_LIMITS, OVERAGE_RATES } from '../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -14,12 +15,12 @@ const CARD = {
   padding: '24px',
 };
 
-const PLAN_FEE     = { starter: 300,  growth: 600,  scale: 1149 };
-const PLAN_LIMIT   = { starter: 30,   growth: 75,   scale: Infinity };
-const OVERAGE_RATE = { starter: 25,   growth: 18,   scale: 0 };
+const PLAN_FEE     = PLAN_FEES;
+const PLAN_LIMIT   = PLAN_LIMITS;
+const OVERAGE_RATE = OVERAGE_RATES;
 
 const PLAN_BADGE = {
-  starter: { bg: '#dbeafe', color: '#1d4ed8' },
+  starter: { bg: '#f3f4f6', color: '#374151' },
   growth:  { bg: '#ede9fe', color: '#7c3aed' },
   scale:   { bg: '#ecfccb', color: '#3f6212' },
 };

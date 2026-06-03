@@ -1,4 +1,5 @@
-const PLAN_FEE = { starter: 300, growth: 600, scale: 1149 };
+import { PLAN_FEES } from './planConfig';
+const PLAN_FEE = PLAN_FEES;
 
 export function getPlanCounts(clients) {
   return {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
+import { PLAN_LIMITS } from './utils/planConfig';
 
 const FONT          = "'Plus Jakarta Sans', system-ui, sans-serif";
 const LIME          = '#a3e635';
@@ -10,7 +11,6 @@ const INACTIVE      = '#6b7280';
 const SECTION_LABEL = '#9ca3af';
 const PRIMARY       = '#166534';
 
-const PLAN_LIMITS = { starter: 30, growth: 75, scale: 999 };
 
 const OVERVIEW_ITEMS = [
   { icon: '⊞', label: 'Overview', route: '/client' },

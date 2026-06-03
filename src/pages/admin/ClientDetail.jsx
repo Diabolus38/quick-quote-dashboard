@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
+import { PLAN_FEES, PLAN_LIMITS } from '../../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -29,7 +30,7 @@ const PLAN_STYLE = {
   starter: { bg: '#dbeafe', color: '#1d4ed8'  },
 };
 
-const PLAN_LIMIT = { starter: 30, growth: 75, scale: Infinity };
+const PLAN_LIMIT = PLAN_LIMITS;
 
 function formatDate(str) {
   if (!str) return '—';
@@ -607,9 +608,9 @@ export default function ClientDetail() {
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>Change Plan</label>
                 <select value={changePlan} onChange={e => setChangePlan(e.target.value)}
                   style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '10px 14px', fontSize: '13.5px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', marginBottom: '8px' }}>
-                  <option value="starter">Starter — $300/mo</option>
-                  <option value="growth">Growth — $600/mo</option>
-                  <option value="scale">Scale — $1,149/mo</option>
+                  <option value="starter">Starter — ${PLAN_FEES.starter}/mo</option>
+                  <option value="growth">Growth — ${PLAN_FEES.growth}/mo</option>
+                  <option value="scale">Scale — ${PLAN_FEES.scale}/mo</option>
                 </select>
                 <button type="button" onClick={handleSavePlan}
                   style={{ width: '100%', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 0', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>

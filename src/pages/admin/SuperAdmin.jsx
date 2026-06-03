@@ -4,6 +4,7 @@ import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { calculateMRR, getPlanCounts } from '../../utils/mrrUtils';
+import { PLAN_FEES } from '../../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -153,9 +154,9 @@ function AddClientModal({ onClose, onSaved }) {
         <div style={{ marginBottom: '28px' }}>
           <label style={lbl}>Plan</label>
           <select value={plan} onChange={e => setPlan(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-            <option value="starter">Starter — $300/mo</option>
-            <option value="growth">Growth — $600/mo</option>
-            <option value="scale">Scale — $1,149/mo</option>
+            <option value="starter">Starter — ${PLAN_FEES.starter}/mo</option>
+            <option value="growth">Growth — ${PLAN_FEES.growth}/mo</option>
+            <option value="scale">Scale — ${PLAN_FEES.scale}/mo</option>
           </select>
         </div>
 
@@ -252,9 +253,9 @@ export default function SuperAdmin() {
 
   const startOfThisMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
   const prevClients       = clients.filter(c => new Date(c.created_at) < startOfThisMonth);
-  const lastMonthMrr      = prevClients.filter(c => c.plan === 'starter').length * 300
-                          + prevClients.filter(c => c.plan === 'growth').length  * 600
-                          + prevClients.filter(c => c.plan === 'scale').length   * 1149;
+  const lastMonthMrr      = prevClients.filter(c => c.plan === 'starter').length * PLAN_FEES.starter
+                          + prevClients.filter(c => c.plan === 'growth').length  * PLAN_FEES.growth
+                          + prevClients.filter(c => c.plan === 'scale').length   * PLAN_FEES.scale;
   const mrrDiff = mrr - lastMonthMrr;
 
   const leadCountPerClient  = {};
@@ -273,7 +274,7 @@ export default function SuperAdmin() {
     }
   });
 
-  const PLAN_LIMIT_SA = { starter: 30, growth: 75, scale: Infinity };
+  const PLAN_LIMIT_SA = { starter: Infinity, growth: 30, scale: 75 };
   const systemAlerts = [];
   clients.forEach(c => {
     const planLimit = PLAN_LIMIT_SA[c.plan] || 30;
@@ -328,9 +329,9 @@ export default function SuperAdmin() {
     const clientRows = clients.map(c => [c.id, c.name || '', c.email || '', c.plan || '', c.active !== false ? 'Yes' : 'No', c.created_at || '']);
     const leadHeaders = ['ID','Client ID','Client Name','Customer Name','Email','Phone','Municipality','Estimated Price','Status','Language','Created At'];
     const leadRows = leads.map(l => [l.id, l.client_id || '', clientMap[l.client_id] || '', l.name || '', l.email || '', l.phone || '', l.municipality || '', l.estimated_price ?? '', l.status || '', l.language || '', l.created_at || '']);
-    const PLAN_FEE_EX = { starter: 300, growth: 600, scale: 1149 };
-    const PLAN_LIMIT_EX = { starter: 30, growth: 75, scale: Infinity };
-    const OVERAGE_RATE_EX = { starter: 25, growth: 18, scale: 0 };
+    const PLAN_FEE_EX = PLAN_FEES;
+    const PLAN_LIMIT_EX = { starter: Infinity, growth: 30, scale: 75 };
+    const OVERAGE_RATE_EX = { starter: 0, growth: 25, scale: 18 };
     const now2 = new Date();
     const monthLeads = {};
     leads.forEach(l => {
@@ -511,7 +512,7 @@ export default function SuperAdmin() {
 
                           {/* Revenue */}
                           <td style={{ ...TD, fontWeight: '700', color: '#0d1117' }}>
-                            ${({ starter: 300, growth: 600, scale: 1149 }[client.plan] || 300).toLocaleString()}/mo
+                            ${(PLAN_FEES[client.plan] || PLAN_FEES.starter).toLocaleString()}/mo
                           </td>
 
                           {/* Estimates Used */}
@@ -615,9 +616,9 @@ export default function SuperAdmin() {
                 <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Plan Distribution</p>
 
                 {[
-                  { label: 'Starter', count: starterCount, fill: LIME,    sub: '$300/mo each'    },
-                  { label: 'Growth',  count: growthCount,  fill: PRIMARY, sub: '$600/mo each'    },
-                  { label: 'Scale',   count: scaleCount,   fill: DARK,    sub: '$1,149/mo each'  },
+                  { label: 'Starter', count: starterCount, fill: LIME,    sub: `$${PLAN_FEES.starter}/mo each`  },
+                  { label: 'Growth',  count: growthCount,  fill: PRIMARY, sub: `$${PLAN_FEES.growth}/mo each`   },
+                  { label: 'Scale',   count: scaleCount,   fill: DARK,    sub: `$${PLAN_FEES.scale}/mo each`    },
                 ].map(row => (
                   <div key={row.label} style={{ marginBottom: '18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>

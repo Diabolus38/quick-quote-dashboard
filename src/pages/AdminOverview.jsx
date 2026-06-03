@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
 import { calculateMRR, getPlanCounts } from '../utils/mrrUtils';
+import { PLAN_FEES } from '../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -153,7 +154,7 @@ export default function AdminOverview() {
   const recentLeads = leads.slice(0, 8);
   const maxPlan     = Math.max(starterCount, growthCount, scaleCount, 1);
 
-  const PLAN_FEE_OV = { starter: 300, growth: 600, scale: 1149 };
+  const PLAN_FEE_OV = PLAN_FEES;
   const conversionRatePerClient = {};
   clients.forEach(c => {
     const cl = leads.filter(l => l.client_id === c.id);
@@ -351,9 +352,9 @@ export default function AdminOverview() {
             <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Clients by Plan</p>
 
             {[
-              { label: 'Starter', count: starterCount, sub: '× $300/mo',   fill: '#1d4ed8', bg: '#dbeafe' },
-              { label: 'Growth',  count: growthCount,  sub: '× $600/mo',   fill: '#7c3aed', bg: '#ede9fe' },
-              { label: 'Scale',   count: scaleCount,   sub: '× $1,149/mo', fill: LIME,      bg: '#ecfccb' },
+              { label: 'Starter', count: starterCount, sub: `× $${PLAN_FEES.starter}/mo`, fill: '#1d4ed8', bg: '#dbeafe' },
+              { label: 'Growth',  count: growthCount,  sub: `× $${PLAN_FEES.growth}/mo`,  fill: '#7c3aed', bg: '#ede9fe' },
+              { label: 'Scale',   count: scaleCount,   sub: `× $${PLAN_FEES.scale}/mo`,   fill: LIME,      bg: '#ecfccb' },
             ].map(row => (
               <div key={row.label} style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
