@@ -166,6 +166,7 @@ export default function ClientDetail() {
   async function handleDeactivate() {
     const newActive = !client.active;
     await supabase.from('clients').update({ active: newActive }).eq('id', id);
+    await supabase.from('profiles').update({ updated_at: new Date().toISOString() }).eq('client_id', id);
     setClient(prev => ({ ...prev, active: newActive }));
   }
 

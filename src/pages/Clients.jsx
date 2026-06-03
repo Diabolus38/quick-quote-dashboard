@@ -233,8 +233,12 @@ export default function Clients() {
   }
 
   async function toggleActive(client) {
-    await supabase.from('clients').update({ active: !client.active }).eq('id', client.id);
-    setClients(prev => prev.map(c => c.id === client.id ? { ...c, active: !c.active } : c));
+    const newActive = !client.active;
+    await supabase.from('clients').update({ active: newActive }).eq('id', client.id);
+    if (!newActive) {
+      await supabase.from('profiles').update({ role: 'deactivated' }).eq('client_id', client.id);
+    }
+    setClients(prev => prev.map(c => c.id === client.id ? { ...c, active: newActive } : c));
   }
 
   function copyEmbed(clientId) {

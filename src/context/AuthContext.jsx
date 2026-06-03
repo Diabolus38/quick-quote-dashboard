@@ -70,6 +70,17 @@ export default function AuthProvider({ children }) {
       console.error('Error fetching profile:', error);
       return null;
     }
+    if (data?.client_id) {
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('active')
+        .eq('id', data.client_id)
+        .single();
+      if (clientData && clientData.active === false) {
+        await supabase.auth.signOut();
+        return null;
+      }
+    }
     return data;
   }
 
