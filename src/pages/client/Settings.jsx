@@ -114,6 +114,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [loading, setLoading] = useState(true);
   const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem('qq360_last_saved_branding') || '');
   const [restoreMsg, setRestoreMsg] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploadErr, setLogoUploadErr] = useState('');
   const _ll = useRef(false);
 
   useEffect(() => {
@@ -164,6 +166,33 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     setTimeout(() => setRestoreMsg(''), 2000);
   }
 
+  async function handleLogoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !clientId) return;
+    if (!file.type.startsWith('image/')) {
+      setLogoUploadErr('Please select an image file.');
+      setTimeout(() => setLogoUploadErr(''), 3000);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoUploadErr('Image must be smaller than 5MB.');
+      setTimeout(() => setLogoUploadErr(''), 3000);
+      return;
+    }
+    setLogoUploading(true);
+    const path = `${clientId}/logo/${file.name}`;
+    const { error: uploadError } = await supabase.storage.from('client-assets').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (uploadError) {
+      setLogoUploadErr('Upload failed: ' + uploadError.message);
+      setTimeout(() => setLogoUploadErr(''), 5000);
+      setLogoUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('client-assets').getPublicUrl(path);
+    setLogoUrl(urlData.publicUrl);
+    setLogoUploading(false);
+  }
+
   return (
     <>
       <div style={{ marginBottom: '20px' }}>
@@ -200,13 +229,22 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
           </div>
         </FieldRow>
 
-        <FieldRow label="Logo URL">
-          <TextInput value={logoUrl} onChange={setLogoUrl} placeholder="https://example.com/logo.png" />
+        <FieldRow label="Logo">
+          <label style={{ display: 'inline-block', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.7 : 1 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', backgroundColor: '#fff', color: '#374151', fontFamily: FONT }}>
+              <span>📁</span>
+              <span>{logoUploading ? 'Uploading…' : 'Upload logo image'}</span>
+            </div>
+            <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} disabled={logoUploading} />
+          </label>
+          {logoUploadErr && <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{logoUploadErr}</p>}
           {logoUrl && isValidUrl(logoUrl) && (
             <img src={logoUrl} alt="Logo preview"
               style={{ marginTop: '10px', maxHeight: '60px', maxWidth: '200px', borderRadius: '8px', border: '1px solid #e8ede8', objectFit: 'contain', display: 'block' }}
               onError={e => { e.target.style.display = 'none'; }} />
           )}
+          <p style={{ margin: '10px 0 6px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Or paste a URL directly</p>
+          <TextInput value={logoUrl} onChange={setLogoUrl} placeholder="https://example.com/logo.png" />
         </FieldRow>
 
         <FieldRow label="Company Phone">
@@ -718,13 +756,17 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
     setUploading(true);
     const ext  = file.name.split('.').pop();
     const path = `${profile.id}/avatar.${ext}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (!error) {
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-      const url = urlData.publicUrl;
-      await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
-      setAvatarUrl(url);
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (uploadError) {
+      setUploadErr('Upload failed: ' + uploadError.message);
+      setTimeout(() => setUploadErr(''), 5000);
+      setUploading(false);
+      return;
     }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    const url = urlData.publicUrl;
+    await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
+    setAvatarUrl(url);
     setUploading(false);
   }
 
@@ -901,6 +943,12 @@ export default function ClientSettingsPage() {
   const saveRef = useRef(null);
   const [navDone, setNavDone] = useState({});
   const [cmdSToast, setCmdSToast] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'embed') {
+      setActiveSection('Embed Code');
+    }
+  }, []);
 
   useEffect(() => { setHasUnsaved(false); saveRef.current = null; }, [activeSection]);
 

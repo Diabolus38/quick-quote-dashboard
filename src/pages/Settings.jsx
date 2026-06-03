@@ -69,8 +69,8 @@ function ProfileSection({ setHasUnsaved, setSaveRef }) {
     const file = e.target.files[0];
     if (!file || !profile?.id) return;
     const path = `${profile.id}/${file.name}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (error) { setAvatarSaveMsg('Upload failed.'); setTimeout(() => setAvatarSaveMsg(''), 3000); return; }
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (uploadError) { setAvatarSaveMsg('Upload failed: ' + uploadError.message); setTimeout(() => setAvatarSaveMsg(''), 5000); return; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
     await supabase.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', profile.id);
     setAvatarSaveMsg('Photo saved!');

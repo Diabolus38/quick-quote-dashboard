@@ -153,7 +153,7 @@ export default function ClientLayout({ title, subtitle, children }) {
 
           {/* Install Card */}
           <div
-            onClick={() => navigate('/client/settings')}
+            onClick={() => navigate('/client/settings?tab=embed')}
             style={{ backgroundColor: '#f0fdf4', borderRadius: '12px', padding: '12px 14px', border: '1px solid #bbf7d0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#dcfce7', color: PRIMARY, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⎘</div>
             <div>
