@@ -6,6 +6,7 @@ import { PLAN_FEES, PLAN_LIMITS, OVERAGE_RATES } from '../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
+const LIME    = '#a3e635';
 
 const CARD = {
   backgroundColor: '#ffffff',
@@ -60,10 +61,12 @@ export default function Billing() {
   const [billingMonth,  setBillingMonth]  = useState(`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`);
   const [clients,       setClients]       = useState([]);
   const [leads,         setLeads]         = useState([]);
+  const [allLeads,      setAllLeads]      = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [hovRow,        setHovRow]        = useState(null);
   const [chartLeads,    setChartLeads]    = useState([]);
   const [invoiceStatus, setInvoiceStatus] = useState({});
+  const [upgradeStatus, setUpgradeStatus] = useState({});
   const [expandedRow,   setExpandedRow]   = useState(null);
   const [paidStatus,    setPaidStatus]    = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_paid_status') || '{}'); } catch { return {}; } });
   const [ytdLeads,      setYtdLeads]      = useState([]);
@@ -76,16 +79,18 @@ export default function Billing() {
       const ytdStart    = new Date(year, 0, 1).toISOString();
       const windowStart = new Date(year, month - 6, 1).toISOString();
 
-      const [clientsRes, leadsRes, ytdRes, chartRes] = await Promise.all([
+      const [clientsRes, leadsRes, ytdRes, chartRes, allLeadsRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('leads').select('id, client_id, created_at, status').gte('created_at', monthStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', ytdStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', windowStart).lt('created_at', monthEnd),
+        supabase.from('leads').select('id, client_id, created_at').order('created_at', { ascending: true }),
       ]);
-      setClients(clientsRes.data  || []);
-      setLeads(leadsRes.data      || []);
-      setYtdLeads(ytdRes.data     || []);
-      setChartLeads(chartRes.data || []);
+      setClients(clientsRes.data   || []);
+      setLeads(leadsRes.data       || []);
+      setYtdLeads(ytdRes.data      || []);
+      setChartLeads(chartRes.data  || []);
+      setAllLeads(allLeadsRes.data || []);
       setLoading(false);
     }
     fetchData();
@@ -144,6 +149,27 @@ export default function Billing() {
       setInvoiceStatus(prev => ({ ...prev, [row.id]: 'failed' }));
     }
     setTimeout(() => setInvoiceStatus(prev => ({ ...prev, [row.id]: 'idle' })), 3000);
+  }
+
+  async function sendUpgradeEmail(row) {
+    if (!window.confirm(`Suggest a plan upgrade to ${row.name}?`)) return;
+    setUpgradeStatus(prev => ({ ...prev, [row.id]: 'sending' }));
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: row.email,
+          name:  row.name,
+          subject: 'Time to upgrade your QuickQuote360 plan',
+          body: `Hi ${row.name}, you have been getting great results with QuickQuote360! Based on your usage you might benefit from upgrading to a higher plan. Visit dashboard.quickquote360.com to see your options or reply to this email and we will help you find the right plan.`,
+        }),
+      });
+      setUpgradeStatus(prev => ({ ...prev, [row.id]: res.ok ? 'sent' : 'failed' }));
+    } catch {
+      setUpgradeStatus(prev => ({ ...prev, [row.id]: 'failed' }));
+    }
+    setTimeout(() => setUpgradeStatus(prev => ({ ...prev, [row.id]: 'idle' })), 3000);
   }
 
   /* ── Build billing rows ── */
@@ -222,6 +248,42 @@ export default function Billing() {
     { label: 'Active Subscriptions', value: activeCount,                              bg: '#dbeafe', color: '#1d4ed8' },
   ];
 
+  /* ── Upsell intelligence ── */
+  const isCurrentBillingMonth = billingMonth === `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`;
+  const daysInSelMonth  = new Date(selYear, selMonthNum, 0).getDate();
+  const daysElapsed     = isCurrentBillingMonth ? Math.max(_now.getDate(), 1) : daysInSelMonth;
+  const daysInNextMonth = new Date(selYear, selMonthNum + 1, 0).getDate();
+
+  const allLeadsPerClientMonth = {};
+  allLeads.forEach(l => {
+    const d   = new Date(l.created_at);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (!allLeadsPerClientMonth[l.client_id]) allLeadsPerClientMonth[l.client_id] = {};
+    allLeadsPerClientMonth[l.client_id][key] = (allLeadsPerClientMonth[l.client_id][key] || 0) + 1;
+  });
+
+  const upsellRows = billingRows.map(row => {
+    const clientMonths = allLeadsPerClientMonth[row.id] || {};
+    let monthsOverLimit = 0;
+    if (row.limit !== Infinity) {
+      Object.values(clientMonths).forEach(count => { if (count > row.limit) monthsOverLimit++; });
+    }
+    const hitLimitThisMonth   = row.limit !== Infinity && row.used >= row.limit && row.limit > 0;
+    const dailyRate           = daysElapsed > 0 ? row.used / daysElapsed : 0;
+    const projectedNextMonth  = Math.ceil(dailyRate * daysInNextMonth);
+    const daysLeftThisMonth   = isCurrentBillingMonth ? Math.max(daysInSelMonth - _now.getDate(), 0) : 0;
+    const estimatesPerDay     = daysElapsed > 0 ? (row.used / daysElapsed).toFixed(1) : '0.0';
+    return { ...row, monthsOverLimit, hitLimitThisMonth, projectedNextMonth, daysLeftThisMonth, estimatesPerDay };
+  });
+
+  const atRiskCount = upsellRows.filter(r => r.hitLimitThisMonth || r.monthsOverLimit > 0).length;
+  const projectedOverageRevenue = upsellRows.reduce((sum, r) => {
+    if (r.limit === Infinity) return sum;
+    const overageNext = Math.max(0, r.projectedNextMonth - r.limit);
+    return sum + overageNext * r.rate;
+  }, 0);
+  const unlimitedCount = upsellRows.filter(r => r.limit === Infinity).length;
+
   if (loading) return (
     <Layout title="Billing">
       <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
@@ -251,7 +313,7 @@ export default function Billing() {
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>
               {(() => {
                 const defaultMonth = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`;
-                if (billingMonth === defaultMonth) return 'Revenue tracking and invoice management';
+                if (billingMonth === defaultMonth) return 'Revenue tracking and upsell intelligence';
                 const [y, m] = billingMonth.split('-').map(Number);
                 const monthName = new Date(y, m - 1, 1).toLocaleString('default', { month: 'long' });
                 return `Showing billing data for ${monthName} ${y}`;
@@ -365,171 +427,221 @@ export default function Billing() {
           );
         })()}
 
-        {/* ── Billing Table ── */}
+        {/* ── Billing Overview ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+          {/* Header */}
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Billing Overview</span>
-            <span style={{ fontSize: '13px', color: '#9ca3af' }}>{billingRows.length} clients</span>
+            <span style={{ fontSize: '13px', color: '#9ca3af' }}>{upsellRows.length} clients</span>
           </div>
-          {billingRows.length === 0 ? (
+
+          {/* ── Summary bar ── */}
+          {upsellRows.length > 0 && (
+            <div style={{ padding: '14px 24px', borderBottom: '1px solid #f4f6f4', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: '4px' }}>Upsell signals:</span>
+              <span style={{ backgroundColor: 'rgba(220,38,38,0.08)', border: '1px solid #dc2626', borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', color: '#dc2626' }}>
+                {atRiskCount} client{atRiskCount !== 1 ? 's' : ''} at risk
+              </span>
+              <span style={{ backgroundColor: 'rgba(22,101,52,0.08)', border: '1px solid #166534', borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', color: '#166534' }}>
+                ${projectedOverageRevenue.toLocaleString()} projected overage next month
+              </span>
+              <span style={{ backgroundColor: 'rgba(29,78,216,0.08)', border: '1px solid #1d4ed8', borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', color: '#1d4ed8' }}>
+                {unlimitedCount} on unlimited
+              </span>
+            </div>
+          )}
+
+          {upsellRows.length === 0 ? (
             <div style={{ padding: '64px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>No clients yet.</div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#fafafa' }}>
-                    {['Client','Plan','Monthly Fee','Leads Used','Limit','Overage','Overage Charge','Total This Month','Status','Actions'].map(col => (
-                      <th key={col} style={{ textAlign: 'left', padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8ede8', whiteSpace: 'nowrap' }}>{col}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {billingRows.map((row, i) => {
-                    const pb         = PLAN_BADGE[row.plan] || PLAN_BADGE.starter;
-                    const isExpanded = expandedRow === row.id;
-                    const rowLeads   = leads.filter(l => l.client_id === row.id);
-                    const sOf        = l => (l.status || '').toLowerCase().replace(/\s+/g, '_');
-                    const statusCount = {
-                      new:          rowLeads.filter(l => sOf(l) === 'new').length,
-                      contacted:    rowLeads.filter(l => sOf(l) === 'contacted').length,
-                      in_progress:  rowLeads.filter(l => sOf(l) === 'in_progress').length,
-                      closed_won:   rowLeads.filter(l => sOf(l) === 'closed_won').length,
-                      closed_lost:  rowLeads.filter(l => sOf(l) === 'closed_lost').length,
-                    };
-                    const sortedDates = rowLeads.map(l => l.created_at).sort();
-                    const firstLead   = sortedDates[0] ? new Date(sortedDates[0]).toLocaleDateString('en-GB') : '—';
-                    const lastLead    = sortedDates[sortedDates.length - 1] ? new Date(sortedDates[sortedDates.length - 1]).toLocaleDateString('en-GB') : '—';
-                    return (
-                      <>
-                      <tr key={row.id}
-                        onClick={() => setExpandedRow(isExpanded ? null : row.id)}
-                        onMouseEnter={() => setHovRow(row.id)}
-                        onMouseLeave={() => setHovRow(null)}
-                        style={{ backgroundColor: hovRow === row.id || isExpanded ? '#f9faf9' : '#fff', borderBottom: isExpanded ? 'none' : '1px solid #f4f6f4', cursor: 'pointer' }}>
+            <div>
+              {upsellRows.map(row => {
+                const pb         = PLAN_BADGE[row.plan] || PLAN_BADGE.starter;
+                const isExpanded = expandedRow === row.id;
+                const rowLeads   = leads.filter(l => l.client_id === row.id);
+                const sOf        = l => (l.status || '').toLowerCase().replace(/\s+/g, '_');
+                const statusCount = {
+                  new:          rowLeads.filter(l => sOf(l) === 'new').length,
+                  contacted:    rowLeads.filter(l => sOf(l) === 'contacted').length,
+                  in_progress:  rowLeads.filter(l => sOf(l) === 'in_progress').length,
+                  closed_won:   rowLeads.filter(l => sOf(l) === 'closed_won').length,
+                  closed_lost:  rowLeads.filter(l => sOf(l) === 'closed_lost').length,
+                };
+                const sortedDates = rowLeads.map(l => l.created_at).sort();
+                const firstLead   = sortedDates[0] ? new Date(sortedDates[0]).toLocaleDateString('en-GB') : '—';
+                const lastLead    = sortedDates[sortedDates.length - 1] ? new Date(sortedDates[sortedDates.length - 1]).toLocaleDateString('en-GB') : '—';
 
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '10px', color: '#9ca3af' }}>{isExpanded ? '▼' : '▶'}</span>
-                            <div>
-                              <div style={{ fontWeight: '600', color: '#0d1117' }}>{row.name}</div>
-                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '1px' }}>{row.email}</div>
-                            </div>
-                          </div>
-                        </td>
+                const pct      = row.limit !== Infinity && row.limit > 0 ? Math.min(Math.round((row.used / row.limit) * 100), 100) : 0;
+                const barColor = pct >= 90 ? '#dc2626' : pct >= 60 ? '#d97706' : '#16a34a';
 
-                        <td style={{ padding: '14px 16px' }}>
-                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>
+                const showUpgrade = row.monthsOverLimit > 0 || row.hitLimitThisMonth || (row.limit !== Infinity && row.projectedNextMonth > row.limit);
+                const upgSt = upgradeStatus[row.id] || 'idle';
+                const invSt = invoiceStatus[row.id] || 'idle';
+
+                return (
+                  <div key={row.id}>
+                    {/* Main row */}
+                    <div
+                      onClick={() => setExpandedRow(isExpanded ? null : row.id)}
+                      onMouseEnter={() => setHovRow(row.id)}
+                      onMouseLeave={() => setHovRow(null)}
+                      style={{ padding: '16px 24px', borderBottom: isExpanded ? 'none' : '1px solid #f4f6f4', backgroundColor: hovRow === row.id || isExpanded ? '#f9faf9' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+
+                      {/* Expand arrow + client info */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '200px', flex: '0 0 200px' }}>
+                        <span style={{ fontSize: '10px', color: '#9ca3af', flexShrink: 0 }}>{isExpanded ? '▼' : '▶'}</span>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#0d1117', fontSize: '13.5px' }}>{row.name}</div>
+                          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '1px' }}>{row.email}</div>
+                          <span style={{ display: 'inline-block', marginTop: '5px', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '600', backgroundColor: pb.bg, color: pb.color }}>
                             {capitalize(row.plan)}
                           </span>
-                        </td>
+                        </div>
+                      </div>
 
-                        <td style={{ padding: '14px 16px', fontWeight: '600', color: '#0d1117' }}>${row.fee.toLocaleString()}</td>
+                      {/* 4 stat boxes */}
+                      <div style={{ flex: 1, display: 'flex', gap: '10px', minWidth: '480px' }}>
 
-                        <td style={{ padding: '14px 16px', fontWeight: '600', color: '#0d1117' }}>{row.used}</td>
+                        {/* This Month */}
+                        <div style={{ flex: 1, backgroundColor: '#f9fbf9', borderRadius: '10px', padding: '10px 12px' }}>
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>This Month</div>
+                          {row.limit === Infinity
+                            ? <div style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>{row.used} / ∞</div>
+                            : <>
+                                <div style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>{row.used} / {row.limit}</div>
+                                <div style={{ height: '4px', borderRadius: '99px', backgroundColor: '#e5e7eb', overflow: 'hidden', marginTop: '6px' }}>
+                                  <div style={{ width: `${pct}%`, height: '100%', backgroundColor: barColor, borderRadius: '99px', transition: 'width 0.3s' }} />
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '3px' }}>{pct}% used</div>
+                              </>
+                          }
+                        </div>
 
-                        <td style={{ padding: '14px 16px', color: '#4b5563' }}>
-                          {row.limit === Infinity ? '∞' : row.limit}
-                        </td>
+                        {/* Hit Limit */}
+                        <div style={{ flex: 1, backgroundColor: '#f9fbf9', borderRadius: '10px', padding: '10px 12px' }}>
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>Hit Limit</div>
+                          <div style={{ fontSize: '14px', fontWeight: '700', color: row.hitLimitThisMonth ? '#dc2626' : '#16a34a' }}>
+                            {row.hitLimitThisMonth ? 'Yes 🔴' : 'No 🟢'}
+                          </div>
+                          {row.overage > 0 && (
+                            <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '3px', fontWeight: '600' }}>+{row.overage} over</div>
+                          )}
+                        </div>
 
-                        <td style={{ padding: '14px 16px', color: row.overage > 0 ? '#dc2626' : '#9ca3af', fontWeight: row.overage > 0 ? '700' : '400' }}>
-                          {row.overage > 0 ? `+${row.overage}` : '0'}
-                        </td>
+                        {/* Historical Overages */}
+                        <div style={{ flex: 1, backgroundColor: '#f9fbf9', borderRadius: '10px', padding: '10px 12px' }}>
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>Historical</div>
+                          {row.monthsOverLimit > 0
+                            ? <>
+                                <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>{row.monthsOverLimit} mo over</div>
+                                <div style={{ fontSize: '10px', color: '#dc2626', marginTop: '2px' }}>upsell signal 🔥</div>
+                              </>
+                            : <div style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af' }}>Never</div>
+                          }
+                        </div>
 
-                        <td style={{ padding: '14px 16px', fontWeight: '600', color: row.overageCharge > 0 ? '#dc2626' : '#9ca3af' }}>
-                          ${row.overageCharge.toLocaleString()}
-                        </td>
+                        {/* Next Month Projection */}
+                        <div style={{ flex: 1, backgroundColor: '#f9fbf9', borderRadius: '10px', padding: '10px 12px' }}>
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>Projected</div>
+                          {row.limit === Infinity
+                            ? <div style={{ fontSize: '14px', fontWeight: '700', color: '#9ca3af' }}>∞</div>
+                            : row.projectedNextMonth > row.limit
+                              ? <>
+                                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>⚠ {row.projectedNextMonth}</div>
+                                  <div style={{ fontSize: '10px', color: '#dc2626', marginTop: '2px' }}>Over limit</div>
+                                </>
+                              : <div style={{ fontSize: '14px', fontWeight: '700', color: '#16a34a' }}>{row.projectedNextMonth}</div>
+                          }
+                        </div>
+                      </div>
 
-                        <td style={{ padding: '14px 16px', fontWeight: '700', color: '#0d1117' }}>
-                          ${row.total.toLocaleString()}
-                        </td>
-
-                        <td style={{ padding: '14px 16px' }}>
-                          <span onClick={() => {
+                      {/* Right: charge + actions */}
+                      <div
+                        onClick={e => e.stopPropagation()}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', minWidth: '180px' }}>
+                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>${row.total.toLocaleString()}</div>
+                        <span
+                          onClick={() => {
                             const next = { ...paidStatus, [row.id]: !paidStatus[row.id] };
                             setPaidStatus(next);
                             localStorage.setItem('qq360_paid_status', JSON.stringify(next));
-                          }} style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', backgroundColor: paidStatus[row.id] ? '#dcfce7' : '#fef9c3', color: paidStatus[row.id] ? '#166534' : '#854d0e' }}>
-                            {paidStatus[row.id] ? 'Paid' : 'Pending'}
-                          </span>
-                        </td>
+                          }}
+                          style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', backgroundColor: paidStatus[row.id] ? '#dcfce7' : '#fef9c3', color: paidStatus[row.id] ? '#166534' : '#854d0e' }}>
+                          {paidStatus[row.id] ? 'Paid' : 'Pending'}
+                        </span>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button type="button" onClick={() => sendInvoice(row)} disabled={invSt === 'sending'}
+                            style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: invSt === 'sent' ? '#dcfce7' : invSt === 'failed' ? '#fee2e2' : '#f4f6f4', color: invSt === 'sent' ? '#166534' : invSt === 'failed' ? '#dc2626' : '#374151', border: 'none', borderRadius: '8px', cursor: invSt === 'sending' ? 'not-allowed' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                            {invSt === 'sending' ? 'Sending…' : invSt === 'sent' ? 'Sent!' : invSt === 'failed' ? 'Failed' : 'Send Invoice'}
+                          </button>
+                          {showUpgrade && (
+                            <button type="button" onClick={() => sendUpgradeEmail(row)} disabled={upgSt === 'sending'}
+                              style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '700', backgroundColor: upgSt === 'sent' ? '#dcfce7' : upgSt === 'failed' ? '#fee2e2' : LIME, color: upgSt === 'sent' ? '#166534' : upgSt === 'failed' ? '#dc2626' : '#0d1f12', border: 'none', borderRadius: '8px', cursor: upgSt === 'sending' ? 'not-allowed' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                              {upgSt === 'sending' ? 'Sending…' : upgSt === 'sent' ? 'Sent!' : upgSt === 'failed' ? 'Failed' : '↑ Upgrade'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                        <td style={{ padding: '14px 16px' }}>
-                          {(() => {
-                            const st = invoiceStatus[row.id] || 'idle';
-                            return (
-                              <button type="button" onClick={() => sendInvoice(row)} disabled={st === 'sending'}
-                                style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: st === 'sent' ? '#dcfce7' : st === 'failed' ? '#fee2e2' : '#f4f6f4', color: st === 'sent' ? '#166534' : st === 'failed' ? '#dc2626' : '#374151', border: 'none', borderRadius: '8px', cursor: st === 'sending' ? 'not-allowed' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-                                {st === 'sending' ? 'Sending…' : st === 'sent' ? 'Sent!' : st === 'failed' ? 'Failed' : 'Send Invoice'}
-                              </button>
-                            );
-                          })()}
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr key={`${row.id}-expanded`} style={{ backgroundColor: '#f9fbf9', borderBottom: '1px solid #f4f6f4' }}>
-                          <td colSpan={10} style={{ padding: '16px 24px' }}>
-                            <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                              <div>
-                                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Status Breakdown</p>
-                                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                                  {[['New', statusCount.new, '#1d4ed8'], ['Contacted', statusCount.contacted, '#d97706'], ['In Progress', statusCount.in_progress, '#7c3aed'], ['Won', statusCount.closed_won, '#16a34a'], ['Lost', statusCount.closed_lost, '#dc2626']].map(([label, count, color]) => (
-                                    <div key={label} style={{ textAlign: 'center' }}>
-                                      <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color, fontFamily: FONT }}>{count}</p>
-                                      <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{label}</p>
-                                    </div>
-                                  ))}
+                    {/* Expanded section */}
+                    {isExpanded && (
+                      <div style={{ backgroundColor: '#f9fbf9', borderBottom: '1px solid #f4f6f4', padding: '16px 24px' }}>
+                        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                          <div>
+                            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Status Breakdown</p>
+                            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                              {[['New', statusCount.new, '#1d4ed8'], ['Contacted', statusCount.contacted, '#d97706'], ['In Progress', statusCount.in_progress, '#7c3aed'], ['Won', statusCount.closed_won, '#16a34a'], ['Lost', statusCount.closed_lost, '#dc2626']].map(([label, count, color]) => (
+                                <div key={label} style={{ textAlign: 'center' }}>
+                                  <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color, fontFamily: FONT }}>{count}</p>
+                                  <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{label}</p>
                                 </div>
-                              </div>
-                              <div>
-                                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Dates This Period</p>
-                                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>First: <strong>{firstLead}</strong></p>
-                                <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>Last: <strong>{lastLead}</strong></p>
-                              </div>
-                              <div>
-                                <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Daily Volume</p>
-                                {rowLeads.length === 0 ? (
-                                  <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>No activity this period.</p>
-                                ) : (() => {
-                                  const [selYear, selMonthNum] = billingMonth.split('-').map(Number);
-                                  const daysInMonth = new Date(selYear, selMonthNum, 0).getDate();
-                                  const dailyCounts = Array.from({ length: daysInMonth }, (_, d) => {
-                                    const day = d + 1;
-                                    return rowLeads.filter(l => { const ld = new Date(l.created_at); return ld.getDate() === day; }).length;
-                                  });
-                                  const maxDay = Math.max(...dailyCounts, 1);
-                                  const showLabels = daysInMonth <= 15;
-                                  return (
-                                    <div>
-                                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '40px' }}>
-                                        {dailyCounts.map((count, d) => (
-                                          <div key={d} style={{ width: '8px', height: count > 0 ? `${Math.max(Math.round((count / maxDay) * 36), 2)}px` : '2px', backgroundColor: count > 0 ? 'rgba(22,101,52,0.6)' : '#f3f4f6', borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
-                                        ))}
-                                      </div>
-                                      {showLabels && (
-                                        <div style={{ display: 'flex', gap: '2px', marginTop: '2px' }}>
-                                          {dailyCounts.map((_, d) => (
-                                            <div key={d} style={{ width: '8px', fontSize: '8px', color: '#9ca3af', textAlign: 'center', flexShrink: 0 }}>{d + 1}</div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
+                              ))}
                             </div>
-                          </td>
-                        </tr>
-                      )}
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </div>
+                          <div>
+                            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Dates This Period</p>
+                            <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>First: <strong>{firstLead}</strong></p>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>Last: <strong>{lastLead}</strong></p>
+                          </div>
+                          <div>
+                            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Usage Pace</p>
+                            <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>{row.estimatesPerDay}/day avg</p>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>{row.daysLeftThisMonth} days left</p>
+                          </div>
+                          <div>
+                            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Daily Volume</p>
+                            {rowLeads.length === 0 ? (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>No activity this period.</p>
+                            ) : (() => {
+                              const daysInMonth = new Date(selYear, selMonthNum, 0).getDate();
+                              const dailyCounts = Array.from({ length: daysInMonth }, (_, d) => {
+                                const day = d + 1;
+                                return rowLeads.filter(l => { const ld = new Date(l.created_at); return ld.getDate() === day; }).length;
+                              });
+                              const maxDay = Math.max(...dailyCounts, 1);
+                              return (
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '40px' }}>
+                                    {dailyCounts.map((count, d) => (
+                                      <div key={d} style={{ width: '8px', height: count > 0 ? `${Math.max(Math.round((count / maxDay) * 36), 2)}px` : '2px', backgroundColor: count > 0 ? 'rgba(22,101,52,0.6)' : '#f3f4f6', borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* Totals row */}
-          {billingRows.length > 0 && (
+          {upsellRows.length > 0 && (
             <div style={{ padding: '16px 24px', borderTop: '2px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px', backgroundColor: '#fafafa', flexWrap: 'wrap' }}>
               {(() => {
                 const paidRows    = billingRows.filter(r => paidStatus[r.id]);
