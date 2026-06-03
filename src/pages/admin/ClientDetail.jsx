@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 import { PLAN_FEES, PLAN_LIMITS } from '../../utils/planConfig';
+import { ensureClientData } from '../../utils/ensureClientData';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -151,6 +152,7 @@ export default function ClientDetail() {
       setCommLog(log ? JSON.parse(log) : []);
     } catch { setCommLog([]); }
     setLoading(false);
+    ensureClientData(supabase, id).catch(err => console.error('ensureClientData ClientDetail:', err));
   }
 
   function pushCommLog(type) {

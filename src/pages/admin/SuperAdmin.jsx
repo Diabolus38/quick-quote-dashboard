@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { calculateMRR, getPlanCounts } from '../../utils/mrrUtils';
 import { PLAN_FEES } from '../../utils/planConfig';
+import { ensureClientData } from '../../utils/ensureClientData';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -126,6 +127,7 @@ function AddClientModal({ onClose, onSaved }) {
           rot_enabled: false, rot_percentage: 30, currency: 'SEK',
         }),
       ]);
+      ensureClientData(supabase, data.id).catch(err => console.error('ensureClientData after SuperAdmin add:', err));
     }
     setSaving(false);
     if (!error) { onSaved(); onClose(); }

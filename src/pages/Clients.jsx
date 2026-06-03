@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
+import { ensureClientData } from '../utils/ensureClientData';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -196,6 +197,7 @@ export default function Clients() {
           rot_enabled: false, rot_percentage: 30, currency: 'SEK',
         }),
       ]);
+      ensureClientData(supabase, data.id).catch(err => console.error('ensureClientData after add client:', err));
       fetchAll();
     }
     return { error };
