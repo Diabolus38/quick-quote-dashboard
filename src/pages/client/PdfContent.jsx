@@ -5,6 +5,8 @@ import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
+import useClientPlan from '../../hooks/useClientPlan';
+import UpgradeLock from '../../components/UpgradeLock';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -71,6 +73,7 @@ function useSaveMsg() {
 }
 
 function PDFContent({ clientId }) {
+  const { plan, planLoading } = useClientPlan();
   const [loading,       setLoading]       = useState(true);
   const [companyName,   setCompanyName]   = useState('Your Company');
   const [previewColor,  setPreviewColor]  = useState(PRIMARY);
@@ -107,6 +110,21 @@ function PDFContent({ clientId }) {
         setLoading(false);
       });
   }, [clientId]);
+
+  if (planLoading) return (
+    <>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' }}>
+          <div style={{ height: '16px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '80%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '40%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+      ))}
+    </>
+  );
+
+  if (plan !== 'scale') return <UpgradeLock feature="PDF Content Editor" requiredPlan="scale" />;
 
   if (loading) return (
     <>

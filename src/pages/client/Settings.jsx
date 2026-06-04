@@ -5,6 +5,8 @@ import { useConfigStatus } from '../../context/ConfigStatusContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
+import useClientPlan from '../../hooks/useClientPlan';
+import UpgradeLock from '../../components/UpgradeLock';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -104,6 +106,7 @@ function SettingsSkeleton() {
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
 function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
+  const { plan } = useClientPlan();
   const [companyName,    setCompanyName]    = useState('');
   const [primaryColor,   setPrimaryColor]   = useState('#166534');
   const [colorHex,       setColorHex]       = useState('#166534');
@@ -206,29 +209,36 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
           <TextInput value={companyName} onChange={setCompanyName} placeholder="Your company name" />
         </FieldRow>
 
-        <FieldRow label="Primary Color">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input type="color" value={primaryColor}
-              onChange={e => { setPrimaryColor(e.target.value); setColorHex(e.target.value); }}
-              style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px', backgroundColor: '#fff' }} />
-            <input type="text" value={colorHex}
-              onChange={e => { setColorHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setPrimaryColor(e.target.value); }}
-              style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-            {['#166534', '#1d4ed8', '#7c3aed', '#dc2626', '#d97706', '#0e7490'].map(color => (
-              <div key={color} onClick={() => { setPrimaryColor(color); setColorHex(color); }}
-                style={{ width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', backgroundColor: color, border: `2px solid ${primaryColor === color ? '#0d1117' : 'transparent'}` }} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
-            <button type="button" onClick={handleRestoreDefaults}
-              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#9ca3af', borderRadius: '10px', padding: '7px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: FONT }}>
-              Restore Defaults
-            </button>
-            {restoreMsg && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{restoreMsg}</span>}
-          </div>
-        </FieldRow>
+        <div style={{ position: 'relative' }}>
+          <FieldRow label="Primary Color">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input type="color" value={primaryColor}
+                onChange={e => { setPrimaryColor(e.target.value); setColorHex(e.target.value); }}
+                style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px', backgroundColor: '#fff' }} />
+              <input type="text" value={colorHex}
+                onChange={e => { setColorHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setPrimaryColor(e.target.value); }}
+                style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              {['#166534', '#1d4ed8', '#7c3aed', '#dc2626', '#d97706', '#0e7490'].map(color => (
+                <div key={color} onClick={() => { setPrimaryColor(color); setColorHex(color); }}
+                  style={{ width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', backgroundColor: color, border: `2px solid ${primaryColor === color ? '#0d1117' : 'transparent'}` }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+              <button type="button" onClick={handleRestoreDefaults}
+                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#9ca3af', borderRadius: '10px', padding: '7px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: FONT }}>
+                Restore Defaults
+              </button>
+              {restoreMsg && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{restoreMsg}</span>}
+            </div>
+          </FieldRow>
+          {(plan === 'growth' || plan === 'starter') && (
+            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+              <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600' }}>🔒 Scale plan only</span>
+            </div>
+          )}
+        </div>
 
         <FieldRow label="Logo">
           <label style={{ display: 'inline-block', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.7 : 1 }}>
@@ -307,6 +317,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
 function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   const { profile } = useAuth();
+  const { plan, planLoading } = useClientPlan();
   const [fromName,     setFromName]     = useState('');
   const [replyTo,      setReplyTo]      = useState('');
   const [subject,      setSubject]      = useState('');
@@ -339,6 +350,8 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
 
+  if (planLoading) return <SettingsSkeleton />;
+  if (plan !== 'scale') return <UpgradeLock feature="Email Settings" requiredPlan="scale" />;
   if (loading) return <SettingsSkeleton />;
 
   async function handleSave() {

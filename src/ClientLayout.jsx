@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { PLAN_LIMITS } from './utils/planConfig';
 import BugReportModal from './components/BugReportModal';
+import useClientPlan from './hooks/useClientPlan';
 
 const FONT          = "'Plus Jakarta Sans', system-ui, sans-serif";
 const LIME          = '#a3e635';
@@ -40,12 +41,14 @@ export default function ClientLayout({ title, subtitle, children }) {
   const { profile, signOut } = useAuth();
   const navigate             = useNavigate();
   const initials             = getInitials(profile?.full_name);
+  const { plan }             = useClientPlan();
 
   const [showNotif,      setShowNotif]      = useState(false);
   const [showBugReport,  setShowBugReport]  = useState(false);
   const [leadsThisMonth, setLeadsThisMonth] = useState(0);
   const [planLimit,      setPlanLimit]      = useState(30);
   const [sidebarSearch,  setSidebarSearch]  = useState('');
+  const [lockedMsg,      setLockedMsg]      = useState('');
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -122,7 +125,25 @@ export default function ClientLayout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {CONFIG_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
+          {CONFIG_ITEMS
+            .filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
+            .map(item => {
+              const isLocked = (item.label === 'Pricing' || item.label === 'PDF') && plan !== null && plan !== 'scale';
+              if (isLocked) {
+                return (
+                  <LockedNavItem
+                    key={item.label}
+                    item={item}
+                    onLockedClick={() => {
+                      setLockedMsg(`Upgrade to Scale to access ${item.label}`);
+                      setTimeout(() => setLockedMsg(''), 2000);
+                    }}
+                  />
+                );
+              }
+              return <NavItem key={item.label} item={item} />;
+            })
+          }
         </nav>
 
         {/* Spacer */}
@@ -183,6 +204,11 @@ export default function ClientLayout({ title, subtitle, children }) {
       </aside>
 
       <BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} />
+      {lockedMsg && (
+        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+          {lockedMsg}
+        </div>
+      )}
 
       {/* ── Main area ── */}
       <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -257,6 +283,32 @@ function NavItem({ item }) {
     >
       <span style={{ fontSize: '14px', lineHeight: 1, flexShrink: 0, width: '16px', textAlign: 'center' }}>{item.icon}</span>
       <span>{item.label}</span>
+    </div>
+  );
+}
+
+/* ── LockedNavItem ── */
+function LockedNavItem({ item, onLockedClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      role="button" tabIndex={0}
+      onClick={onLockedClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '9px 16px',
+        margin: '2px 10px', borderRadius: '10px',
+        fontSize: '13.5px', fontWeight: '500',
+        color: hovered ? '#6b7280' : '#9ca3af',
+        backgroundColor: hovered ? '#f9faf9' : 'transparent',
+        borderLeft: '3px solid transparent',
+        cursor: 'pointer', transition: 'all 0.15s', userSelect: 'none',
+      }}
+    >
+      <span style={{ fontSize: '14px', lineHeight: 1, flexShrink: 0, width: '16px', textAlign: 'center' }}>{item.icon}</span>
+      <span>{item.label} 🔒</span>
     </div>
   );
 }

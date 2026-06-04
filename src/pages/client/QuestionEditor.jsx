@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useConfigStatus } from '../../context/ConfigStatusContext';
 import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
+import useClientPlan from '../../hooks/useClientPlan';
+import UpgradeLock from '../../components/UpgradeLock';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -84,6 +86,7 @@ function ConfigStatusCard() {
 export default function QuestionEditor() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
+  const { plan, planLoading } = useClientPlan();
 
   const [questions,   setQuestions]   = useState({});
   const [loading,     setLoading]     = useState(true);
@@ -174,6 +177,14 @@ export default function QuestionEditor() {
       {lastSavedQ && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Last saved: {(() => { const d = new Date(lastSavedQ); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
     </div>
   );
+
+  if (!planLoading && plan === 'starter') {
+    return (
+      <ClientLayout title="Questions">
+        <UpgradeLock feature="Question Editor" requiredPlan="growth" />
+      </ClientLayout>
+    );
+  }
 
   return (
     <ClientLayout title="Question Editor">
