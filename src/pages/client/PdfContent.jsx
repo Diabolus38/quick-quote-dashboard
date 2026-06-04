@@ -73,7 +73,6 @@ function useSaveMsg() {
 }
 
 function PDFContent({ clientId }) {
-  const { plan, planLoading } = useClientPlan();
   const [loading,       setLoading]       = useState(true);
   const [companyName,   setCompanyName]   = useState('Your Company');
   const [previewColor,  setPreviewColor]  = useState(PRIMARY);
@@ -110,21 +109,6 @@ function PDFContent({ clientId }) {
         setLoading(false);
       });
   }, [clientId]);
-
-  if (planLoading) return (
-    <>
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
-      {[0, 1, 2].map(i => (
-        <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' }}>
-          <div style={{ height: '16px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '80%', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '40%', animation: 'pulse 1.5s ease-in-out infinite' }} />
-        </div>
-      ))}
-    </>
-  );
-
-  if (plan !== 'scale') return <ClientLayout title="PDF Content"><UpgradeLock feature="PDF Content Editor" requiredPlan="scale" /></ClientLayout>;
 
   if (loading) return (
     <>
@@ -316,6 +300,7 @@ function ConfigStatusCard() {
 export default function PdfContent() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
+  const { plan, planLoading } = useClientPlan();
   const [trialExpired, setTrialExpired] = useState(false);
   const [planEmailSent, setPlanEmailSent] = useState(false);
 
@@ -329,6 +314,25 @@ export default function PdfContent() {
     await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
     setPlanEmailSent(true);
   }
+
+  if (planLoading) return (
+    <ClientLayout title="PDF Content">
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' }}>
+          <div style={{ height: '16px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '80%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '40%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+      ))}
+    </ClientLayout>
+  );
+
+  if (plan !== 'scale') return (
+    <ClientLayout title="PDF Content">
+      <UpgradeLock feature="PDF Content Editor" requiredPlan="scale" />
+    </ClientLayout>
+  );
 
   return (
     <ClientLayout title="PDF Content">

@@ -165,6 +165,7 @@ export default function AuthProvider({ children }) {
   }
 
   async function signOut() {
+    sessionStorage.removeItem('qq360_client_plan');
     await supabase.auth.signOut();
   }
 

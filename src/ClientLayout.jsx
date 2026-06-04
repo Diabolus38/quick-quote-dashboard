@@ -4,7 +4,6 @@ import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { PLAN_LIMITS } from './utils/planConfig';
 import BugReportModal from './components/BugReportModal';
-import useClientPlan from './hooks/useClientPlan';
 
 const FONT          = "'Plus Jakarta Sans', system-ui, sans-serif";
 const LIME          = '#a3e635';
@@ -41,7 +40,6 @@ export default function ClientLayout({ title, subtitle, children }) {
   const { profile, signOut } = useAuth();
   const navigate             = useNavigate();
   const initials             = getInitials(profile?.full_name);
-  const { plan }             = useClientPlan();
 
   const [showNotif,      setShowNotif]      = useState(false);
   const [showBugReport,  setShowBugReport]  = useState(false);
@@ -119,26 +117,13 @@ export default function ClientLayout({ title, subtitle, children }) {
           {LEADS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
-        {/* CONFIGURATION Section — hidden for starter plan */}
-        {(plan === null || plan === 'growth' || plan === 'scale') && (() => {
-          const visibleItems = CONFIG_ITEMS.filter(item => {
-            if (sidebarSearch && !item.label.toLowerCase().includes(sidebarSearch.toLowerCase())) return false;
-            if (plan === 'scale') return true;
-            if (plan === 'growth') return item.label !== 'PDF';
-            return true; // plan === null (loading): show all
-          });
-          if (visibleItems.length === 0) return null;
-          return (
-            <>
-              <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-                <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
-              </div>
-              <nav style={{ flexShrink: 0 }}>
-                {visibleItems.map(item => <NavItem key={item.label} item={item} />)}
-              </nav>
-            </>
-          );
-        })()}
+        {/* CONFIGURATION Section */}
+        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
+          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
+        </div>
+        <nav style={{ flexShrink: 0 }}>
+          {CONFIG_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
+        </nav>
 
         {/* Spacer */}
         <div style={{ flex: 1 }} />
@@ -170,7 +155,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           </div>
 
           {/* Install Card */}
-          {plan !== 'starter' && <div
+          <div
             onClick={() => navigate('/client/settings?tab=embed')}
             style={{ backgroundColor: '#f0fdf4', borderRadius: '12px', padding: '12px 14px', border: '1px solid #bbf7d0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#dcfce7', color: PRIMARY, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⎘</div>
@@ -178,7 +163,7 @@ export default function ClientLayout({ title, subtitle, children }) {
               <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: PRIMARY, fontFamily: FONT }}>Install on your website</p>
               <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Get your embed code →</p>
             </div>
-          </div>}
+          </div>
 
           {/* Upgrade Card — only if pct >= 75 */}
           {pct >= 75 && (

@@ -598,7 +598,7 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
 /* ── 4. Embed Code ───────────────────────────────────────────── */
 
 function EmbedCodeSection({ clientId }) {
-  const { plan } = useClientPlan();
+  const { plan, planLoading } = useClientPlan();
   const [copied,        setCopied]        = useState(false);
   const [copiedIframe,  setCopiedIframe]  = useState(false);
   const [copiedWP,      setCopiedWP]      = useState(false);
@@ -629,6 +629,12 @@ function EmbedCodeSection({ clientId }) {
       setTimeout(() => setCopiedWP(false), 2000);
     });
   }
+
+  if (planLoading) return (
+    <div style={{ height: '200px', borderRadius: '16px', backgroundColor: '#f0f0f0', animation: 'pulse 1.5s ease-in-out infinite' }}>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+    </div>
+  );
 
   if (plan === 'starter') return <UpgradeLock feature="Embed Code" requiredPlan="growth" />;
 

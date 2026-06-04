@@ -178,7 +178,20 @@ export default function QuestionEditor() {
     </div>
   );
 
-  if (!planLoading && plan === 'starter') {
+  if (planLoading) return (
+    <>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }`}</style>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px', marginBottom: '16px' }}>
+          <div style={{ height: '16px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '80%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: '12px', borderRadius: '6px', backgroundColor: '#f0f0f0', marginBottom: '12px', width: '40%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+      ))}
+    </>
+  );
+
+  if (plan === 'starter') {
     return (
       <ClientLayout title="Questions">
         <UpgradeLock feature="Question Editor" requiredPlan="growth" />
