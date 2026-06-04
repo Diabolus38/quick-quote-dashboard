@@ -194,7 +194,7 @@ function PricingContent({ clientId }) {
     </>
   );
 
-  if (plan !== 'scale') return <UpgradeLock feature="Pricing Editor" requiredPlan="scale" />;
+  if (plan === 'starter') return <ClientLayout title="Pricing"><UpgradeLock feature="Pricing Editor" requiredPlan="growth" /></ClientLayout>;
 
   if (loading) return (
     <>

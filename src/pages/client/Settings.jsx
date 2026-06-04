@@ -106,7 +106,7 @@ function SettingsSkeleton() {
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
 function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
-  const { plan } = useClientPlan();
+  const { plan, planLoading } = useClientPlan();
   const [companyName,    setCompanyName]    = useState('');
   const [primaryColor,   setPrimaryColor]   = useState('#166534');
   const [colorHex,       setColorHex]       = useState('#166534');
@@ -145,7 +145,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
 
-  if (loading) return <SettingsSkeleton />;
+  if (loading || planLoading) return <SettingsSkeleton />;
+
+  if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="growth" />;
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
@@ -209,7 +211,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
           <TextInput value={companyName} onChange={setCompanyName} placeholder="Your company name" />
         </FieldRow>
 
-        <div style={{ position: 'relative' }}>
+        {plan === 'scale' && (
           <FieldRow label="Primary Color">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input type="color" value={primaryColor}
@@ -233,12 +235,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
               {restoreMsg && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{restoreMsg}</span>}
             </div>
           </FieldRow>
-          {(plan === 'growth' || plan === 'starter') && (
-            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-              <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600' }}>🔒 Scale plan only</span>
-            </div>
-          )}
-        </div>
+        )}
 
         <FieldRow label="Logo">
           <label style={{ display: 'inline-block', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.7 : 1 }}>
@@ -601,6 +598,7 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
 /* ── 4. Embed Code ───────────────────────────────────────────── */
 
 function EmbedCodeSection({ clientId }) {
+  const { plan } = useClientPlan();
   const [copied,        setCopied]        = useState(false);
   const [copiedIframe,  setCopiedIframe]  = useState(false);
   const [copiedWP,      setCopiedWP]      = useState(false);
@@ -631,6 +629,8 @@ function EmbedCodeSection({ clientId }) {
       setTimeout(() => setCopiedWP(false), 2000);
     });
   }
+
+  if (plan === 'starter') return <UpgradeLock feature="Embed Code" requiredPlan="growth" />;
 
   return (
     <>

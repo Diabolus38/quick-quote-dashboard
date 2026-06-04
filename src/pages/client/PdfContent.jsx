@@ -124,7 +124,7 @@ function PDFContent({ clientId }) {
     </>
   );
 
-  if (plan !== 'scale') return <UpgradeLock feature="PDF Content Editor" requiredPlan="scale" />;
+  if (plan !== 'scale') return <ClientLayout title="PDF Content"><UpgradeLock feature="PDF Content Editor" requiredPlan="scale" /></ClientLayout>;
 
   if (loading) return (
     <>

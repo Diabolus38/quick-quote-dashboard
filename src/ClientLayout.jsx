@@ -170,7 +170,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           </div>
 
           {/* Install Card */}
-          <div
+          {plan !== 'starter' && <div
             onClick={() => navigate('/client/settings?tab=embed')}
             style={{ backgroundColor: '#f0fdf4', borderRadius: '12px', padding: '12px 14px', border: '1px solid #bbf7d0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#dcfce7', color: PRIMARY, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⎘</div>
@@ -178,7 +178,7 @@ export default function ClientLayout({ title, subtitle, children }) {
               <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: PRIMARY, fontFamily: FONT }}>Install on your website</p>
               <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Get your embed code →</p>
             </div>
-          </div>
+          </div>}
 
           {/* Upgrade Card — only if pct >= 75 */}
           {pct >= 75 && (
