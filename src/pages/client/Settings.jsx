@@ -111,8 +111,11 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [primaryColor,   setPrimaryColor]   = useState('#166534');
   const [colorHex,       setColorHex]       = useState('#166534');
   const [logoUrl,        setLogoUrl]        = useState('');
-  const [companyPhone,   setCompanyPhone]   = useState('');
-  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyPhone,     setCompanyPhone]     = useState('');
+  const [companyAddress,   setCompanyAddress]   = useState('');
+  const [widgetHeadline,   setWidgetHeadline]   = useState('');
+  const [widgetSubtext,    setWidgetSubtext]    = useState('');
+  const [bubbleText,       setBubbleText]       = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
@@ -133,6 +136,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setLogoUrl(b.logo_url            || '');
         setCompanyPhone(b.company_phone  || '');
         setCompanyAddress(b.company_address || '');
+        setWidgetHeadline(b.widget_headline || '');
+        setWidgetSubtext(b.widget_subtext   || '');
+        setBubbleText(b.bubble_text         || '');
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
       });
@@ -140,7 +146,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [companyName, primaryColor, colorHex, logoUrl, companyPhone, companyAddress]);
+  }, [companyName, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, bubbleText]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -151,7 +157,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
-      { client_id: clientId, branding: { company_name: companyName, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress } },
+      { client_id: clientId, branding: { company_name: companyName, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, bubble_text: bubbleText } },
       { onConflict: 'client_id' }
     );
     flash();
@@ -163,9 +169,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   async function handleRestoreDefaults() {
     if (!window.confirm('Reset branding to defaults? This will clear your company name, logo, and color settings.')) return;
-    setCompanyName(''); setPrimaryColor('#166534'); setColorHex('#166534'); setLogoUrl(''); setCompanyPhone(''); setCompanyAddress('');
+    setCompanyName(''); setPrimaryColor('#166534'); setColorHex('#166534'); setLogoUrl(''); setCompanyPhone(''); setCompanyAddress(''); setWidgetHeadline(''); setWidgetSubtext(''); setBubbleText('');
     await supabase.from('client_settings').upsert(
-      { client_id: clientId, branding: { company_name: '', primary_color: '#166534', logo_url: '', company_phone: '', company_address: '' } },
+      { client_id: clientId, branding: { company_name: '', primary_color: '#166534', logo_url: '', company_phone: '', company_address: '', widget_headline: '', widget_subtext: '', bubble_text: '' } },
       { onConflict: 'client_id' }
     );
     setRestoreMsg('Defaults restored');
@@ -262,6 +268,21 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
         <FieldRow label="Company Address">
           <TextInput value={companyAddress} onChange={setCompanyAddress} placeholder="123 Main St, Stockholm" />
+        </FieldRow>
+
+        <FieldRow label="Widget Headline">
+          <TextInput value={widgetHeadline} onChange={setWidgetHeadline} placeholder="Get an instant project estimate" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The main title shown at the top of your estimator tool.</p>
+        </FieldRow>
+
+        <FieldRow label="Widget Subtext">
+          <Textarea value={widgetSubtext} onChange={setWidgetSubtext} placeholder="Answer a few questions about your project and we'll give you a preliminary cost estimate right away." rows={3} />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The description shown below the headline.</p>
+        </FieldRow>
+
+        <FieldRow label="Chat Bubble Text">
+          <TextInput value={bubbleText} onChange={setBubbleText} placeholder="Let's get you an estimate!" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The text shown in the floating chat bubble on your website.</p>
         </FieldRow>
       </div>
 
