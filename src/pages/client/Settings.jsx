@@ -116,6 +116,7 @@ function SettingsSkeleton() {
 function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const { plan, planLoading } = useClientPlan();
   const [companyName,         setCompanyName]         = useState('');
+  const [widgetCompanyName,   setWidgetCompanyName]   = useState('');
   const [widgetSubtitle,      setWidgetSubtitle]      = useState('');
   const [primaryColor,        setPrimaryColor]        = useState('#166534');
   const [colorHex,            setColorHex]            = useState('#166534');
@@ -148,8 +149,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     supabase.from('client_settings').select('branding').eq('client_id', clientId).maybeSingle()
       .then(({ data }) => {
         const b = data?.branding || {};
-        setCompanyName(b.company_name       || '');
-        setWidgetSubtitle(b.widget_subtitle || '');
+        setCompanyName(b.company_name             || '');
+        setWidgetCompanyName(b.widget_company_name || '');
+        setWidgetSubtitle(b.widget_subtitle       || '');
         setPrimaryColor(b.primary_color     || '#166534');
         setColorHex(b.primary_color         || '#166534');
         setLogoUrl(b.logo_url               || '');
@@ -173,7 +175,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [companyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
+  }, [companyName, widgetCompanyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -183,7 +185,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="growth" />;
 
   function currentBranding() {
-    return { company_name: companyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, answer_selected_color: answerSelectedColor, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
+    return { company_name: companyName, widget_company_name: widgetCompanyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, answer_selected_color: answerSelectedColor, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
   }
 
   async function handleSave() {
@@ -267,6 +269,11 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       <div style={CARD}>
         <FieldRow label="Company Name" onReset={() => { setCompanyName(''); resetField({ company_name: '' }); }}>
           <TextInput value={companyName} onChange={setCompanyName} placeholder="Your company name" />
+        </FieldRow>
+
+        <FieldRow label="Widget Company Name" onReset={() => { setWidgetCompanyName(''); resetField({ widget_company_name: '' }); }}>
+          <TextInput value={widgetCompanyName} onChange={setWidgetCompanyName} placeholder="Your company name" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The company name shown in the CENTER of the welcome screen in your estimator tool. Leave blank to use your Company Name above.</p>
         </FieldRow>
 
         <FieldRow label="Widget Subtitle" onReset={() => { setWidgetSubtitle('Quick project estimate'); resetField({ widget_subtitle: 'Quick project estimate' }); }}>
