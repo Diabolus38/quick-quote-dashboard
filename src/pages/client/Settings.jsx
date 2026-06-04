@@ -132,6 +132,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [bubbleIconUrl,       setBubbleIconUrl]       = useState('');
   const [bubbleIconUploading, setBubbleIconUploading] = useState(false);
   const [bubbleIconUploadErr, setBubbleIconUploadErr] = useState('');
+  const [answerSelectedColor, setAnswerSelectedColor] = useState('#dcfce7');
+  const [answerSelectedHex,   setAnswerSelectedHex]   = useState('#dcfce7');
   const [showPoweredBy,       setShowPoweredBy]       = useState(true);
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
@@ -160,7 +162,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setBubbleBgHex(b.bubble_bg_color       || '#166534');
         setBubbleTextColor(b.bubble_text_color || '#ffffff');
         setBubbleTextHex(b.bubble_text_color   || '#ffffff');
-        setBubbleIconUrl(b.bubble_icon_url     || '');
+        setBubbleIconUrl(b.bubble_icon_url              || '');
+        setAnswerSelectedColor(b.answer_selected_color || '#dcfce7');
+        setAnswerSelectedHex(b.answer_selected_color   || '#dcfce7');
         setShowPoweredBy(b.show_powered_by !== false);
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
@@ -169,7 +173,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [companyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
+  }, [companyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -179,7 +183,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="growth" />;
 
   function currentBranding() {
-    return { company_name: companyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
+    return { company_name: companyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, answer_selected_color: answerSelectedColor, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
   }
 
   async function handleSave() {
@@ -324,6 +328,18 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         <FieldRow label="Widget Subtext" onReset={() => { setWidgetSubtext('Answer a few questions about your project and we will give you a preliminary cost estimate right away.'); resetField({ widget_subtext: 'Answer a few questions about your project and we will give you a preliminary cost estimate right away.' }); }}>
           <Textarea value={widgetSubtext} onChange={setWidgetSubtext} placeholder="Answer a few questions about your project and we'll give you a preliminary cost estimate right away." rows={3} />
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The description shown below the headline.</p>
+        </FieldRow>
+
+        <FieldRow label="Answer Selected Color" onReset={() => { setAnswerSelectedColor('#dcfce7'); setAnswerSelectedHex('#dcfce7'); resetField({ answer_selected_color: '#dcfce7' }); }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <input type="color" value={answerSelectedColor}
+              onChange={e => { setAnswerSelectedColor(e.target.value); setAnswerSelectedHex(e.target.value); }}
+              style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px', backgroundColor: '#fff' }} />
+            <input type="text" value={answerSelectedHex}
+              onChange={e => { setAnswerSelectedHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setAnswerSelectedColor(e.target.value); }}
+              style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
+          </div>
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The background color shown on a selected answer option in your estimator tool.</p>
         </FieldRow>
 
         {/* Chat Bubble section */}
