@@ -66,6 +66,7 @@ const ALL_MUNICIPALITIES = [
 function MunicipalitiesContent({ clientId }) {
   const [loading,           setLoading]           = useState(true);
   const [search,            setSearch]            = useState('');
+  const [showSearch,        setShowSearch]        = useState(false);
   const [covered,           setCovered]           = useState([]);
   const [notCoveredMsg,     setNotCoveredMsg]     = useState('We currently do not cover your municipality.');
   const [notCoveredSaveMsg, setNotCoveredSaveMsg] = useState('');
@@ -121,6 +122,7 @@ function MunicipalitiesContent({ clientId }) {
       .select().single();
     if (data) setCovered(prev => [...prev, data]);
     setSearch('');
+    setShowSearch(false);
   }
 
   async function removeRow(rowId) {
@@ -145,23 +147,31 @@ function MunicipalitiesContent({ clientId }) {
     <>
       <SectionHeader title="Municipalities" subtitle="Select which Swedish municipalities you cover." />
       <div style={CARD}>
-        <div style={{ position: 'relative' }}>
-          <input type="text" placeholder="Search municipality..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', boxSizing: 'border-box', height: '42px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 16px', fontSize: '13.5px', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-          {showDropdown && (
-            <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', boxShadow: '0 4px 16px rgba(13,31,18,0.10)', zIndex: 10, overflow: 'hidden' }}>
-              {filtered.map(m => {
-                const alreadyAdded = !!covered.find(c => c.municipality === m);
-                return (
-                  <div key={m} onClick={() => !alreadyAdded && addMunicipality(m)}
-                    style={{ padding: '10px 16px', fontSize: '13.5px', color: alreadyAdded ? '#9ca3af' : '#374151', cursor: alreadyAdded ? 'default' : 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                    onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.backgroundColor = '#f4f6f4'; }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                    <span>{m}</span>
-                    {alreadyAdded && <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Already added</span>}
-                  </div>
-                );
-              })}
+        <div>
+          <button type="button" onClick={() => setShowSearch(s => !s)}
+            style={{ backgroundColor: PRIMARY, color: '#fff', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: FONT, marginBottom: showSearch ? '12px' : '0' }}>
+            + Add Municipality
+          </button>
+          {showSearch && (
+            <div style={{ position: 'relative' }}>
+              <input type="text" placeholder="Search municipality..." value={search} onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', height: '42px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 16px', fontSize: '13.5px', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
+              {showDropdown && (
+                <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', boxShadow: '0 4px 16px rgba(13,31,18,0.10)', zIndex: 10, overflow: 'hidden' }}>
+                  {filtered.map(m => {
+                    const alreadyAdded = !!covered.find(c => c.municipality === m);
+                    return (
+                      <div key={m} onClick={() => !alreadyAdded && addMunicipality(m)}
+                        style={{ padding: '10px 16px', fontSize: '13.5px', color: alreadyAdded ? '#9ca3af' : '#374151', cursor: alreadyAdded ? 'default' : 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                        onMouseEnter={e => { if (!alreadyAdded) e.currentTarget.style.backgroundColor = '#f4f6f4'; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+                        <span>{m}</span>
+                        {alreadyAdded && <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Already added</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
