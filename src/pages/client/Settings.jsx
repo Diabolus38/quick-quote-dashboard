@@ -29,10 +29,18 @@ function useSaveMsg() {
   return [msg, flash];
 }
 
-function FieldRow({ label, children }) {
+function FieldRow({ label, onReset, children }) {
   return (
     <div style={{ marginBottom: '16px' }}>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>{label}</label>
+      <div style={{ display: 'flex', justifyContent: onReset ? 'space-between' : undefined, alignItems: 'center', marginBottom: '6px' }}>
+        <label style={{ fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>{label}</label>
+        {onReset && (
+          <button type="button" onClick={onReset}
+            style={{ backgroundColor: 'transparent', border: 'none', color: '#9ca3af', fontSize: '11px', cursor: 'pointer', padding: '2px 6px' }}>
+            ↺ Reset
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -107,20 +115,28 @@ function SettingsSkeleton() {
 
 function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const { plan, planLoading } = useClientPlan();
-  const [companyName,    setCompanyName]    = useState('');
-  const [primaryColor,   setPrimaryColor]   = useState('#166534');
-  const [colorHex,       setColorHex]       = useState('#166534');
-  const [logoUrl,        setLogoUrl]        = useState('');
-  const [companyPhone,     setCompanyPhone]     = useState('');
-  const [companyAddress,   setCompanyAddress]   = useState('');
-  const [widgetHeadline,   setWidgetHeadline]   = useState('');
-  const [widgetSubtext,    setWidgetSubtext]    = useState('');
-  const [bubbleText,       setBubbleText]       = useState('');
+  const [companyName,         setCompanyName]         = useState('');
+  const [widgetSubtitle,      setWidgetSubtitle]      = useState('');
+  const [primaryColor,        setPrimaryColor]        = useState('#166534');
+  const [colorHex,            setColorHex]            = useState('#166534');
+  const [logoUrl,             setLogoUrl]             = useState('');
+  const [companyPhone,        setCompanyPhone]        = useState('');
+  const [companyAddress,      setCompanyAddress]      = useState('');
+  const [widgetHeadline,      setWidgetHeadline]      = useState('');
+  const [widgetSubtext,       setWidgetSubtext]       = useState('');
+  const [bubbleText,          setBubbleText]          = useState('');
+  const [bubbleBgColor,       setBubbleBgColor]       = useState('#166534');
+  const [bubbleBgHex,         setBubbleBgHex]         = useState('#166534');
+  const [bubbleTextColor,     setBubbleTextColor]     = useState('#ffffff');
+  const [bubbleTextHex,       setBubbleTextHex]       = useState('#ffffff');
+  const [bubbleIconUrl,       setBubbleIconUrl]       = useState('');
+  const [bubbleIconUploading, setBubbleIconUploading] = useState(false);
+  const [bubbleIconUploadErr, setBubbleIconUploadErr] = useState('');
+  const [showPoweredBy,       setShowPoweredBy]       = useState(true);
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
   const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem('qq360_last_saved_branding') || '');
-  const [restoreMsg, setRestoreMsg] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoUploadErr, setLogoUploadErr] = useState('');
   const _ll = useRef(false);
@@ -130,15 +146,22 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     supabase.from('client_settings').select('branding').eq('client_id', clientId).maybeSingle()
       .then(({ data }) => {
         const b = data?.branding || {};
-        setCompanyName(b.company_name    || '');
-        setPrimaryColor(b.primary_color  || '#166534');
-        setColorHex(b.primary_color      || '#166534');
-        setLogoUrl(b.logo_url            || '');
-        setCompanyPhone(b.company_phone  || '');
+        setCompanyName(b.company_name       || '');
+        setWidgetSubtitle(b.widget_subtitle || '');
+        setPrimaryColor(b.primary_color     || '#166534');
+        setColorHex(b.primary_color         || '#166534');
+        setLogoUrl(b.logo_url               || '');
+        setCompanyPhone(b.company_phone     || '');
         setCompanyAddress(b.company_address || '');
         setWidgetHeadline(b.widget_headline || '');
         setWidgetSubtext(b.widget_subtext   || '');
         setBubbleText(b.bubble_text         || '');
+        setBubbleBgColor(b.bubble_bg_color     || '#166534');
+        setBubbleBgHex(b.bubble_bg_color       || '#166534');
+        setBubbleTextColor(b.bubble_text_color || '#ffffff');
+        setBubbleTextHex(b.bubble_text_color   || '#ffffff');
+        setBubbleIconUrl(b.bubble_icon_url     || '');
+        setShowPoweredBy(b.show_powered_by !== false);
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
       });
@@ -146,7 +169,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [companyName, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, bubbleText]);
+  }, [companyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -155,9 +178,13 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="growth" />;
 
+  function currentBranding() {
+    return { company_name: companyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
+  }
+
   async function handleSave() {
     await supabase.from('client_settings').upsert(
-      { client_id: clientId, branding: { company_name: companyName, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, bubble_text: bubbleText } },
+      { client_id: clientId, branding: currentBranding() },
       { onConflict: 'client_id' }
     );
     flash();
@@ -167,15 +194,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     setLastSavedBranding(ts);
   }
 
-  async function handleRestoreDefaults() {
-    if (!window.confirm('Reset branding to defaults? This will clear your company name, logo, and color settings.')) return;
-    setCompanyName(''); setPrimaryColor('#166534'); setColorHex('#166534'); setLogoUrl(''); setCompanyPhone(''); setCompanyAddress(''); setWidgetHeadline(''); setWidgetSubtext(''); setBubbleText('');
-    await supabase.from('client_settings').upsert(
-      { client_id: clientId, branding: { company_name: '', primary_color: '#166534', logo_url: '', company_phone: '', company_address: '', widget_headline: '', widget_subtext: '', bubble_text: '' } },
-      { onConflict: 'client_id' }
-    );
-    setRestoreMsg('Defaults restored');
-    setTimeout(() => setRestoreMsg(''), 2000);
+  async function resetField(overrides) {
+    const merged = { ...currentBranding(), ...overrides };
+    await supabase.from('client_settings').upsert({ client_id: clientId, branding: merged }, { onConflict: 'client_id' });
   }
 
   async function handleLogoUpload(e) {
@@ -205,6 +226,33 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     setLogoUploading(false);
   }
 
+  async function handleBubbleIconUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !clientId) return;
+    if (!file.type.startsWith('image/')) {
+      setBubbleIconUploadErr('Please select an image file.');
+      setTimeout(() => setBubbleIconUploadErr(''), 3000);
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setBubbleIconUploadErr('Image must be smaller than 2MB.');
+      setTimeout(() => setBubbleIconUploadErr(''), 3000);
+      return;
+    }
+    setBubbleIconUploading(true);
+    const path = `${clientId}/bubble/${file.name}`;
+    const { error: uploadError } = await supabase.storage.from('client-assets').upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (uploadError) {
+      setBubbleIconUploadErr('Upload failed: ' + uploadError.message);
+      setTimeout(() => setBubbleIconUploadErr(''), 5000);
+      setBubbleIconUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from('client-assets').getPublicUrl(path);
+    setBubbleIconUrl(urlData.publicUrl);
+    setBubbleIconUploading(false);
+  }
+
   return (
     <>
       <div style={{ marginBottom: '20px' }}>
@@ -213,12 +261,17 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       </div>
 
       <div style={CARD}>
-        <FieldRow label="Company Name">
+        <FieldRow label="Company Name" onReset={() => { setCompanyName(''); resetField({ company_name: '' }); }}>
           <TextInput value={companyName} onChange={setCompanyName} placeholder="Your company name" />
         </FieldRow>
 
+        <FieldRow label="Widget Subtitle" onReset={() => { setWidgetSubtitle('Quick project estimate'); resetField({ widget_subtitle: 'Quick project estimate' }); }}>
+          <TextInput value={widgetSubtitle} onChange={setWidgetSubtitle} placeholder="Quick project estimate" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The small text shown under your company name in the tool header.</p>
+        </FieldRow>
+
         {plan === 'scale' && (
-          <FieldRow label="Primary Color">
+          <FieldRow label="Primary Color" onReset={() => { setPrimaryColor('#166534'); setColorHex('#166534'); resetField({ primary_color: '#166534' }); }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input type="color" value={primaryColor}
                 onChange={e => { setPrimaryColor(e.target.value); setColorHex(e.target.value); }}
@@ -233,17 +286,10 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
                   style={{ width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', backgroundColor: color, border: `2px solid ${primaryColor === color ? '#0d1117' : 'transparent'}` }} />
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
-              <button type="button" onClick={handleRestoreDefaults}
-                style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#9ca3af', borderRadius: '10px', padding: '7px 16px', fontSize: '12px', cursor: 'pointer', fontFamily: FONT }}>
-                Restore Defaults
-              </button>
-              {restoreMsg && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{restoreMsg}</span>}
-            </div>
           </FieldRow>
         )}
 
-        <FieldRow label="Logo">
+        <FieldRow label="Logo" onReset={() => { setLogoUrl(''); resetField({ logo_url: '' }); }}>
           <label style={{ display: 'inline-block', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.7 : 1 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', backgroundColor: '#fff', color: '#374151', fontFamily: FONT }}>
               <span>📁</span>
@@ -262,28 +308,95 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
           <TextInput value={logoUrl} onChange={setLogoUrl} placeholder="https://example.com/logo.png" />
         </FieldRow>
 
-        <FieldRow label="Company Phone">
+        <FieldRow label="Company Phone" onReset={() => { setCompanyPhone(''); resetField({ company_phone: '' }); }}>
           <TextInput value={companyPhone} onChange={setCompanyPhone} placeholder="+46 8 123 456 78" />
         </FieldRow>
 
-        <FieldRow label="Company Address">
+        <FieldRow label="Company Address" onReset={() => { setCompanyAddress(''); resetField({ company_address: '' }); }}>
           <TextInput value={companyAddress} onChange={setCompanyAddress} placeholder="123 Main St, Stockholm" />
         </FieldRow>
 
-        <FieldRow label="Widget Headline">
+        <FieldRow label="Widget Headline" onReset={() => { setWidgetHeadline('Get an instant project estimate'); resetField({ widget_headline: 'Get an instant project estimate' }); }}>
           <TextInput value={widgetHeadline} onChange={setWidgetHeadline} placeholder="Get an instant project estimate" />
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The main title shown at the top of your estimator tool.</p>
         </FieldRow>
 
-        <FieldRow label="Widget Subtext">
+        <FieldRow label="Widget Subtext" onReset={() => { setWidgetSubtext('Answer a few questions about your project and we will give you a preliminary cost estimate right away.'); resetField({ widget_subtext: 'Answer a few questions about your project and we will give you a preliminary cost estimate right away.' }); }}>
           <Textarea value={widgetSubtext} onChange={setWidgetSubtext} placeholder="Answer a few questions about your project and we'll give you a preliminary cost estimate right away." rows={3} />
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The description shown below the headline.</p>
         </FieldRow>
 
-        <FieldRow label="Chat Bubble Text">
-          <TextInput value={bubbleText} onChange={setBubbleText} placeholder="Let's get you an estimate!" />
-          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The text shown in the floating chat bubble on your website.</p>
-        </FieldRow>
+        {/* Chat Bubble section */}
+        <div style={{ borderTop: '1px solid #f4f6f4', marginTop: '20px', paddingTop: '20px' }}>
+          <p style={{ margin: '0 0 16px', fontSize: '13px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Chat Bubble</p>
+
+          <FieldRow label="Chat Bubble Text" onReset={() => { setBubbleText("Let's get you an estimate!"); resetField({ bubble_text: "Let's get you an estimate!" }); }}>
+            <TextInput value={bubbleText} onChange={setBubbleText} placeholder="Let's get you an estimate!" />
+            <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The text shown in the floating chat bubble on your website.</p>
+          </FieldRow>
+
+          <FieldRow label="Bubble Background Color" onReset={() => { setBubbleBgColor('#166534'); setBubbleBgHex('#166534'); resetField({ bubble_bg_color: '#166534' }); }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input type="color" value={bubbleBgColor}
+                onChange={e => { setBubbleBgColor(e.target.value); setBubbleBgHex(e.target.value); }}
+                style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px', backgroundColor: '#fff' }} />
+              <input type="text" value={bubbleBgHex}
+                onChange={e => { setBubbleBgHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setBubbleBgColor(e.target.value); }}
+                style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
+            </div>
+          </FieldRow>
+
+          <FieldRow label="Bubble Text Color" onReset={() => { setBubbleTextColor('#ffffff'); setBubbleTextHex('#ffffff'); resetField({ bubble_text_color: '#ffffff' }); }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input type="color" value={bubbleTextColor}
+                onChange={e => { setBubbleTextColor(e.target.value); setBubbleTextHex(e.target.value); }}
+                style={{ width: '42px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px', backgroundColor: '#fff' }} />
+              <input type="text" value={bubbleTextHex}
+                onChange={e => { setBubbleTextHex(e.target.value); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setBubbleTextColor(e.target.value); }}
+                style={{ width: '120px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', color: '#0d1117', outline: 'none', fontFamily: 'monospace', backgroundColor: '#fff' }} />
+            </div>
+          </FieldRow>
+
+          <FieldRow label="Bubble Icon" onReset={() => { setBubbleIconUrl(''); resetField({ bubble_icon_url: '' }); }}>
+            <label style={{ display: 'inline-block', cursor: bubbleIconUploading ? 'not-allowed' : 'pointer', opacity: bubbleIconUploading ? 0.7 : 1 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #d1d5db', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', backgroundColor: '#fff', color: '#374151', fontFamily: FONT }}>
+                <span>📁</span>
+                <span>{bubbleIconUploading ? 'Uploading…' : 'Upload icon image'}</span>
+              </div>
+              <input type="file" accept="image/*" onChange={handleBubbleIconUpload} style={{ display: 'none' }} disabled={bubbleIconUploading} />
+            </label>
+            <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Recommended: PNG or SVG, 32x32px, transparent background, max 2MB.</p>
+            {bubbleIconUploadErr && <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{bubbleIconUploadErr}</p>}
+            {bubbleIconUrl && isValidUrl(bubbleIconUrl) && (
+              <img src={bubbleIconUrl} alt="Bubble icon preview"
+                style={{ marginTop: '10px', height: '32px', width: '32px', borderRadius: '6px', border: '1px solid #e8ede8', objectFit: 'contain', display: 'block' }}
+                onError={e => { e.target.style.display = 'none'; }} />
+            )}
+          </FieldRow>
+
+          <div style={{ marginTop: '12px' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Bubble Preview</p>
+            <div style={{ display: 'inline-flex', borderRadius: '50px', padding: '12px 20px', alignItems: 'center', gap: '10px', backgroundColor: bubbleBgColor, color: bubbleTextColor }}>
+              {bubbleIconUrl && isValidUrl(bubbleIconUrl) && (
+                <img src={bubbleIconUrl} alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+              )}
+              <span style={{ fontSize: '13.5px', fontWeight: '600', fontFamily: FONT }}>{bubbleText || "Let's get you an estimate!"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Powered By Badge */}
+        <div style={{ borderTop: '1px solid #f4f6f4', marginTop: '20px', paddingTop: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Show Powered by QuickQuote360</p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
+                {plan !== 'enterprise' ? 'Available on Enterprise plan only' : 'Toggle the powered-by badge on your estimator tool.'}
+              </p>
+            </div>
+            <Toggle value={showPoweredBy} onChange={v => { if (plan === 'enterprise') { setShowPoweredBy(v); resetField({ show_powered_by: v }); } }} />
+          </div>
+        </div>
       </div>
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
@@ -741,6 +854,18 @@ function EmbedCodeSection({ clientId }) {
           style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
           Download QR Code
         </button>
+
+        <div style={{ borderTop: '1px solid #f4f6f4', marginTop: '28px', paddingTop: '20px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Powered By Badge</p>
+          <span style={{ display: 'inline-block', backgroundColor: '#0d1f12', color: '#ffffff', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: '600', fontFamily: FONT }}>
+            ⚡ Powered by QuickQuote360
+          </span>
+          <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.6' }}>
+            {plan !== 'enterprise'
+              ? 'The Powered by QuickQuote360 badge appears on your estimator tool and PDF. It can only be removed on the Enterprise plan.'
+              : 'You can hide the Powered by QuickQuote360 badge in the Branding section.'}
+          </p>
+        </div>
       </div>
     </>
   );
