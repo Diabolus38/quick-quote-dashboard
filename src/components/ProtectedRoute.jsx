@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getPlanFeatures } from '../utils/planConfig';
 
 const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
 

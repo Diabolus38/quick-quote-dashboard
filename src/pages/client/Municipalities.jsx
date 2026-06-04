@@ -115,7 +115,7 @@ function MunicipalitiesContent({ clientId }) {
 
   async function addMunicipality(name) {
     const { data } = await supabase.from('client_municipalities')
-      .insert({ client_id: clientId, municipality: name, zone: '', custom_price: 0 })
+      .insert({ client_id: clientId, municipality: name, zone: 'Zone 1', custom_price: 0 })
       .select().single();
     if (data) setCovered(prev => [...prev, data]);
     setSearch('');
@@ -136,6 +136,8 @@ function MunicipalitiesContent({ clientId }) {
     await supabase.from('client_municipalities').update({ custom_price: num }).eq('id', rowId);
     setCovered(prev => prev.map(c => c.id === rowId ? { ...c, custom_price: num } : c));
   }
+
+  const inputStyle = { border: '1px solid #e8ede8', borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff' };
 
   return (
     <>
@@ -165,26 +167,38 @@ function MunicipalitiesContent({ clientId }) {
         <div style={{ marginTop: '20px' }}>
           {covered.length === 0 ? (
             <p style={{ fontSize: '13.5px', color: '#9ca3af', textAlign: 'center', padding: '20px 0', fontFamily: FONT }}>No municipalities added yet.</p>
-          ) : covered.map(c => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
-              <span style={{ flex: 1, fontSize: '13.5px', color: '#0d1117', fontWeight: '500', fontFamily: FONT }}>{c.municipality}</span>
-              <input
-                type="text"
-                defaultValue={c.zone || ''}
-                placeholder="Zone name"
-                onBlur={e => updateZone(c.id, e.target.value)}
-                style={{ width: '110px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff' }} />
-              <input
-                type="number"
-                defaultValue={c.custom_price || 0}
-                placeholder="0"
-                min="0"
-                onBlur={e => updatePrice(c.id, e.target.value)}
-                style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '5px 10px', fontSize: '12px', fontFamily: FONT, outline: 'none', color: '#0d1117', backgroundColor: '#fff', textAlign: 'right' }} />
-              <span style={{ fontSize: '12px', color: '#6b7280', fontFamily: FONT }}>kr</span>
-              <button type="button" onClick={() => removeRow(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#dc2626', lineHeight: 1, padding: '0 4px' }}>×</button>
-            </div>
-          ))}
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '8px', borderBottom: '1px solid #e8ede8', marginBottom: '4px' }}>
+                <span style={{ flex: 1, fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Municipality</span>
+                <span style={{ width: '110px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Zone Name</span>
+                <span style={{ width: '90px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Price</span>
+                <span style={{ width: '28px' }} />
+              </div>
+              {covered.map(c => (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderBottom: '1px solid #f4f6f4' }}>
+                  <span style={{ flex: 1, fontSize: '13.5px', fontWeight: '500', fontFamily: FONT, color: '#0d1117' }}>{c.municipality}</span>
+                  <input
+                    type="text"
+                    defaultValue={c.zone || ''}
+                    placeholder="Zone name"
+                    onBlur={e => updateZone(c.id, e.target.value)}
+                    style={{ width: '110px', ...inputStyle }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input
+                      type="number"
+                      defaultValue={c.custom_price || 0}
+                      placeholder="0"
+                      min="0"
+                      onBlur={e => updatePrice(c.id, e.target.value)}
+                      style={{ width: '90px', ...inputStyle, textAlign: 'right' }} />
+                    <span style={{ fontSize: '12px', color: '#6b7280', fontFamily: FONT }}>kr</span>
+                  </div>
+                  <button type="button" onClick={() => removeRow(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#dc2626', lineHeight: 1, padding: '0 4px' }}>×</button>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         <div style={{ marginTop: '20px' }}>

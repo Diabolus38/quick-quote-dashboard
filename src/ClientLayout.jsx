@@ -48,7 +48,6 @@ export default function ClientLayout({ title, subtitle, children }) {
   const [leadsThisMonth, setLeadsThisMonth] = useState(0);
   const [planLimit,      setPlanLimit]      = useState(30);
   const [sidebarSearch,  setSidebarSearch]  = useState('');
-  const [lockedMsg,      setLockedMsg]      = useState('');
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -120,31 +119,26 @@ export default function ClientLayout({ title, subtitle, children }) {
           {LEADS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
         </nav>
 
-        {/* CONFIGURATION Section */}
-        <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
-          <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
-        </div>
-        <nav style={{ flexShrink: 0 }}>
-          {CONFIG_ITEMS
-            .filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
-            .map(item => {
-              const isLocked = (item.label === 'Pricing' || item.label === 'PDF') && plan !== null && plan !== 'scale';
-              if (isLocked) {
-                return (
-                  <LockedNavItem
-                    key={item.label}
-                    item={item}
-                    onLockedClick={() => {
-                      setLockedMsg(`Upgrade to Scale to access ${item.label}`);
-                      setTimeout(() => setLockedMsg(''), 2000);
-                    }}
-                  />
-                );
-              }
-              return <NavItem key={item.label} item={item} />;
-            })
-          }
-        </nav>
+        {/* CONFIGURATION Section — hidden for starter plan */}
+        {(plan === null || plan === 'growth' || plan === 'scale') && (() => {
+          const visibleItems = CONFIG_ITEMS.filter(item => {
+            if (sidebarSearch && !item.label.toLowerCase().includes(sidebarSearch.toLowerCase())) return false;
+            if (plan === 'scale') return true;
+            if (plan === 'growth') return item.label !== 'PDF';
+            return true; // plan === null (loading): show all
+          });
+          if (visibleItems.length === 0) return null;
+          return (
+            <>
+              <div style={{ padding: '14px 16px 6px', flexShrink: 0 }}>
+                <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</span>
+              </div>
+              <nav style={{ flexShrink: 0 }}>
+                {visibleItems.map(item => <NavItem key={item.label} item={item} />)}
+              </nav>
+            </>
+          );
+        })()}
 
         {/* Spacer */}
         <div style={{ flex: 1 }} />
@@ -204,11 +198,6 @@ export default function ClientLayout({ title, subtitle, children }) {
       </aside>
 
       <BugReportModal isOpen={showBugReport} onClose={() => setShowBugReport(false)} />
-      {lockedMsg && (
-        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-          {lockedMsg}
-        </div>
-      )}
 
       {/* ── Main area ── */}
       <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

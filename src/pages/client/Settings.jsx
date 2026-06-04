@@ -951,9 +951,107 @@ function ConfigStatusCard() {
   );
 }
 
+/* ── 7. Subscription ─────────────────────────────────────────── */
+
+const PLAN_FEATURES = {
+  starter: ['Unlimited estimates', 'Automatic PDF generation', 'Lead email notifications', 'Powered by QuickQuote360 badge'],
+  growth:  ['Everything in Starter', '30 estimates/month', 'Question editor', 'Municipality editor', 'Leads dashboard + CSV export', 'Logo upload'],
+  scale:   ['Everything in Growth', '75 estimates/month', 'Full pricing editor', 'PDF content editor', 'Brand colors', 'Email settings', 'Lead status tracking', 'ROT deduction'],
+};
+
+const PLAN_PRICES = { starter: '$140/month', growth: '$300/month', scale: '$600/month' };
+
+const PLAN_BADGE = {
+  starter: { bg: '#f3f4f6', color: '#374151' },
+  growth:  { bg: '#dbeafe', color: '#1d4ed8' },
+  scale:   { bg: '#dcfce7', color: '#166534' },
+};
+
+function SubscriptionSection() {
+  const { profile } = useAuth();
+  const { plan, planLoading } = useClientPlan();
+  const [createdAt, setCreatedAt] = useState(null);
+  const [cancelMsg, setCancelMsg] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+
+  useEffect(() => {
+    if (!profile?.client_id) return;
+    supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).single()
+      .then(({ data }) => { if (data?.created_at) setCreatedAt(data.created_at); });
+  }, [profile?.client_id]);
+
+  if (planLoading) return <SettingsSkeleton />;
+
+  const badge = PLAN_BADGE[plan] || PLAN_BADGE.starter;
+  const features = PLAN_FEATURES[plan] || PLAN_FEATURES.starter;
+  const price = PLAN_PRICES[plan] || PLAN_PRICES.starter;
+  const memberSince = createdAt ? (() => { const d = new Date(createdAt); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : '';
+
+  async function handleCancel() {
+    if (!window.confirm('Are you sure you want to cancel your subscription? Your account will remain active until the end of your billing period.')) return;
+    setCancelling(true);
+    try {
+      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'team@aiworldpartners.com',
+          subject: 'Cancellation Request from ' + profile?.full_name,
+          body: 'Client ' + profile?.full_name + ' (' + profile?.email + ') has requested to cancel their subscription. Plan: ' + plan + '. Client ID: ' + profile?.client_id,
+        }),
+      });
+      setCancelMsg('Cancellation request sent. We will contact you shortly.');
+      setTimeout(() => setCancelMsg(''), 4000);
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>My Subscription</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Your current plan and billing details.</p>
+      </div>
+
+      <div style={CARD}>
+        <span style={{ display: 'inline-block', padding: '6px 20px', borderRadius: '20px', fontSize: '15px', fontWeight: '700', marginBottom: '16px', backgroundColor: badge.bg, color: badge.color, fontFamily: FONT, textTransform: 'capitalize' }}>
+          {plan || 'starter'}
+        </span>
+        <p style={{ margin: '0 0 16px', fontSize: '28px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>{price}</p>
+        <div style={{ marginBottom: '16px' }}>
+          {features.map(f => (
+            <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <span style={{ color: '#16a34a', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>✓</span>
+              <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{f}</span>
+            </div>
+          ))}
+        </div>
+        {memberSince && (
+          <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Member since {memberSince}</p>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {plan !== 'scale' && (
+          <button type="button" onClick={() => window.open('https://quickquote360.com/pricing', '_blank')}
+            style={{ backgroundColor: PRIMARY, color: '#fff', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
+            Upgrade Plan →
+          </button>
+        )}
+        <button type="button" onClick={handleCancel} disabled={cancelling}
+          style={{ backgroundColor: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', cursor: cancelling ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: cancelling ? 0.7 : 1 }}>
+          Cancel Subscription
+        </button>
+      </div>
+      {cancelMsg && <p style={{ margin: '12px 0 0', fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{cancelMsg}</p>}
+    </>
+  );
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 
-const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Danger Zone'];
+const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Subscription', 'Danger Zone'];
 
 export default function ClientSettingsPage() {
   const { profile } = useAuth();
@@ -1053,6 +1151,7 @@ export default function ClientSettingsPage() {
           {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
           {activeSection === 'Account'        && <AccountSection setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
+          {activeSection === 'Subscription'   && <SubscriptionSection />}
           {activeSection === 'Danger Zone'    && <DangerZoneSection />}
         </div>
       </div>
