@@ -27,7 +27,7 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   const contentW = pageW - margin * 2
   let y = 0
 
-  const primaryHex = settings.branding?.pdf_primary_color || settings.branding?.primary_color || '#166534';
+  const primaryHex = settings.pdf_content?.pdf_primary_color || settings.branding?.primary_color || '#166534';
   const GREEN = hexToRgb(primaryHex);
   const DARK_GREEN = [13, 31, 18]
   const LIME = [163, 230, 53]
@@ -377,57 +377,71 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...TEXT_MID)
-  doc.text('This quote is valid for 60 days from the date of issue.', margin, y)
-  doc.text('Do not hesitate to reach out with any', margin + halfW + 10, y)
-  y += 4.5
-  doc.text('Delivery date: To be agreed upon order confirmation.', margin, y)
-  doc.text('questions or to adjust this estimate.', margin + halfW + 10, y)
-  y += 8
+  const quoteValidityText = settings.pdf_content?.quote_validity_text || 'This quote is valid for 60 days from the date of issue. Delivery date: To be agreed upon order confirmation.'
+  const questionsTextVal = settings.pdf_content?.questions_text || 'Do not hesitate to reach out with any questions.'
+  const vLines = doc.splitTextToSize(quoteValidityText, halfW)
+  const qLines = doc.splitTextToSize(questionsTextVal, halfW)
+  const validityStartY = y
+  vLines.forEach((line, i) => { doc.text(line, margin, validityStartY + i * 4.5) })
+  qLines.forEach((line, i) => { doc.text(line, margin + halfW + 10, validityStartY + i * 4.5) })
+  y = validityStartY + Math.max(vLines.length, qLines.length) * 4.5 + 3.5
   hline(y)
   y += 6
 
   // ── SIGNATURE ──
   checkPage(40)
+  const showAuth = pdf.show_authorized_by === true
+  const fromText = pdf.from_text || ''
+  const pwrX = margin + halfW + 10
+
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7)
   doc.setTextColor(...TEXT_LIGHT)
-  doc.text('AUTHORIZED BY', margin, y)
-  doc.text('POWERED BY', margin + halfW + 10, y)
+  if (showAuth) doc.text('AUTHORIZED BY', margin, y)
+  doc.text('POWERED BY', pwrX, y)
   y += 8
 
-  doc.setDrawColor(...BORDER)
-  doc.setLineWidth(0.5)
-  doc.line(margin, y, margin + 60, y)
-  y += 6
+  if (showAuth) {
+    doc.setDrawColor(...BORDER)
+    doc.setLineWidth(0.5)
+    doc.line(margin, y, margin + 60, y)
+    y += 6
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  doc.setTextColor(...TEXT_DARK)
-  doc.text(pdf.signature_name || client.name || '—', margin, y)
-  y += 4.5
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
-  doc.setTextColor(...TEXT_LIGHT)
-  if (pdf.signature_title) { doc.text(pdf.signature_title, margin, y); y += 4 }
-  if (pdf.signature_phone) { doc.text(pdf.signature_phone, margin, y); y += 4 }
-  doc.text(pdf.signature_email || client.email || '', margin, y)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(...TEXT_DARK)
+    doc.text(pdf.signature_name || client.name || '—', margin, y)
+    y += 4.5
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...TEXT_LIGHT)
+    if (pdf.signature_title) { doc.text(pdf.signature_title, margin, y); y += 4 }
+    if (pdf.signature_phone) { doc.text(pdf.signature_phone, margin, y); y += 4 }
+    doc.text(pdf.signature_email || client.email || '', margin, y)
+  }
 
-  const pwrX = margin + halfW + 10
-  const pwrY = y - 20
-  doc.setFillColor(...GREEN)
-  doc.roundedRect(pwrX, pwrY, 12, 12, 2, 2, 'F')
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7)
-  doc.setTextColor(168, 240, 192)
-  doc.text('Q', pwrX + 6, pwrY + 7.5, { align: 'center' })
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(...TEXT_DARK)
-  doc.text('Quick Quote 360', pwrX + 15, pwrY + 5)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
-  doc.setTextColor(...TEXT_LIGHT)
-  doc.text('quickquote360.com', pwrX + 15, pwrY + 9.5)
+  const pwrY = showAuth ? y - 20 : y
+  if (fromText) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(...TEXT_DARK)
+    doc.text(fromText, pwrX, pwrY + 7)
+  } else {
+    doc.setFillColor(...GREEN)
+    doc.roundedRect(pwrX, pwrY, 12, 12, 2, 2, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7)
+    doc.setTextColor(168, 240, 192)
+    doc.text('Q', pwrX + 6, pwrY + 7.5, { align: 'center' })
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(...TEXT_DARK)
+    doc.text('Quick Quote 360', pwrX + 15, pwrY + 5)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(...TEXT_LIGHT)
+    doc.text('quickquote360.com', pwrX + 15, pwrY + 9.5)
+  }
 
   if (pdf.disclaimer) {
     y += 10

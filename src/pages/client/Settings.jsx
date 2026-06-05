@@ -475,6 +475,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [fromName,     setFromName]     = useState('');
   const [replyTo,      setReplyTo]      = useState('');
   const [subject,      setSubject]      = useState('');
+  const [emailBody,    setEmailBody]    = useState('');
   const [footerText,   setFooterText]   = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [testMsg,      setTestMsg]      = useState('');
@@ -491,6 +492,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
         setFromName(es.from_name    || '');
         setReplyTo(es.reply_to      || '');
         setSubject(es.subject       || '');
+        setEmailBody(es.email_body  || '');
         setFooterText(es.footer_text || '');
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
@@ -499,7 +501,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [fromName, replyTo, subject, footerText]);
+  }, [fromName, replyTo, subject, emailBody, footerText]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -510,7 +512,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   async function handleSave() {
     await supabase.from('client_settings').upsert(
-      { client_id: clientId, email_settings: { from_name: fromName, reply_to: replyTo, subject, footer_text: footerText } },
+      { client_id: clientId, email_settings: { from_name: fromName, reply_to: replyTo, subject, email_body: emailBody, footer_text: footerText } },
       { onConflict: 'client_id' }
     );
     flash();
@@ -558,6 +560,14 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
         </FieldRow>
         <FieldRow label="Custom Email Subject">
           <TextInput value={subject} onChange={setSubject} placeholder="Your estimate from {company}" />
+        </FieldRow>
+        <FieldRow label="Email Body">
+          <Textarea value={emailBody} onChange={setEmailBody}
+            placeholder={'Hi {{name}},\n\nPlease find your estimation PDF attached.\n\nBest regards,\n{{company_name}}'}
+            rows={6} />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.5' }}>
+            {'Use {{name}} to include the customer\'s name and {{company_name}} for your company name. These are replaced automatically when the email is sent.'}
+          </p>
         </FieldRow>
         <FieldRow label="Email Footer Text">
           <Textarea value={footerText} onChange={setFooterText} placeholder="Your company address, legal disclaimer, etc." rows={4} />

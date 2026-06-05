@@ -88,6 +88,10 @@ function PDFContent({ clientId }) {
   const [sigTitle,         setSigTitle]         = useState('');
   const [sigPhone,         setSigPhone]         = useState('');
   const [sigEmail,         setSigEmail]         = useState('');
+  const [quoteValidityText, setQuoteValidityText] = useState('');
+  const [questionsText,     setQuestionsText]     = useState('');
+  const [fromText,          setFromText]          = useState('');
+  const [showAuthorizedBy,  setShowAuthorizedBy]  = useState(false);
   const [saveMsg, flash] = useSaveMsg();
   const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem('qq360_last_saved_pdf') || '');
   const [sectionVisible, setSectionVisible] = useState({ intro: true, systemDesc: true, serviceAg: true, payTerms: true, legal: true });
@@ -112,6 +116,10 @@ function PDFContent({ clientId }) {
         setSigTitle(pc.signature_title    || '');
         setSigPhone(pc.signature_phone    || '');
         setSigEmail(pc.signature_email    || '');
+        setQuoteValidityText(pc.quote_validity_text || '');
+        setQuestionsText(pc.questions_text || '');
+        setFromText(pc.from_text || '');
+        setShowAuthorizedBy(pc.show_authorized_by ?? false);
         setLoading(false);
       });
   }, [clientId]);
@@ -156,6 +164,10 @@ function PDFContent({ clientId }) {
         signature_title:    sigTitle,
         signature_phone:    sigPhone,
         signature_email:    sigEmail,
+        quote_validity_text: quoteValidityText,
+        questions_text:      questionsText,
+        from_text:           fromText,
+        show_authorized_by:  showAuthorizedBy,
       },
     }).eq('client_id', clientId);
     flash();
@@ -214,6 +226,28 @@ function PDFContent({ clientId }) {
             <FieldRow label="Phone"><TextInput value={sigPhone} onChange={setSigPhone} /></FieldRow>
             <FieldRow label="Email"><TextInput value={sigEmail} onChange={setSigEmail} /></FieldRow>
           </div>
+        </SettingsCard>
+        <SettingsCard title="Quote Validity Text">
+          <Textarea value={quoteValidityText} onChange={setQuoteValidityText} placeholder="This quote is valid for 60 days from the date of issue. Delivery date: To be agreed upon order confirmation." />
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown in the Quote Validity section at the bottom of the PDF.</p>
+        </SettingsCard>
+        <SettingsCard title="Questions Text">
+          <Textarea value={questionsText} onChange={setQuestionsText} placeholder="Do not hesitate to reach out with any questions." />
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown in the Questions section at the bottom of the PDF.</p>
+        </SettingsCard>
+        <SettingsCard title="From Text">
+          <TextInput value={fromText} onChange={setFromText} placeholder="From AI World Partners" />
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown at the bottom of the PDF instead of Powered By QuickQuote360.</p>
+        </SettingsCard>
+        <SettingsCard title="Show Authorized By">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div onClick={() => setShowAuthorizedBy(p => !p)}
+              style={{ width: '36px', height: '20px', borderRadius: '10px', backgroundColor: showAuthorizedBy ? PRIMARY : '#e5e7eb', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background-color 0.2s' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: showAuthorizedBy ? '19px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }} />
+            </div>
+            <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>Show Authorized By section</span>
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>When enabled shows an Authorized By signature line on the PDF.</p>
         </SettingsCard>
         <SaveButton onClick={handleSave} saveMsg={saveMsg} />
         {lastSavedPdf && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPdf); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
