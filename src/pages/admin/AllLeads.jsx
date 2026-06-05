@@ -40,6 +40,27 @@ function getInitials(name) {
   return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
 }
 
+function calcLeadScore(lead) {
+  const a = lead.answers || {};
+  let score = 0;
+  if (a.projectType === 'new_installation') score += 2;
+  if (a.wastewaterType === 'wc_bdt' || a.wastewaterType === 'wc') score += 2;
+  if (Number(a.households) >= 2) score += 1;
+  if (lead.company) score += 1;
+  if (lead.phone) score += 1;
+  const price = Number(lead.estimated_price) || 0;
+  if (price > 100000) score += 2;
+  else if (price > 50000) score += 1;
+  return score;
+}
+
+function getLeadQuality(lead) {
+  const score = calcLeadScore(lead);
+  if (score >= 7) return { label: 'Hot',  bg: '#fee2e2', color: '#991b1b' };
+  if (score >= 4) return { label: 'Warm', bg: '#fef9c3', color: '#854d0e' };
+  return                  { label: 'Cold', bg: '#f3f4f6', color: '#6b7280' };
+}
+
 function formatDate(str) {
   if (!str) return '—';
   const d = new Date(str);
@@ -98,6 +119,7 @@ export default function AllLeads() {
   const [flaggedFilter, setFlaggedFilter] = useState(false);
   const clientsRef = useRef([]);
 
+  const [sortBy,        setSortBy]        = useState('newest');
   const [search,        setSearch]        = useState('');
   const [clientFilter,  setClientFilter]  = useState(() => {
     const params = new URLSearchParams(location.search);
@@ -116,7 +138,7 @@ export default function AllLeads() {
   const [focusedLeadId, setFocusedLeadId] = useState(null);
   const [hoveredDay, setHoveredDay] = useState(null);
   const [heatmapRange, setHeatmapRange] = useState('7days');
-  const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Actions'];
+  const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Lead Quality','Actions'];
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
       const saved = localStorage.getItem('qq360_leads_columns');
@@ -262,11 +284,18 @@ export default function AllLeads() {
     return matchSearch && matchClient && matchStatus && matchDate && matchFlagged;
   });
 
+  /* ── Sort ── */
+  const sorted = sortBy === 'hottest'
+    ? [...filtered].sort((a, b) => calcLeadScore(b) - calcLeadScore(a))
+    : sortBy === 'coldest'
+    ? [...filtered].sort((a, b) => calcLeadScore(a) - calcLeadScore(b))
+    : filtered;
+
   /* ── Pagination ── */
   const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_admin_leads_page_size'); return s ? Number(s) : 25; });
   const PAGE_SIZE    = pageSize;
-  const totalPages   = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedLeads = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages   = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginatedLeads = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   /* ── Stats ── */
   const now        = new Date();
@@ -513,6 +542,14 @@ export default function AllLeads() {
             style={{ border: flaggedFilter ? 'none' : '1px solid #e8ede8', backgroundColor: flaggedFilter ? '#dc2626' : '#fff', color: flaggedFilter ? '#fff' : '#4b5563', borderRadius: '10px', padding: '8px 12px', fontSize: '12.5px', fontWeight: flaggedFilter ? '600' : '500', cursor: 'pointer', fontFamily: FONT }}>
             🚩 Flagged Only
           </button>
+
+          {/* Sort dropdown */}
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+            style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, height: '42px', outline: 'none' }}>
+            <option value="newest">Newest First</option>
+            <option value="hottest">Hottest First</option>
+            <option value="coldest">Coldest First</option>
+          </select>
         </div>
 
         {/* ── Bulk Action Bar ── */}
@@ -562,7 +599,7 @@ export default function AllLeads() {
 
         {/* ── Table ── */}
         <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
-          {filtered.length === 0 ? (
+          {sorted.length === 0 ? (
             <div style={{ padding: '64px', textAlign: 'center', color: '#9ca3af', fontSize: '13.5px' }}>
               No leads yet across any client accounts
             </div>
@@ -651,6 +688,15 @@ export default function AllLeads() {
                           </td>
                         )}
 
+                        {visibleColumns.has('Lead Quality') && (() => {
+                          const q = getLeadQuality(lead);
+                          return (
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: '700', backgroundColor: q.bg, color: q.color }}>{q.label}</span>
+                            </td>
+                          );
+                        })()}
+
                         {visibleColumns.has('Actions') && (
                           <td style={{ padding: '12px 16px' }}>
                             <button type="button" onClick={() => setPreviewLead(lead)}
@@ -669,7 +715,7 @@ export default function AllLeads() {
         </div>
 
         {/* ── Pagination ── */}
-        {filtered.length > 0 && (
+        {sorted.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem('qq360_admin_leads_page_size', n); setCurrentPage(1); }}
@@ -677,7 +723,7 @@ export default function AllLeads() {
                 {[10,25,50,100].map(n => <option key={n} value={n}>{n} per page</option>)}
               </select>
               <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>
-                Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} leads
+                Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, sorted.length)}–{Math.min(currentPage * PAGE_SIZE, sorted.length)} of {sorted.length} leads
               </span>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>

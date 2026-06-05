@@ -180,7 +180,7 @@ export default function Billing() {
 
   const billingRows = clients.map(c => {
     const plan    = c.plan || 'starter';
-    const fee     = PLAN_FEE[plan]     || 300;
+    const fee     = PLAN_FEE[plan]     ?? 300;
     const limit   = PLAN_LIMIT[plan]   ?? 30;
     const rate    = OVERAGE_RATE[plan] ?? 25;
     const used    = leadsThisMonth[c.id] || 0;
@@ -221,7 +221,7 @@ export default function Billing() {
     });
     const total = clients.reduce((sum, c) => {
       const plan    = c.plan || 'starter';
-      const fee     = PLAN_FEE[plan]     || 300;
+      const fee     = PLAN_FEE[plan]     ?? 300;
       const limit   = PLAN_LIMIT[plan]   ?? 30;
       const rate    = OVERAGE_RATE[plan] ?? 25;
       const used    = leadsInMonth[c.id] || 0;
@@ -388,7 +388,7 @@ export default function Billing() {
             });
             clients.forEach(c => {
               const plan    = c.plan || 'starter';
-              const fee     = PLAN_FEE[plan]     || 300;
+              const fee     = PLAN_FEE[plan]     ?? 300;
               const limit   = PLAN_LIMIT[plan]   ?? 30;
               const rate    = OVERAGE_RATE[plan] ?? 25;
               const used    = monthCounts[c.id] || 0;

@@ -73,21 +73,25 @@ function useSaveMsg() {
 }
 
 function PDFContent({ clientId }) {
-  const [loading,       setLoading]       = useState(true);
-  const [companyName,   setCompanyName]   = useState('Your Company');
-  const [previewColor,  setPreviewColor]  = useState(PRIMARY);
-  const [intro,         setIntro]         = useState('');
-  const [systemDesc,    setSystemDesc]    = useState('');
-  const [serviceAg,     setServiceAg]     = useState('');
-  const [payTerms,      setPayTerms]      = useState('');
-  const [legal,         setLegal]         = useState('');
-  const [sigName,       setSigName]       = useState('');
-  const [sigTitle,      setSigTitle]      = useState('');
-  const [sigPhone,      setSigPhone]      = useState('');
-  const [sigEmail,      setSigEmail]      = useState('');
+  const [loading,          setLoading]          = useState(true);
+  const [companyName,      setCompanyName]      = useState('Your Company');
+  const [previewColor,     setPreviewColor]     = useState(PRIMARY);
+  const [pdfLogoUrl,       setPdfLogoUrl]       = useState('');
+  const [pdfPrimaryColor,  setPdfPrimaryColor]  = useState(PRIMARY);
+  const [uploadingLogo,    setUploadingLogo]    = useState(false);
+  const [intro,            setIntro]            = useState('');
+  const [systemDesc,       setSystemDesc]       = useState('');
+  const [serviceAg,        setServiceAg]        = useState('');
+  const [payTerms,         setPayTerms]         = useState('');
+  const [legal,            setLegal]            = useState('');
+  const [sigName,          setSigName]          = useState('');
+  const [sigTitle,         setSigTitle]         = useState('');
+  const [sigPhone,         setSigPhone]         = useState('');
+  const [sigEmail,         setSigEmail]         = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem('qq360_last_saved_pdf') || '');
   const [sectionVisible, setSectionVisible] = useState({ intro: true, systemDesc: true, serviceAg: true, payTerms: true, legal: true });
+  const { plan } = useClientPlan();
 
   useEffect(() => {
     if (!clientId) return;
@@ -97,6 +101,8 @@ function PDFContent({ clientId }) {
         const b  = data?.branding   || {};
         setCompanyName(b.company_name   || 'Your Company');
         setPreviewColor(b.primary_color || PRIMARY);
+        setPdfLogoUrl(pc.pdf_logo_url         || '');
+        setPdfPrimaryColor(pc.pdf_primary_color || PRIMARY);
         setIntro(pc.introduction       || '');
         setSystemDesc(pc.system_description || '');
         setServiceAg(pc.service_agreement  || '');
@@ -123,9 +129,24 @@ function PDFContent({ clientId }) {
     </>
   );
 
+  async function handleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const path = `${clientId}/pdf/logo/${file.name}`;
+    const { error } = await supabase.storage.from('client-assets').upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from('client-assets').getPublicUrl(path);
+      setPdfLogoUrl(urlData.publicUrl);
+    }
+    setUploadingLogo(false);
+  }
+
   async function handleSave() {
     await supabase.from('client_settings').update({
       pdf_content: {
+        pdf_logo_url:       pdfLogoUrl,
+        pdf_primary_color:  pdfPrimaryColor,
         introduction:       intro,
         system_description: systemDesc,
         service_agreement:  serviceAg,
@@ -148,6 +169,35 @@ function PDFContent({ clientId }) {
       {/* Left column: form */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <SectionHeader title="PDF Content" subtitle="Edit the text sections of your generated PDF." />
+        <SettingsCard title="PDF Branding">
+          <FieldRow label="PDF Logo">
+            <div style={{ position: 'relative' }}>
+              {pdfLogoUrl && <img src={pdfLogoUrl} alt="PDF Logo" style={{ maxHeight: '60px', maxWidth: '200px', marginBottom: '8px', display: 'block', borderRadius: '6px', border: '1px solid #e8ede8' }} />}
+              <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo}
+                style={{ fontSize: '13px', fontFamily: FONT, color: '#374151' }} />
+              {uploadingLogo && <span style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontFamily: FONT }}>Uploading...</span>}
+              {plan !== 'scale' && (
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+                  <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600', fontFamily: FONT }}>🔒 Scale plan only</span>
+                </div>
+              )}
+            </div>
+          </FieldRow>
+          <FieldRow label="PDF Primary Color">
+            <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input type="color" value={pdfPrimaryColor} onChange={e => setPdfPrimaryColor(e.target.value)}
+                  style={{ width: '40px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
+                <TextInput value={pdfPrimaryColor} onChange={v => { if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setPdfPrimaryColor(v); }} placeholder="#166534" />
+              </div>
+              {plan !== 'scale' && (
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+                  <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600', fontFamily: FONT }}>🔒 Scale plan only</span>
+                </div>
+              )}
+            </div>
+          </FieldRow>
+        </SettingsCard>
         {[
           { label: 'Introduction Text',  value: intro,      onChange: setIntro      },
           { label: 'System Description', value: systemDesc, onChange: setSystemDesc },
@@ -189,7 +239,7 @@ function PDFContent({ clientId }) {
           {sectionVisible.intro && (
             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
               <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Introduction</p>
-              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: intro ? '#374151' : '#9ca3af', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                 {intro || 'Introduction text will appear here...'}
               </p>
             </div>
@@ -198,7 +248,7 @@ function PDFContent({ clientId }) {
           {sectionVisible.systemDesc && (
             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
               <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>System Description</p>
-              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: systemDesc ? '#374151' : '#9ca3af', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                 {systemDesc || 'System description will appear here...'}
               </p>
             </div>
@@ -207,7 +257,7 @@ function PDFContent({ clientId }) {
           {sectionVisible.serviceAg && (
             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
               <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Service Agreement</p>
-              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: serviceAg ? '#374151' : '#9ca3af', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                 {serviceAg || 'Service agreement text will appear here...'}
               </p>
             </div>
@@ -216,7 +266,7 @@ function PDFContent({ clientId }) {
           {sectionVisible.payTerms && (
             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
               <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Payment Terms</p>
-              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: payTerms ? '#374151' : '#9ca3af', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                 {payTerms || 'Payment terms will appear here...'}
               </p>
             </div>
@@ -225,14 +275,14 @@ function PDFContent({ clientId }) {
           {sectionVisible.legal && (
             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #f4f6f4' }}>
               <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Legal</p>
-              <p style={{ margin: 0, fontSize: '11px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: legal ? '#374151' : '#9ca3af', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                 {legal || 'Legal text will appear here...'}
               </p>
             </div>
           )}
           {/* Footer */}
           <div style={{ paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
-            <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#0d1117' }}>{sigName || 'Signature Name'}</p>
+            <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: sigName ? '#0d1117' : '#9ca3af' }}>{sigName || 'Signature Name'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigTitle || 'Title'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigPhone || ''}</p>
             <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>

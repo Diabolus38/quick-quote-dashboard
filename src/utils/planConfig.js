@@ -1,6 +1,6 @@
-export const PLAN_FEES = { starter: 140, growth: 300, scale: 600, enterprise: 0 };
-export const PLAN_LIMITS = { starter: Infinity, growth: 30, scale: 75, enterprise: Infinity };
-export const OVERAGE_RATES = { starter: 0, growth: 25, scale: 18, enterprise: 0 };
+export const PLAN_FEES = { starter: 140, growth: 300, scale: 600, enterprise: 0, free_trial: 0 };
+export const PLAN_LIMITS = { starter: Infinity, growth: 30, scale: 75, enterprise: Infinity, free_trial: Infinity };
+export const OVERAGE_RATES = { starter: 0, growth: 25, scale: 18, enterprise: 0, free_trial: 0 };
 export const PLAN_YEARLY = { starter: 1400, growth: 3000, scale: 6000, enterprise: 0 };
 
 export const PLAN_FEATURES = {
@@ -71,6 +71,24 @@ export const PLAN_FEATURES = {
     hasFreeTrialDays: 0,
     poweredByBadge: false,
     show_powered_by: false,
+  },
+  free_trial: {
+    dashboardAccess: true,
+    canEditQuestions: true,
+    canEditPricing: true,
+    canEditBranding: true,
+    canEditPDF: true,
+    canEditEmail: true,
+    canEditMunicipalities: true,
+    canExportCSV: true,
+    canUploadLogo: true,
+    canViewLeads: true,
+    canViewEmbed: true,
+    teamMembers: 5,
+    hasFreeTrialDays: 14,
+    poweredByBadge: true,
+    show_powered_by: true,
+    trialPlan: true,
   },
 };
 

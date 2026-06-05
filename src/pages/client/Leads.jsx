@@ -171,6 +171,10 @@ export default function Leads() {
     ? [...filteredLeads].sort((a, b) => (Number(b.estimated_price) || 0) - (Number(a.estimated_price) || 0))
     : sortBy === 'lowest_price'
     ? [...filteredLeads].sort((a, b) => (Number(a.estimated_price) || 0) - (Number(b.estimated_price) || 0))
+    : sortBy === 'hottest'
+    ? [...filteredLeads].sort((a, b) => getLeadScore(b) - getLeadScore(a))
+    : sortBy === 'coldest'
+    ? [...filteredLeads].sort((a, b) => getLeadScore(a) - getLeadScore(b))
     : filteredLeads;
 
   const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_leads_page_size'); return s ? Number(s) : 25; });
@@ -366,6 +370,8 @@ export default function Leads() {
             <option value="newest">Newest First</option>
             <option value="highest_price">Highest Price</option>
             <option value="lowest_price">Lowest Price</option>
+            <option value="hottest">Hottest First</option>
+            <option value="coldest">Coldest First</option>
           </select>
         </div>
 

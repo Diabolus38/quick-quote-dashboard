@@ -57,6 +57,27 @@ const VALUE_LABELS = {
   deep:             'Deep (2m+)',
 };
 
+function calcLeadScore(lead) {
+  const a = lead.answers || {};
+  let score = 0;
+  if (a.projectType === 'new_installation') score += 2;
+  if (a.wastewaterType === 'wc_bdt' || a.wastewaterType === 'wc') score += 2;
+  if (Number(a.households) >= 2) score += 1;
+  if (lead.company) score += 1;
+  if (lead.phone) score += 1;
+  const price = Number(lead.estimated_price) || 0;
+  if (price > 100000) score += 2;
+  else if (price > 50000) score += 1;
+  return score;
+}
+
+function getLeadQuality(lead) {
+  const score = calcLeadScore(lead);
+  if (score >= 7) return { label: 'Hot',  bg: '#fee2e2', color: '#991b1b' };
+  if (score >= 4) return { label: 'Warm', bg: '#fef9c3', color: '#854d0e' };
+  return                  { label: 'Cold', bg: '#f3f4f6', color: '#6b7280' };
+}
+
 function formatDate(str) {
   const d = new Date(str);
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
@@ -248,6 +269,31 @@ export default function LeadDetail() {
                 {['New', 'Contacted', 'In Progress', 'Closed Won', 'Closed Lost'].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+
+            {/* Lead Summary */}
+            {(() => {
+              const q = getLeadQuality(lead);
+              return (
+                <div style={{ ...CARD, padding: '16px 22px', display: 'flex', gap: '24px', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Estimated Price</p>
+                    <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: PRIMARY, fontFamily: FONT, lineHeight: 1 }}>
+                      {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                    </p>
+                  </div>
+                  <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Quality</p>
+                    <span style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: q.bg, color: q.color }}>{q.label}</span>
+                  </div>
+                  <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Submitted</p>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{formatDate(lead.created_at)}</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Contact Details */}
             <div style={CARD}>

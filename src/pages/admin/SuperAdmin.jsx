@@ -514,12 +514,9 @@ export default function SuperAdmin() {
 
                           {/* Trial */}
                           <td style={TD}>
-                            {client.plan === 'scale' && (() => {
-                              const days = (Date.now() - new Date(client.created_at).getTime()) / (1000 * 60 * 60 * 24);
-                              if (days > 14) return null;
-                              const left = Math.max(0, Math.ceil(14 - days));
-                              return <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#854d0e' }}>Trial {left}d left</span>;
-                            })()}
+                            {client.plan === 'free_trial' && (
+                              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', backgroundColor: '#fef9c3', color: '#854d0e' }}>Trial</span>
+                            )}
                           </td>
 
                           {/* Revenue */}
