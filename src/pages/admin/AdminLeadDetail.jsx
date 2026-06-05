@@ -233,7 +233,13 @@ export default function AdminLeadDetail() {
               </div>
               <DetailRow label="Name"         value={lead.name}         />
               <DetailRow label="Email"        value={lead.email}        />
-              <DetailRow label="Phone"        value={lead.phone}        />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Phone</span>
+                <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {lead.phone || '—'}
+                  {lead.phone && !lead.phone.startsWith('+') && <span style={{ color: '#d97706' }}>⚠</span>}
+                </span>
+              </div>
               <DetailRow label="Company"      value={lead.company}      />
               <DetailRow label="Municipality" value={lead.municipality} />
               <DetailRow label="Language"     value={lead.language}     />
@@ -299,38 +305,42 @@ export default function AdminLeadDetail() {
 
             {/* Lead Score */}
             {(() => {
-              const price = Number(lead.estimated_price) || 0;
+              const answers = lead.answers || {};
               let score = 0;
-              if (price > 100000) score += 2; else if (price > 50000) score += 1;
-              if (lead.company)      score += 2;
-              if (lead.phone)        score += 1;
-              const st = (lead.status || '').replace(/\s+/g,'').toLowerCase();
-              if (st === 'closedwon' || st === 'inprogress') score += 2;
-              else if (st === 'contacted') score += 1;
-              if (lead.municipality) score += 2;
-              const dotColor = score <= 3 ? '#dc2626' : score <= 6 ? '#d97706' : '#16a34a';
-              const criteria = [
-                { label: '+2 High value (>100k)', earned: price > 100000 },
-                { label: '+1 Good value (50-100k)', earned: price > 50000 && price <= 100000 },
-                { label: '+2 Has company', earned: !!lead.company },
-                { label: '+1 Has phone', earned: !!lead.phone },
-                { label: '+2 Active status', earned: st === 'closedwon' || st === 'inprogress' },
-                { label: '+1 Contacted', earned: st === 'contacted' },
-                { label: '+2 Has municipality', earned: !!lead.municipality },
-              ];
+              let breakdown = [];
+              if (answers.projectType === 'new_installation') { score += 2; breakdown.push({ label: 'New installation project', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'New installation project', points: 2, earned: false }); }
+              if (['wc_bdt', 'wc'].includes(answers.wastewaterType)) { score += 2; breakdown.push({ label: 'Full wastewater system', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'Full wastewater system', points: 2, earned: false }); }
+              if (Number(answers.households) >= 2) { score += 1; breakdown.push({ label: '2+ households', points: 1, earned: true }); }
+              else { breakdown.push({ label: '2+ households', points: 1, earned: false }); }
+              if (answers.existingSystem === 'no' || answers.existingSystem === 'none') { score += 1; breakdown.push({ label: 'No existing system', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'No existing system', points: 1, earned: false }); }
+              if (lead.company) { score += 1; breakdown.push({ label: 'Has company name', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'Has company name', points: 1, earned: false }); }
+              if (lead.phone) { score += 1; breakdown.push({ label: 'Phone number provided', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'Phone number provided', points: 1, earned: false }); }
+              if (Number(lead.estimated_price) > 100000) { score += 2; breakdown.push({ label: 'Estimate over 100,000 kr', points: 2, earned: true }); }
+              else if (Number(lead.estimated_price) > 50000) { score += 1; breakdown.push({ label: 'Estimate over 50,000 kr', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'High estimate value', points: 2, earned: false }); }
+              const maxScore = 10;
+              const qualification = score >= 7 ? 'Hot' : score >= 4 ? 'Warm' : 'Cold';
+              const qualColor = score >= 7 ? '#dc2626' : score >= 4 ? '#d97706' : '#6b7280';
+              const qualBg = score >= 7 ? '#fee2e2' : score >= 4 ? '#fef9c3' : '#f3f4f6';
               return (
                 <div style={CARD}>
                   <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lead Score</p>
+                  <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', backgroundColor: qualBg, color: qualColor, marginBottom: '8px' }}>{qualification}</span>
                   <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
-                    {Array.from({ length: 10 }, (_, i) => (
-                      <span key={i} style={{ fontSize: '14px', color: i < score ? dotColor : '#e5e7eb' }}>{i < score ? '●' : '○'}</span>
+                    {Array.from({ length: maxScore }, (_, i) => (
+                      <span key={i} style={{ fontSize: '14px', color: i < score ? qualColor : '#e5e7eb' }}>{i < score ? '●' : '○'}</span>
                     ))}
                   </div>
-                  <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: dotColor }}>{score}/10</p>
+                  <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: qualColor }}>{score}/{maxScore}</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-                    {criteria.map(c => (
+                    {breakdown.map(c => (
                       <span key={c.label} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '600', backgroundColor: c.earned ? '#dcfce7' : '#f3f4f6', color: c.earned ? '#166534' : '#9ca3af' }}>
-                        {c.earned ? c.label : `${c.label.split(' ').slice(0,2).join(' ')} (missing)`}
+                        {c.earned ? `+${c.points} ${c.label}` : `${c.label} (missing)`}
                       </span>
                     ))}
                   </div>

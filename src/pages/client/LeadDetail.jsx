@@ -86,6 +86,8 @@ export default function LeadDetail() {
   const [printing,       setPrinting]       = useState(false);
   const [sendingEmail,   setSendingEmail]   = useState(false);
   const [emailMsg,       setEmailMsg]       = useState('');
+  const [sendingToMe,    setSendingToMe]    = useState(false);
+  const [sentToMe,       setSentToMe]       = useState('');
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [copiedContact,  setCopiedContact]  = useState(false);
   const [prevLead, setPrevLead] = useState(null);
@@ -117,6 +119,28 @@ export default function LeadDetail() {
     await supabase.from('leads').update({ notes }).eq('id', id);
     setSaveMsg('Saved!');
     setTimeout(() => setSaveMsg(''), 2000);
+  }
+
+  async function handleSendToMe() {
+    if (!profile?.email) return;
+    setSendingToMe(true);
+    setSentToMe('');
+    try {
+      const answersText = Object.entries(lead.answers || {})
+        .map(([k, v]) => `${KEY_LABELS[k] || k}: ${VALUE_LABELS[String(v)] || String(v)}`)
+        .join('\n');
+      const emailBody = `Lead: ${lead.name || '—'}\nEmail: ${lead.email || '—'}\nPhone: ${lead.phone || '—'}\nCompany: ${lead.company || '—'}\nMunicipality: ${lead.municipality || '—'}\nEstimated Price: ${lead.estimated_price || '—'} kr\nStatus: ${lead.status || '—'}\nSubmitted: ${formatDate(lead.created_at)}\n\nAnswers:\n${answersText}`;
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: profile.email, name: profile.full_name || '', subject: `Lead Details: ${lead.name || '—'}`, body: emailBody }),
+      });
+      setSentToMe(res.ok ? 'sent' : 'failed');
+    } catch {
+      setSentToMe('failed');
+    }
+    setSendingToMe(false);
+    setTimeout(() => setSentToMe(''), 3000);
   }
 
   function handlePrint() {
@@ -238,7 +262,13 @@ export default function LeadDetail() {
               </div>
               <DetailRow label="Name"    value={lead.name}    />
               <DetailRow label="Email"   value={lead.email}   />
-              <DetailRow label="Phone"   value={lead.phone}   />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Phone</span>
+                <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {lead.phone || '—'}
+                  {lead.phone && !lead.phone.startsWith('+') && <span style={{ color: '#d97706' }}>⚠</span>}
+                </span>
+              </div>
               <DetailRow label="Company" value={lead.company} />
             </div>
 
@@ -296,38 +326,42 @@ export default function LeadDetail() {
 
             {/* Lead Score */}
             {(() => {
-              const price = Number(lead.estimated_price) || 0;
+              const answers = lead.answers || {};
               let score = 0;
-              if (price > 100000) score += 2; else if (price > 50000) score += 1;
-              if (lead.company)      score += 2;
-              if (lead.phone)        score += 1;
-              const st = (lead.status || '').replace(/\s+/g,'').toLowerCase();
-              if (st === 'closedwon' || st === 'inprogress') score += 2;
-              else if (st === 'contacted') score += 1;
-              if (lead.municipality) score += 2;
-              const dotColor = score <= 3 ? '#dc2626' : score <= 6 ? '#d97706' : '#16a34a';
-              const criteria = [
-                { label: price > 100000 ? '+2 High value' : '+2 High value (>100k)', pts: 2, earned: price > 100000 },
-                { label: price > 50000 && price <= 100000 ? '+1 Good value' : '+1 Good value (50-100k)', pts: 1, earned: price > 50000 && price <= 100000 },
-                { label: '+2 Has company', pts: 2, earned: !!lead.company },
-                { label: '+1 Has phone', pts: 1, earned: !!lead.phone },
-                { label: '+2 Active status', pts: 2, earned: st === 'closedwon' || st === 'inprogress' },
-                { label: '+1 Contacted', pts: 1, earned: st === 'contacted' },
-                { label: '+2 Has municipality', pts: 2, earned: !!lead.municipality },
-              ];
+              let breakdown = [];
+              if (answers.projectType === 'new_installation') { score += 2; breakdown.push({ label: 'New installation project', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'New installation project', points: 2, earned: false }); }
+              if (['wc_bdt', 'wc'].includes(answers.wastewaterType)) { score += 2; breakdown.push({ label: 'Full wastewater system', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'Full wastewater system', points: 2, earned: false }); }
+              if (Number(answers.households) >= 2) { score += 1; breakdown.push({ label: '2+ households', points: 1, earned: true }); }
+              else { breakdown.push({ label: '2+ households', points: 1, earned: false }); }
+              if (answers.existingSystem === 'no' || answers.existingSystem === 'none') { score += 1; breakdown.push({ label: 'No existing system', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'No existing system', points: 1, earned: false }); }
+              if (lead.company) { score += 1; breakdown.push({ label: 'Has company name', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'Has company name', points: 1, earned: false }); }
+              if (lead.phone) { score += 1; breakdown.push({ label: 'Phone number provided', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'Phone number provided', points: 1, earned: false }); }
+              if (Number(lead.estimated_price) > 100000) { score += 2; breakdown.push({ label: 'Estimate over 100,000 kr', points: 2, earned: true }); }
+              else if (Number(lead.estimated_price) > 50000) { score += 1; breakdown.push({ label: 'Estimate over 50,000 kr', points: 1, earned: true }); }
+              else { breakdown.push({ label: 'High estimate value', points: 2, earned: false }); }
+              const maxScore = 10;
+              const qualification = score >= 7 ? 'Hot' : score >= 4 ? 'Warm' : 'Cold';
+              const qualColor = score >= 7 ? '#dc2626' : score >= 4 ? '#d97706' : '#6b7280';
+              const qualBg = score >= 7 ? '#fee2e2' : score >= 4 ? '#fef9c3' : '#f3f4f6';
               return (
                 <div style={CARD}>
                   <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lead Score</p>
+                  <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', backgroundColor: qualBg, color: qualColor, marginBottom: '8px' }}>{qualification}</span>
                   <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
-                    {Array.from({ length: 10 }, (_, i) => (
-                      <span key={i} style={{ fontSize: '14px', color: i < score ? dotColor : '#e5e7eb' }}>{i < score ? '●' : '○'}</span>
+                    {Array.from({ length: maxScore }, (_, i) => (
+                      <span key={i} style={{ fontSize: '14px', color: i < score ? qualColor : '#e5e7eb' }}>{i < score ? '●' : '○'}</span>
                     ))}
                   </div>
-                  <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: dotColor }}>{score}/10</p>
+                  <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: qualColor }}>{score}/{maxScore}</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-                    {criteria.map(c => (
+                    {breakdown.map(c => (
                       <span key={c.label} style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '600', backgroundColor: c.earned ? '#dcfce7' : '#f3f4f6', color: c.earned ? '#166534' : '#9ca3af' }}>
-                        {c.earned ? c.label : `${c.label.split(' ').slice(0,2).join(' ')} (missing)`}
+                        {c.earned ? `+${c.points} ${c.label}` : `${c.label} (missing)`}
                       </span>
                     ))}
                   </div>
@@ -342,10 +376,16 @@ export default function LeadDetail() {
                 {downloadingPDF ? 'Generating...' : 'Download PDF'}
               </button>
               <button type="button" onClick={handleSendEmail} disabled={sendingEmail}
-                style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '500', backgroundColor: '#fff', color: '#0d1117', border: '1px solid #e8ede8', borderRadius: '10px', cursor: sendingEmail ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: sendingEmail ? 0.7 : 1 }}>
+                style={{ width: '100%', padding: '11px', fontSize: '13.5px', fontWeight: '500', backgroundColor: '#fff', color: '#0d1117', border: '1px solid #e8ede8', borderRadius: '10px', cursor: sendingEmail ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: sendingEmail ? 0.7 : 1, marginBottom: '8px' }}>
                 {sendingEmail ? 'Sending…' : 'Send Email'}
               </button>
-              {emailMsg && <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: '600', color: emailMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT, textAlign: 'center' }}>{emailMsg}</p>}
+              {emailMsg && <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: emailMsg.includes('Failed') ? '#dc2626' : '#16a34a', fontFamily: FONT, textAlign: 'center' }}>{emailMsg}</p>}
+              <button type="button" onClick={handleSendToMe} disabled={sendingToMe}
+                style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '10px', padding: '11px', fontSize: '13.5px', fontWeight: 500, width: '100%', cursor: sendingToMe ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: sendingToMe ? 0.7 : 1 }}>
+                {sendingToMe ? 'Sending...' : 'Send to My Email'}
+              </button>
+              {sentToMe === 'sent' && <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: '600', color: '#16a34a', fontFamily: FONT, textAlign: 'center' }}>Sent to your email!</p>}
+              {sentToMe === 'failed' && <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: '600', color: '#dc2626', fontFamily: FONT, textAlign: 'center' }}>Failed</p>}
             </div>
 
             {/* Status timeline */}

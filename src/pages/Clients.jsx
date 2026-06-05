@@ -318,7 +318,7 @@ export default function Clients() {
 
   return (
     <Layout title="Clients">
-      <div style={{ fontFamily: FONT }}>
+      <div style={{ fontFamily: FONT, overflow: 'hidden' }}>
 
         {/* ── Header ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
@@ -398,7 +398,7 @@ export default function Clients() {
         )}
 
         {/* ── Table ── */}
-        <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+        <div style={{ ...CARD, padding: 0, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
             <thead>
               <tr style={{ backgroundColor: '#fafafa' }}>

@@ -315,7 +315,7 @@ export default function AllLeads() {
           {newLeadToast}
         </div>
       )}
-      <div style={{ fontFamily: FONT }}>
+      <div style={{ fontFamily: FONT, overflow: 'hidden' }}>
 
         {/* DND Banner */}
         {dnd && (

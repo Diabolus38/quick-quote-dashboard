@@ -380,7 +380,7 @@ export default function SuperAdmin() {
 
   return (
     <Layout title="Super Admin">
-      <div style={{ fontFamily: FONT }}>
+      <div style={{ fontFamily: FONT, overflow: 'hidden' }}>
 
         {/* ── PAGE HEADER ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>

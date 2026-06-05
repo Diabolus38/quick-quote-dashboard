@@ -25,7 +25,21 @@ const STATUS_BADGE = {
 };
 
 const FILTER_OPTIONS = ['All', 'New', 'Contacted', 'In Progress', 'Closed Won', 'Closed Lost'];
-const COLUMNS = ['Date', 'Name', 'Email', 'Phone', 'Municipality', 'System Type', 'Estimated Price', 'Status', 'Actions'];
+const COLUMNS = ['Date', 'Name', 'Email', 'Phone', 'Municipality', 'System Type', 'Estimated Price', 'Status', 'Lead Quality', 'Actions'];
+
+function getLeadScore(lead) {
+  const a = lead.answers || {};
+  let s = 0;
+  if (a.projectType === 'new_installation') s += 2;
+  if (['wc_bdt', 'wc'].includes(a.wastewaterType)) s += 2;
+  if (Number(a.households) >= 2) s += 1;
+  if (a.existingSystem === 'no' || a.existingSystem === 'none') s += 1;
+  if (lead.company) s += 1;
+  if (lead.phone) s += 1;
+  if (Number(lead.estimated_price) > 100000) s += 2;
+  else if (Number(lead.estimated_price) > 50000) s += 1;
+  return s;
+}
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -51,6 +65,7 @@ export default function Leads() {
   const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
   const [showColPicker, setShowColPicker] = useState(false);
   const [focusedLeadId, setFocusedLeadId] = useState(null);
+  const [sortBy, setSortBy] = useState('newest');
   const [hoveredDay, setHoveredDay] = useState(null);
   const [heatmapRange, setHeatmapRange] = useState('7days');
 
@@ -79,7 +94,7 @@ export default function Leads() {
       play(520, ctx.currentTime); play(660, ctx.currentTime + 0.15);
     } catch {}
   }
-  const DEFAULT_VIS_ARR = ['Date','Name','Email','Municipality','Estimated Price','Status','Actions'];
+  const DEFAULT_VIS_ARR = ['Date','Name','Email','Municipality','Estimated Price','Status','Lead Quality','Actions'];
   const [visibleCols, setVisibleCols] = useState(() => {
     try {
       const saved = localStorage.getItem('qq360_client_leads_columns');
@@ -110,7 +125,7 @@ export default function Leads() {
     return () => { supabase.removeChannel(channel); };
   }, [profile]);
 
-  useEffect(() => { setCurrentPage(1); }, [search, activeFilter]);
+  useEffect(() => { setCurrentPage(1); }, [search, activeFilter, sortBy]);
 
   async function fetchLeads() {
     setLoading(true);
@@ -152,10 +167,16 @@ export default function Leads() {
     return matchSearch && matchFilter;
   });
 
+  const sortedLeads = sortBy === 'highest_price'
+    ? [...filteredLeads].sort((a, b) => (Number(b.estimated_price) || 0) - (Number(a.estimated_price) || 0))
+    : sortBy === 'lowest_price'
+    ? [...filteredLeads].sort((a, b) => (Number(a.estimated_price) || 0) - (Number(b.estimated_price) || 0))
+    : filteredLeads;
+
   const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_leads_page_size'); return s ? Number(s) : 25; });
   const PAGE_SIZE = pageSize;
-  const totalPages = Math.ceil(filteredLeads.length / PAGE_SIZE);
-  const paginatedLeads = filteredLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(sortedLeads.length / PAGE_SIZE);
+  const paginatedLeads = sortedLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const wonLeads = leads.filter(l => l.status === 'Closed Won').length;
   const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0;
@@ -182,7 +203,7 @@ export default function Leads() {
           New lead just came in!
         </div>
       )}
-      <div style={{ fontFamily: FONT }}>
+      <div style={{ fontFamily: FONT, overflow: 'hidden' }}>
 
         {/* DND Banner */}
         {dnd && (
@@ -340,6 +361,12 @@ export default function Leads() {
               </button>
             ))}
           </div>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+            style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 12px', fontSize: '12.5px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, outline: 'none', height: '36px' }}>
+            <option value="newest">Newest First</option>
+            <option value="highest_price">Highest Price</option>
+            <option value="lowest_price">Lowest Price</option>
+          </select>
         </div>
 
         {/* Summary Bar */}
@@ -362,11 +389,11 @@ export default function Leads() {
 
         {/* Table */}
         {(() => {
-          const COL_WIDTHS = { 'Date': '100px', 'Name': '130px', 'Email': '180px', 'Phone': '120px', 'Municipality': '130px', 'System Type': '130px', 'Estimated Price': '140px', 'Status': '150px', 'Actions': '80px' };
+          const COL_WIDTHS = { 'Date': '100px', 'Name': '130px', 'Email': '180px', 'Phone': '120px', 'Municipality': '130px', 'System Type': '130px', 'Estimated Price': '140px', 'Status': '150px', 'Lead Quality': '110px', 'Actions': '80px' };
           const visCols = COLUMNS.filter(c => visibleCols.has(c));
           const gridTpl = visCols.map(c => COL_WIDTHS[c] || '120px').join(' ');
           return (
-            <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}
+            <div style={{ ...CARD, padding: 0, overflowX: 'auto' }}
               onKeyDown={e => {
                 if (!['ArrowDown','ArrowUp','Enter'].includes(e.key)) return;
                 e.preventDefault();
@@ -401,6 +428,7 @@ export default function Leads() {
                       {visibleCols.has('System Type') && <span>{lead.answers?.wastewaterType||'—'}</span>}
                       {visibleCols.has('Estimated Price') && <span style={{ fontWeight: '600', color: '#0d1117' }}>{lead.estimated_price!=null&&!isNaN(Number(lead.estimated_price))?`${Number(lead.estimated_price).toLocaleString()} kr`:'—'}</span>}
                       {visibleCols.has('Status') && <span><select value={lead.status||'New'} onChange={e=>updateStatus(lead.id,e.target.value)} style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: '600', color: STATUS_COLORS[lead.status]||'#374151', backgroundColor: '#fff', cursor: 'pointer', outline: 'none', fontFamily: FONT }}>{['New','Contacted','In Progress','Closed Won','Closed Lost'].map(s=><option key={s} value={s}>{s}</option>)}</select></span>}
+                      {visibleCols.has('Lead Quality') && (() => { const sc = getLeadScore(lead); const q = sc >= 7 ? { label: 'Hot', bg: '#fee2e2', color: '#dc2626' } : sc >= 4 ? { label: 'Warm', bg: '#fef9c3', color: '#d97706' } : { label: 'Cold', bg: '#f3f4f6', color: '#6b7280' }; return <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: q.bg, color: q.color }}>{q.label}</span>; })()}
                       {visibleCols.has('Actions') && <span style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={()=>navigate(`/client/leads/${lead.id}`)} style={{ fontSize: '12px', color: PRIMARY, backgroundColor: '#ecfccb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>View</button><button type="button" onClick={()=>handleDeleteLead(lead.id)} style={{ fontSize: '12px', color: '#dc2626', backgroundColor: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>Delete</button></span>}
                     </div>
                   );
