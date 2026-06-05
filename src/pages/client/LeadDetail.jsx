@@ -147,6 +147,7 @@ export default function LeadDetail() {
     setSendingToMe(true);
     setSentToMe('');
     try {
+      const { data: emailSettingsData } = await supabase.from('client_settings').select('email_settings').eq('client_id', profile.client_id).single();
       const answersText = Object.entries(lead.answers || {})
         .map(([k, v]) => `${KEY_LABELS[k] || k}: ${VALUE_LABELS[String(v)] || String(v)}`)
         .join('\n');
@@ -154,7 +155,17 @@ export default function LeadDetail() {
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: profile.email, name: profile.full_name || '', subject: `Lead Details: ${lead.name || '—'}`, body: emailBody }),
+        body: JSON.stringify({
+          email: profile.email,
+          name: profile.full_name || '',
+          subject: `Lead Details: ${lead.name || '—'}`,
+          body: emailBody,
+          clientId: profile.client_id,
+          fromName: emailSettingsData?.email_settings?.from_name || '',
+          replyTo: emailSettingsData?.email_settings?.reply_to || '',
+          emailSubject: emailSettingsData?.email_settings?.subject || 'Your Quote',
+          footerText: emailSettingsData?.email_settings?.footer_text || '',
+        }),
       });
       setSentToMe(res.ok ? 'sent' : 'failed');
     } catch {
@@ -177,7 +188,7 @@ export default function LeadDetail() {
         supabase.from('client_pricing').select('*').eq('client_id', profile.client_id).single(),
         supabase.from('clients').select('*').eq('id', profile.client_id).single(),
       ]);
-      generateQuotePDF({
+      await generateQuotePDF({
         lead,
         client: clientData || {},
         settings: {
@@ -198,10 +209,20 @@ export default function LeadDetail() {
     if (!window.confirm(`Send the quote PDF to ${lead.email}?`)) return;
     setSendingEmail(true);
     try {
+      const { data: emailSettingsData } = await supabase.from('client_settings').select('email_settings').eq('client_id', profile.client_id).single();
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: lead.email, name: lead.name || '', pdfBase64: '' }),
+        body: JSON.stringify({
+          email: lead.email,
+          name: lead.name || '',
+          pdfBase64: '',
+          clientId: profile.client_id,
+          fromName: emailSettingsData?.email_settings?.from_name || '',
+          replyTo: emailSettingsData?.email_settings?.reply_to || '',
+          emailSubject: emailSettingsData?.email_settings?.subject || 'Your Quote',
+          footerText: emailSettingsData?.email_settings?.footer_text || '',
+        }),
       });
       if (res.ok) {
         setEmailMsg('Email sent!');

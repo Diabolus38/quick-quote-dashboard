@@ -1,13 +1,34 @@
 import { jsPDF } from 'jspdf'
 
-export default function generateQuotePDF({ lead, client, settings }) {
+function hexToRgb(hex) {
+  const h = (hex || '#166534').replace('#', '');
+  return [
+    parseInt(h.substring(0, 2), 16),
+    parseInt(h.substring(2, 4), 16),
+    parseInt(h.substring(4, 6), 16),
+  ];
+}
+
+async function fetchImageAsBase64(url) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+export default async function generateQuotePDF({ lead, client, settings }) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageW = 210
   const margin = 20
   const contentW = pageW - margin * 2
   let y = 0
 
-  const GREEN = [22, 101, 52]
+  const primaryHex = settings.branding?.pdf_primary_color || settings.branding?.primary_color || '#166534';
+  const GREEN = hexToRgb(primaryHex);
   const DARK_GREEN = [13, 31, 18]
   const LIME = [163, 230, 53]
   const WHITE = [255, 255, 255]
@@ -60,19 +81,31 @@ export default function generateQuotePDF({ lead, client, settings }) {
   doc.setFillColor(...GREEN)
   doc.rect(0, 0, 210, 44, 'F')
 
-  doc.setFillColor(...DARK_GREEN)
-  doc.roundedRect(margin, 8, 16, 16, 2, 2, 'F')
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(168, 240, 192)
-  doc.text('Q', margin + 8, 18.5, { align: 'center' })
+  const logoUrl = settings.branding?.pdf_logo_url || settings.branding?.logo_url;
+  let logoLoaded = false;
+  if (logoUrl) {
+    try {
+      const logoDataUrl = await fetchImageAsBase64(logoUrl);
+      const fmt = /jpeg|jpg/i.test(logoDataUrl) ? 'JPEG' : 'PNG';
+      doc.addImage(logoDataUrl, fmt, margin, 6, 30, 18);
+      logoLoaded = true;
+    } catch {}
+  }
+  if (!logoLoaded) {
+    doc.setFillColor(...DARK_GREEN)
+    doc.roundedRect(margin, 8, 16, 16, 2, 2, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(168, 240, 192)
+    doc.text('Q', margin + 8, 18.5, { align: 'center' })
 
-  doc.setTextColor(...WHITE)
-  doc.setFontSize(11)
-  doc.text('Quick Quote', margin + 20, 16)
-  doc.setFontSize(7)
-  doc.setTextColor(...LIME)
-  doc.text('360', margin + 20, 21)
+    doc.setTextColor(...WHITE)
+    doc.setFontSize(11)
+    doc.text('Quick Quote', margin + 20, 16)
+    doc.setFontSize(7)
+    doc.setTextColor(...LIME)
+    doc.text('360', margin + 20, 21)
+  }
 
   const quoteNum = 'Quote #QQ-' + new Date().getFullYear() + '-' + (lead.id || '0000').toString().slice(-4).toUpperCase()
   const issuedDate = new Date(lead.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
