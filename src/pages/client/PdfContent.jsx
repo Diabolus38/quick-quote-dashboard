@@ -319,15 +319,39 @@ function PDFContent({ clientId }) {
           )}
           {/* Footer */}
           <div style={{ paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
-            {showAuthorizedBy && (
-              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Authorized By</p>
-            )}
             <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: sigName ? '#0d1117' : '#9ca3af' }}>{sigName || 'Signature Name'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigTitle || 'Title'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigPhone || ''}</p>
-            <p style={{ margin: '0 0 8px', fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
-            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{fromText || 'Powered by QuickQuote360'}</p>
+            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
           </div>
+          {/* Quote Validity */}
+          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '9px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>QUOTE VALIDITY</p>
+            <p style={{ margin: 0, fontSize: '10px', color: quoteValidityText ? '#374151' : '#9ca3af', lineHeight: '1.5' }}>
+              {quoteValidityText || 'This quote is valid for 60 days...'}
+            </p>
+          </div>
+          {/* Questions */}
+          <div style={{ marginTop: '10px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '9px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>QUESTIONS?</p>
+            <p style={{ margin: 0, fontSize: '10px', color: questionsText ? '#374151' : '#9ca3af', lineHeight: '1.5' }}>
+              {questionsText || 'Do not hesitate to reach out...'}
+            </p>
+          </div>
+          {/* From */}
+          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f4f6f4' }}>
+            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af', fontStyle: 'italic' }}>
+              {fromText || 'Powered by QuickQuote360'}
+            </p>
+          </div>
+          {/* Authorized By */}
+          {showAuthorizedBy && (
+            <div style={{ marginTop: '10px' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '9px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AUTHORIZED BY</p>
+              <div style={{ height: '1px', backgroundColor: '#e8ede8', width: '80px', marginTop: '8px' }} />
+              <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#9ca3af' }}>Signature</p>
+            </div>
+          )}
         </div>
 
         {/* Section Visibility Toggles */}
