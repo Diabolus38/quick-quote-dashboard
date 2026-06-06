@@ -104,8 +104,8 @@ function PDFContent({ clientId }) {
         const pc = data?.pdf_content || {};
         const b  = data?.branding   || {};
         setCompanyName(b.company_name   || 'Your Company');
-        setPreviewColor(b.primary_color || PRIMARY);
-        setPdfLogoUrl(pc.pdf_logo_url         || '');
+        setPreviewColor(pc.pdf_primary_color || b.primary_color || PRIMARY);
+        setPdfLogoUrl(pc.pdf_logo_url || b.logo_url || '');
         setPdfPrimaryColor(pc.pdf_primary_color || PRIMARY);
         setIntro(pc.introduction       || '');
         setSystemDesc(pc.system_description || '');
@@ -154,7 +154,7 @@ function PDFContent({ clientId }) {
     await supabase.from('client_settings').update({
       pdf_content: {
         pdf_logo_url:       pdfLogoUrl,
-        pdf_primary_color:  pdfPrimaryColor,
+        pdf_primary_color:  previewColor,
         introduction:       intro,
         system_description: systemDesc,
         service_agreement:  serviceAg,
@@ -198,9 +198,9 @@ function PDFContent({ clientId }) {
           <FieldRow label="PDF Primary Color">
             <div style={{ position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input type="color" value={pdfPrimaryColor} onChange={e => setPdfPrimaryColor(e.target.value)}
+                <input type="color" value={previewColor} onChange={e => setPreviewColor(e.target.value)}
                   style={{ width: '40px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
-                <TextInput value={pdfPrimaryColor} onChange={v => { if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setPdfPrimaryColor(v); }} placeholder="#166534" />
+                <TextInput value={previewColor} onChange={v => { if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setPreviewColor(v); }} placeholder="#166534" />
               </div>
               {plan !== 'scale' && (
                 <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
@@ -260,7 +260,10 @@ function PDFContent({ clientId }) {
         <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', fontSize: '12px', fontFamily: FONT }}>
           {/* Header */}
           <div style={{ backgroundColor: previewColor, borderRadius: '8px', padding: '14px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>{companyName}</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {pdfLogoUrl && <img src={pdfLogoUrl} alt="" style={{ height: '24px', objectFit: 'contain', marginRight: '8px' }} />}
+              <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>{companyName}</span>
+            </div>
             <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>QUOTE</span>
           </div>
           {/* Customer */}
@@ -316,10 +319,14 @@ function PDFContent({ clientId }) {
           )}
           {/* Footer */}
           <div style={{ paddingTop: '12px', borderTop: '1px solid #f4f6f4' }}>
+            {showAuthorizedBy && (
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Authorized By</p>
+            )}
             <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: sigName ? '#0d1117' : '#9ca3af' }}>{sigName || 'Signature Name'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigTitle || 'Title'}</p>
             <p style={{ margin: '0 0 1px', fontSize: '10px', color: '#9ca3af' }}>{sigPhone || ''}</p>
-            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
+            <p style={{ margin: '0 0 8px', fontSize: '10px', color: '#9ca3af' }}>{sigEmail || 'email@company.com'}</p>
+            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af' }}>{fromText || 'Powered by QuickQuote360'}</p>
           </div>
         </div>
 
