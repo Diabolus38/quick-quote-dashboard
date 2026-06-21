@@ -40,6 +40,10 @@ export default function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
+  if (profile?.role === 'super_admin') {
+    return children;
+  }
+
   if (requiredRole === 'super_admin' && profile?.role !== 'super_admin') {
     return <Navigate to="/client" replace />;
   }

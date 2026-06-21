@@ -35,6 +35,15 @@ export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendP
       {planEmailSent && (
         <p style={{ marginTop: '24px', fontSize: '14px', color: '#a3e635', fontWeight: '600', fontFamily: FONT }}>We will be in touch shortly!</p>
       )}
+      <hr style={{ width: '320px', border: 'none', borderTop: '1px solid rgba(255,255,255,0.15)', margin: '32px 0 20px' }} />
+      <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.7)', fontFamily: FONT, textAlign: 'center' }}>Need help or think this is a mistake?</p>
+      <button
+        type="button"
+        onClick={() => window.open('https://quickquote360.com/support', '_blank')}
+        style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff', borderRadius: '10px', padding: '10px 24px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', marginTop: '12px', fontFamily: FONT }}
+      >
+        Contact Support
+      </button>
     </div>
   );
 }
