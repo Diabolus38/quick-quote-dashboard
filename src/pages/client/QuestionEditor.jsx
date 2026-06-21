@@ -98,7 +98,7 @@ export default function QuestionEditor() {
   const [previewMode, setPreviewMode] = useState(false);
   const [previewLang, setPreviewLang] = useState('en');
   const [retryKey,    setRetryKey]    = useState(0);
-  const [lastSavedQ,  setLastSavedQ]  = useState(() => localStorage.getItem('qq360_last_saved_questions') || '');
+  const [lastSavedQ,  setLastSavedQ]  = useState(() => localStorage.getItem(`qq360_last_saved_questions_${profile?.id || 'anon'}`) || '');
   const [resetBanner, setResetBanner] = useState(false);
   const [trialExpired,      setTrialExpired]      = useState(false);
   const [planEmailSent,     setPlanEmailSent]     = useState(false);
@@ -160,7 +160,7 @@ export default function QuestionEditor() {
     const { error: upsertErr } = await supabase
       .from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
     setSaving(false);
-    if (upsertErr) { setError('Failed to save. Please try again.'); } else { flashSave(); setHasChanges(false); const ts = new Date().toISOString(); localStorage.setItem('qq360_last_saved_questions', ts); setLastSavedQ(ts); }
+    if (upsertErr) { setError('Failed to save. Please try again.'); } else { flashSave(); setHasChanges(false); const ts = new Date().toISOString(); localStorage.setItem(`qq360_last_saved_questions_${profile?.id || 'anon'}`, ts); setLastSavedQ(ts); }
   }
 
   const inputStyle = { width: '100%', padding: '8px 12px', fontSize: '13px', color: '#0d1117', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff', fontFamily: FONT };

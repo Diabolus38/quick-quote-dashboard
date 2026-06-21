@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
 import { ensureClientData } from '../utils/ensureClientData';
+import { useAuth } from '../context/AuthContext';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -122,6 +123,7 @@ function ClientModal({ title, initial, onClose, onSave }) {
 }
 
 export default function Clients() {
+  const { profile } = useAuth();
   const navigate = useNavigate();
 
   const [clients,       setClients]       = useState([]);
@@ -157,8 +159,8 @@ export default function Clients() {
   async function fetchAll() {
     setLoading(true);
     const [clientsRes, leadsRes] = await Promise.all([
-      supabase.from('clients').select('*').order('created_at', { ascending: false }),
-      supabase.from('leads').select('client_id, created_at'),
+      supabase.from('clients').select('*').order('created_at', { ascending: false }).limit(1000),
+      supabase.from('leads').select('client_id, created_at').order('created_at', { ascending: false }).limit(5000),
     ]);
     if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
     if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
@@ -286,7 +288,7 @@ export default function Clients() {
   });
 
   /* ── Pagination ── */
-  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_clients_page_size'); return s ? Number(s) : 20; });
+  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem(`qq360_clients_page_size_${profile?.id || 'anon'}`); return s ? Number(s) : 20; });
   const PAGE_SIZE        = pageSize;
   const totalPages       = Math.ceil(sorted.length / PAGE_SIZE);
   const paginatedClients = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -565,7 +567,7 @@ export default function Clients() {
         {sorted.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem('qq360_clients_page_size', n); setCurrentPage(1); }}
+              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem(`qq360_clients_page_size_${profile?.id || 'anon'}`, n); setCurrentPage(1); }}
                 style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#374151', cursor: 'pointer' }}>
                 {[10,20,50].map(n => <option key={n} value={n}>{n} per page</option>)}
               </select>

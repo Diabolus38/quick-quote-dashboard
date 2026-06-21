@@ -80,6 +80,7 @@ function useSaveMsg() {
 }
 
 function PricingContent({ clientId }) {
+  const { profile } = useAuth();
   const hh = ['1','2','3','4','5'];
 
   function makeList(obj, entries) {
@@ -128,7 +129,7 @@ function PricingContent({ clientId }) {
   const [currency,    setCurrency]   = useState('SEK');
   const [saveMsg, flash] = useSaveMsg();
   const [resetMsg, setResetMsg] = useState('');
-  const [lastSavedPricing, setLastSavedPricing] = useState(() => localStorage.getItem('qq360_last_saved_pricing') || '');
+  const [lastSavedPricing, setLastSavedPricing] = useState(() => localStorage.getItem(`qq360_last_saved_pricing_${profile?.id || 'anon'}`) || '');
   const [showPreview,        setShowPreview]        = useState(false);
   const [previewSystemType,  setPreviewSystemType]  = useState('bdt');
   const [previewHouseholds,  setPreviewHouseholds]  = useState('1');
@@ -239,7 +240,7 @@ function PricingContent({ clientId }) {
     }).eq('client_id', clientId);
     flash();
     const ts = new Date().toISOString();
-    localStorage.setItem('qq360_last_saved_pricing', ts);
+    localStorage.setItem(`qq360_last_saved_pricing_${profile?.id || 'anon'}`, ts);
     setLastSavedPricing(ts);
   }
 

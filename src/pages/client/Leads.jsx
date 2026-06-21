@@ -63,7 +63,7 @@ export default function Leads() {
   const [planEmailSent,     setPlanEmailSent]     = useState(false);
   const [installPreference, setInstallPreference] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
+  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem(`qq360_dnd_${profile?.id || 'anon'}`) || 'false'); } catch { return false; } });
   const [showColPicker, setShowColPicker] = useState(false);
   const [focusedLeadId, setFocusedLeadId] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
@@ -98,7 +98,7 @@ export default function Leads() {
   const DEFAULT_VIS_ARR = ['Date','Name','Email','Municipality','Estimated Price','Status','Lead Quality','Actions'];
   const [visibleCols, setVisibleCols] = useState(() => {
     try {
-      const saved = localStorage.getItem('qq360_client_leads_columns');
+      const saved = localStorage.getItem(`qq360_client_leads_columns_${profile?.id || 'anon'}`);
       if (saved) return new Set(JSON.parse(saved));
     } catch {}
     return new Set(DEFAULT_VIS_ARR);
@@ -178,7 +178,7 @@ export default function Leads() {
     ? [...filteredLeads].sort((a, b) => getLeadScore(a) - getLeadScore(b))
     : filteredLeads;
 
-  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_leads_page_size'); return s ? Number(s) : 25; });
+  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem(`qq360_leads_page_size_${profile?.id || 'anon'}`); return s ? Number(s) : 25; });
   const PAGE_SIZE = pageSize;
   const totalPages = Math.ceil(sortedLeads.length / PAGE_SIZE);
   const paginatedLeads = sortedLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -215,7 +215,7 @@ export default function Leads() {
           <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT }}>
             <span>🌙</span>
             <span style={{ flex: 1 }}>Do Not Disturb is on — lead notifications are muted.</span>
-            <button type="button" onClick={() => { setDnd(false); localStorage.setItem('qq360_dnd', 'false'); }}
+            <button type="button" onClick={() => { setDnd(false); localStorage.setItem(`qq360_dnd_${profile?.id || 'anon'}`, 'false'); }}
               style={{ background: 'none', border: '1px solid #d97706', color: '#854d0e', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
               Turn off
             </button>
@@ -238,11 +238,11 @@ export default function Leads() {
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: '200px' }}>
                 {COLUMNS.map(col => (
                   <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', cursor: 'pointer', fontSize: '13px', color: '#374151', fontFamily: FONT }}>
-                    <input type="checkbox" checked={visibleCols.has(col)} onChange={() => setVisibleCols(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); localStorage.setItem('qq360_client_leads_columns', JSON.stringify([...next])); return next; })} style={{ cursor: 'pointer' }} />
+                    <input type="checkbox" checked={visibleCols.has(col)} onChange={() => setVisibleCols(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); localStorage.setItem(`qq360_client_leads_columns_${profile?.id || 'anon'}`, JSON.stringify([...next])); return next; })} style={{ cursor: 'pointer' }} />
                     {col}
                   </label>
                 ))}
-                <button type="button" onClick={() => { const d = new Set(DEFAULT_VIS_ARR); setVisibleCols(d); localStorage.setItem('qq360_client_leads_columns', JSON.stringify([...d])); }}
+                <button type="button" onClick={() => { const d = new Set(DEFAULT_VIS_ARR); setVisibleCols(d); localStorage.setItem(`qq360_client_leads_columns_${profile?.id || 'anon'}`, JSON.stringify([...d])); }}
                   style={{ background: 'none', border: 'none', borderTop: '1px solid #f4f6f4', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '8px 16px', width: '100%', textAlign: 'left', marginTop: '4px', fontFamily: FONT }}>
                   Reset to defaults
                 </button>
@@ -254,7 +254,7 @@ export default function Leads() {
             style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
             {soundEnabled ? '🔔' : '🔕'}
           </button>
-          <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem('qq360_dnd', JSON.stringify(next)); }}
+          <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem(`qq360_dnd_${profile?.id || 'anon'}`, JSON.stringify(next)); }}
             title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
             style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#9ca3af', fontWeight: '600', fontFamily: FONT }}>
             🌙 DND
@@ -449,7 +449,7 @@ export default function Leads() {
         {totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem('qq360_leads_page_size', n); setCurrentPage(1); }}
+              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem(`qq360_leads_page_size_${profile?.id || 'anon'}`, n); setCurrentPage(1); }}
                 style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#374151', cursor: 'pointer' }}>
                 {[10,25,50,100].map(n => <option key={n} value={n}>{n} per page</option>)}
               </select>

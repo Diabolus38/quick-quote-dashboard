@@ -89,11 +89,11 @@ export default function AdminOverview() {
   async function fetchData(leadsOnly = false) {
     if (!leadsOnly) setLoading(true);
     if (!leadsOnly) {
-      const clientsRes = await supabase.from('clients').select('id, name, email, plan, active, created_at, website_url, notes').order('created_at', { ascending: false });
+      const clientsRes = await supabase.from('clients').select('id, name, email, plan, active, created_at, website_url, notes').order('created_at', { ascending: false }).limit(1000);
       if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
       setClients(clientsRes.data || []);
     }
-    const leadsRes = await supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false });
+    const leadsRes = await supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false }).limit(2000);
     if (leadsRes.error) console.error('Failed to fetch leads:', leadsRes.error);
     setLeads(leadsRes.data || []);
     if (!leadsOnly) setLoading(false);

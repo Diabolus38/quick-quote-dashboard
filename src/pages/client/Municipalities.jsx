@@ -64,13 +64,14 @@ const ALL_MUNICIPALITIES = [
 ];
 
 function MunicipalitiesContent({ clientId }) {
+  const { profile } = useAuth();
   const [loading,           setLoading]           = useState(true);
   const [search,            setSearch]            = useState('');
   const [showSearch,        setShowSearch]        = useState(false);
   const [covered,           setCovered]           = useState([]);
   const [notCoveredMsg,     setNotCoveredMsg]     = useState('We currently do not cover your municipality.');
   const [notCoveredSaveMsg, setNotCoveredSaveMsg] = useState('');
-  const [lastSavedMuni,     setLastSavedMuni]     = useState(() => localStorage.getItem('qq360_last_saved_municipalities') || '');
+  const [lastSavedMuni,     setLastSavedMuni]     = useState(() => localStorage.getItem(`qq360_last_saved_municipalities_${profile?.id || 'anon'}`) || '');
 
   useEffect(() => {
     if (!clientId) return;
@@ -107,7 +108,7 @@ function MunicipalitiesContent({ clientId }) {
     setNotCoveredSaveMsg('Saved!');
     setTimeout(() => setNotCoveredSaveMsg(''), 2000);
     const ts = new Date().toISOString();
-    localStorage.setItem('qq360_last_saved_municipalities', ts);
+    localStorage.setItem(`qq360_last_saved_municipalities_${profile?.id || 'anon'}`, ts);
     setLastSavedMuni(ts);
   }
 

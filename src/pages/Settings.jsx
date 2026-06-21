@@ -68,6 +68,17 @@ function ProfileSection({ setHasUnsaved, setSaveRef }) {
   async function handleAvatarUpload(e) {
     const file = e.target.files[0];
     if (!file || !profile?.id) return;
+    if (!file.type.startsWith('image/')) {
+      setAvatarSaveMsg('Please select an image file.');
+      setTimeout(() => setAvatarSaveMsg(''), 3000);
+      return;
+    }
+    const _ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
+      setAvatarSaveMsg('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
+      setTimeout(() => setAvatarSaveMsg(''), 3000);
+      return;
+    }
     const path = `${profile.id}/${file.name}`;
     const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' });
     if (uploadError) { setAvatarSaveMsg('Upload failed: ' + uploadError.message); setTimeout(() => setAvatarSaveMsg(''), 5000); return; }

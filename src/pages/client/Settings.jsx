@@ -114,6 +114,7 @@ function SettingsSkeleton() {
 /* ── 1. Branding ─────────────────────────────────────────────── */
 
 function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
+  const { profile } = useAuth();
   const { plan, planLoading } = useClientPlan();
   const [companyName,         setCompanyName]         = useState('');
   const [widgetCompanyName,   setWidgetCompanyName]   = useState('');
@@ -139,7 +140,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [saveMsg, flash] = useSaveMsg();
   const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
-  const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem('qq360_last_saved_branding') || '');
+  const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem(`qq360_last_saved_branding_${profile?.id || 'anon'}`) || '');
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoUploadErr, setLogoUploadErr] = useState('');
   const _ll = useRef(false);
@@ -196,7 +197,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     flash();
     setHasUnsaved?.(false);
     const ts = new Date().toISOString();
-    localStorage.setItem('qq360_last_saved_branding', ts);
+    localStorage.setItem(`qq360_last_saved_branding_${profile?.id || 'anon'}`, ts);
     setLastSavedBranding(ts);
   }
 
@@ -210,6 +211,12 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     if (!file || !clientId) return;
     if (!file.type.startsWith('image/')) {
       setLogoUploadErr('Please select an image file.');
+      setTimeout(() => setLogoUploadErr(''), 3000);
+      return;
+    }
+    const _ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
+      setLogoUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
       setTimeout(() => setLogoUploadErr(''), 3000);
       return;
     }
@@ -237,6 +244,12 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     if (!file || !clientId) return;
     if (!file.type.startsWith('image/')) {
       setBubbleIconUploadErr('Please select an image file.');
+      setTimeout(() => setBubbleIconUploadErr(''), 3000);
+      return;
+    }
+    const _ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
+      setBubbleIconUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
       setTimeout(() => setBubbleIconUploadErr(''), 3000);
       return;
     }
@@ -481,7 +494,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [testMsg,      setTestMsg]      = useState('');
   const [testSending,  setTestSending]  = useState(false);
   const [loading,      setLoading]      = useState(true);
-  const [lastSavedEmail, setLastSavedEmail] = useState(() => localStorage.getItem('qq360_last_saved_email') || '');
+  const [lastSavedEmail, setLastSavedEmail] = useState(() => localStorage.getItem(`qq360_last_saved_email_${profile?.id || 'anon'}`) || '');
   const _ll = useRef(false);
 
   useEffect(() => {
@@ -518,7 +531,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
     flash();
     setHasUnsaved?.(false);
     const ts = new Date().toISOString();
-    localStorage.setItem('qq360_last_saved_email', ts);
+    localStorage.setItem(`qq360_last_saved_email_${profile?.id || 'anon'}`, ts);
     setLastSavedEmail(ts);
   }
 
@@ -616,11 +629,12 @@ const LANG_OPTIONS = [
 ];
 
 function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
+  const { profile } = useAuth();
   const [enabled,         setEnabled]         = useState({ EN: true, SV: false, DE: false, FR: false });
   const [defaultLanguage, setDefaultLanguage] = useState('EN');
   const [saveMsg, flash] = useSaveMsg();
   const [loading, setLoading] = useState(true);
-  const [lastSavedLangs, setLastSavedLangs] = useState(() => localStorage.getItem('qq360_last_saved_languages') || '');
+  const [lastSavedLangs, setLastSavedLangs] = useState(() => localStorage.getItem(`qq360_last_saved_languages_${profile?.id || 'anon'}`) || '');
   const [questionCounts,  setQuestionCounts]  = useState({ EN: null, SV: null, DE: null, FR: null });
   const [copyEnMsg, setCopyEnMsg] = useState('');
   const [copyEnWorking, setCopyEnWorking] = useState(false);
@@ -687,7 +701,7 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
     flash();
     setHasUnsaved?.(false);
     const ts = new Date().toISOString();
-    localStorage.setItem('qq360_last_saved_languages', ts);
+    localStorage.setItem(`qq360_last_saved_languages_${profile?.id || 'anon'}`, ts);
     setLastSavedLangs(ts);
   }
 
@@ -951,6 +965,12 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
     if (!file || !profile?.id) return;
     if (!file.type.startsWith('image/')) {
       setUploadErr('Please select an image file.');
+      setTimeout(() => setUploadErr(''), 3000);
+      return;
+    }
+    const _ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
+      setUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
       setTimeout(() => setUploadErr(''), 3000);
       return;
     }

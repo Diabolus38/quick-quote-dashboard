@@ -73,12 +73,14 @@ function useSaveMsg() {
 }
 
 function PDFContent({ clientId }) {
+  const { profile } = useAuth();
   const [loading,          setLoading]          = useState(true);
   const [companyName,      setCompanyName]      = useState('Your Company');
   const [previewColor,     setPreviewColor]     = useState(PRIMARY);
   const [pdfLogoUrl,       setPdfLogoUrl]       = useState('');
   const [pdfPrimaryColor,  setPdfPrimaryColor]  = useState(PRIMARY);
   const [uploadingLogo,    setUploadingLogo]    = useState(false);
+  const [logoUploadErr,    setLogoUploadErr]    = useState('');
   const [intro,            setIntro]            = useState('');
   const [systemDesc,       setSystemDesc]       = useState('');
   const [serviceAg,        setServiceAg]        = useState('');
@@ -93,7 +95,7 @@ function PDFContent({ clientId }) {
   const [fromText,          setFromText]          = useState('');
   const [showAuthorizedBy,  setShowAuthorizedBy]  = useState(false);
   const [saveMsg, flash] = useSaveMsg();
-  const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem('qq360_last_saved_pdf') || '');
+  const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem(`qq360_last_saved_pdf_${profile?.id || 'anon'}`) || '');
   const [sectionVisible, setSectionVisible] = useState({ intro: true, systemDesc: true, serviceAg: true, payTerms: true, legal: true });
   const { plan } = useClientPlan();
 
@@ -140,6 +142,22 @@ function PDFContent({ clientId }) {
   async function handleLogoUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setLogoUploadErr('Please select an image file.');
+      setTimeout(() => setLogoUploadErr(''), 3000);
+      return;
+    }
+    const _ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
+      setLogoUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
+      setTimeout(() => setLogoUploadErr(''), 3000);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoUploadErr('Image must be smaller than 5MB.');
+      setTimeout(() => setLogoUploadErr(''), 3000);
+      return;
+    }
     setUploadingLogo(true);
     const path = `${clientId}/pdf/logo/${file.name}`;
     const { error } = await supabase.storage.from('client-assets').upload(path, file, { upsert: true });
@@ -172,7 +190,7 @@ function PDFContent({ clientId }) {
     }).eq('client_id', clientId);
     flash();
     const ts = new Date().toISOString();
-    localStorage.setItem('qq360_last_saved_pdf', ts);
+    localStorage.setItem(`qq360_last_saved_pdf_${profile?.id || 'anon'}`, ts);
     setLastSavedPdf(ts);
   }
 
@@ -188,6 +206,7 @@ function PDFContent({ clientId }) {
               <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo}
                 style={{ fontSize: '13px', fontFamily: FONT, color: '#374151' }} />
               {uploadingLogo && <span style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontFamily: FONT }}>Uploading...</span>}
+              {logoUploadErr && <span style={{ display: 'block', fontSize: '12px', color: '#dc2626', marginTop: '4px', fontFamily: FONT }}>{logoUploadErr}</span>}
               {!['scale', 'enterprise', 'free_trial'].includes(plan) && (
                 <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
                   <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600', fontFamily: FONT }}>🔒 Scale plan only</span>

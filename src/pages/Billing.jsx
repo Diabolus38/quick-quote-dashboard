@@ -3,6 +3,7 @@ import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
 import { calculateMRR } from '../utils/mrrUtils';
 import { PLAN_FEES, PLAN_LIMITS, OVERAGE_RATES } from '../utils/planConfig';
+import { useAuth } from '../context/AuthContext';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -57,6 +58,7 @@ function exportBillingCSV(rows) {
 }
 
 export default function Billing() {
+  const { profile } = useAuth();
   const _now = new Date();
   const [billingMonth,  setBillingMonth]  = useState(`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`);
   const [clients,       setClients]       = useState([]);
@@ -68,7 +70,7 @@ export default function Billing() {
   const [invoiceStatus, setInvoiceStatus] = useState({});
   const [upgradeStatus, setUpgradeStatus] = useState({});
   const [expandedRow,   setExpandedRow]   = useState(null);
-  const [paidStatus,    setPaidStatus]    = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_paid_status') || '{}'); } catch { return {}; } });
+  const [paidStatus,    setPaidStatus]    = useState(() => { try { return JSON.parse(localStorage.getItem(`qq360_paid_status_${profile?.id || 'anon'}`) || '{}'); } catch { return {}; } });
   const [ytdLeads,      setYtdLeads]      = useState([]);
 
   useEffect(() => {
@@ -84,7 +86,8 @@ export default function Billing() {
         supabase.from('leads').select('id, client_id, created_at, status').gte('created_at', monthStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', ytdStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', windowStart).lt('created_at', monthEnd),
-        supabase.from('leads').select('id, client_id, created_at').order('created_at', { ascending: true }),
+        // TODO: paginate this query when total lead count exceeds ~10k
+        supabase.from('leads').select('id, client_id, created_at').order('created_at', { ascending: true }).limit(10000),
       ]);
       setClients(clientsRes.data   || []);
       setLeads(leadsRes.data       || []);
@@ -564,7 +567,7 @@ export default function Billing() {
                           onClick={() => {
                             const next = { ...paidStatus, [row.id]: !paidStatus[row.id] };
                             setPaidStatus(next);
-                            localStorage.setItem('qq360_paid_status', JSON.stringify(next));
+                            localStorage.setItem(`qq360_paid_status_${profile?.id || 'anon'}`, JSON.stringify(next));
                           }}
                           style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', backgroundColor: paidStatus[row.id] ? '#dcfce7' : '#fef9c3', color: paidStatus[row.id] ? '#166534' : '#854d0e' }}>
                           {paidStatus[row.id] ? 'Paid' : 'Pending'}

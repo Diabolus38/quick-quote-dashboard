@@ -66,7 +66,7 @@ export const PLAN_FEATURES = {
     canViewLeads: true,
     canViewEmbed: true,
     teamMembers: 5,
-    hasFreeTrialDays: 14,
+    hasFreeTrialDays: 0,
     poweredByBadge: true,
     show_powered_by: true,
     canEditPdfContent:  true,

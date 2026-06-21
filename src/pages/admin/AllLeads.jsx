@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -105,6 +106,7 @@ function startOfMonth() {
 }
 
 export default function AllLeads() {
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -114,8 +116,8 @@ export default function AllLeads() {
   const [hovRow,       setHovRow]       = useState(null);
   const [newLeadToast, setNewLeadToast] = useState(null);
   const [soundEnabled,  setSoundEnabled]  = useState(true);
-  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_dnd') || 'false'); } catch { return false; } });
-  const [flaggedLeads, setFlaggedLeads] = useState(() => { try { return JSON.parse(localStorage.getItem('qq360_flagged_leads') || '[]'); } catch { return []; } });
+  const [dnd, setDnd] = useState(() => { try { return JSON.parse(localStorage.getItem(`qq360_dnd_${profile?.id || 'anon'}`) || 'false'); } catch { return false; } });
+  const [flaggedLeads, setFlaggedLeads] = useState(() => { try { return JSON.parse(localStorage.getItem(`qq360_flagged_leads_${profile?.id || 'anon'}`) || '[]'); } catch { return []; } });
   const [flaggedFilter, setFlaggedFilter] = useState(false);
   const clientsRef = useRef([]);
 
@@ -141,7 +143,7 @@ export default function AllLeads() {
   const ALL_COLS = ['Date','Client','Customer Name','Email','Phone','Municipality','System Type','Language','Price','Status','Lead Quality','Actions'];
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
-      const saved = localStorage.getItem('qq360_leads_columns');
+      const saved = localStorage.getItem(`qq360_leads_columns_${profile?.id || 'anon'}`);
       if (saved) return new Set(JSON.parse(saved));
     } catch {}
     return new Set(ALL_COLS);
@@ -180,7 +182,7 @@ export default function AllLeads() {
   function toggleFlag(leadId) {
     setFlaggedLeads(prev => {
       const next = prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId];
-      localStorage.setItem('qq360_flagged_leads', JSON.stringify(next));
+      localStorage.setItem(`qq360_flagged_leads_${profile?.id || 'anon'}`, JSON.stringify(next));
       return next;
     });
   }
@@ -292,7 +294,7 @@ export default function AllLeads() {
     : filtered;
 
   /* ── Pagination ── */
-  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem('qq360_admin_leads_page_size'); return s ? Number(s) : 25; });
+  const [pageSize, setPageSize] = useState(() => { const s = localStorage.getItem(`qq360_admin_leads_page_size_${profile?.id || 'anon'}`); return s ? Number(s) : 25; });
   const PAGE_SIZE    = pageSize;
   const totalPages   = Math.ceil(sorted.length / PAGE_SIZE);
   const paginatedLeads = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -351,7 +353,7 @@ export default function AllLeads() {
           <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: FONT }}>
             <span>🌙</span>
             <span style={{ flex: 1 }}>Do Not Disturb is on — lead notifications are muted.</span>
-            <button type="button" onClick={() => { setDnd(false); localStorage.setItem('qq360_dnd', 'false'); }}
+            <button type="button" onClick={() => { setDnd(false); localStorage.setItem(`qq360_dnd_${profile?.id || 'anon'}`, 'false'); }}
               style={{ background: 'none', border: '1px solid #d97706', color: '#854d0e', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
               Turn off
             </button>
@@ -385,7 +387,7 @@ export default function AllLeads() {
               style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
               {soundEnabled ? '🔔' : '🔕'}
             </button>
-            <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem('qq360_dnd', JSON.stringify(next)); }}
+            <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem(`qq360_dnd_${profile?.id || 'anon'}`, JSON.stringify(next)); }}
               title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
               style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#9ca3af', fontWeight: '600', fontFamily: FONT }}>
               🌙 DND
@@ -399,11 +401,11 @@ export default function AllLeads() {
                 <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: '200px' }}>
                   {ALL_COLS.map(col => (
                     <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', cursor: 'pointer', fontSize: '13px', color: '#374151', fontFamily: FONT }}>
-                      <input type="checkbox" checked={visibleColumns.has(col)} onChange={() => setVisibleColumns(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); localStorage.setItem('qq360_leads_columns', JSON.stringify([...next])); return next; })} style={{ cursor: 'pointer' }} />
+                      <input type="checkbox" checked={visibleColumns.has(col)} onChange={() => setVisibleColumns(prev => { const next = new Set(prev); next.has(col) ? next.delete(col) : next.add(col); localStorage.setItem(`qq360_leads_columns_${profile?.id || 'anon'}`, JSON.stringify([...next])); return next; })} style={{ cursor: 'pointer' }} />
                       {col}
                     </label>
                   ))}
-                  <button type="button" onClick={() => { const d = new Set(ALL_COLS); setVisibleColumns(d); localStorage.setItem('qq360_leads_columns', JSON.stringify([...d])); }}
+                  <button type="button" onClick={() => { const d = new Set(ALL_COLS); setVisibleColumns(d); localStorage.setItem(`qq360_leads_columns_${profile?.id || 'anon'}`, JSON.stringify([...d])); }}
                     style={{ background: 'none', border: 'none', borderTop: '1px solid #f4f6f4', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '8px 16px', width: '100%', textAlign: 'left', marginTop: '4px', fontFamily: FONT }}>
                     Reset to defaults
                   </button>
@@ -718,7 +720,7 @@ export default function AllLeads() {
         {sorted.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem('qq360_admin_leads_page_size', n); setCurrentPage(1); }}
+              <select value={pageSize} onChange={e => { const n = Number(e.target.value); setPageSize(n); localStorage.setItem(`qq360_admin_leads_page_size_${profile?.id || 'anon'}`, n); setCurrentPage(1); }}
                 style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#374151', cursor: 'pointer' }}>
                 {[10,25,50,100].map(n => <option key={n} value={n}>{n} per page</option>)}
               </select>
