@@ -2,15 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
-const CACHE_KEY = 'qq360_client_plan';
-
 export default function useClientPlan() {
   const { profile } = useAuth();
-
-  const cached = sessionStorage.getItem(CACHE_KEY);
-  const [plan, setPlan] = useState(cached || null);
-  const [planLoading, setPlanLoading] = useState(!cached);
-  const [planLoaded, setPlanLoaded] = useState(!!cached);
+  const [plan, setPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [planLoaded, setPlanLoaded] = useState(false);
 
   useEffect(() => {
     if (!profile?.client_id) {
@@ -25,9 +21,7 @@ export default function useClientPlan() {
       .eq('id', profile.client_id)
       .single()
       .then(({ data, error }) => {
-        const fetched = error ? 'growth' : (data?.plan || 'growth');
-        sessionStorage.setItem(CACHE_KEY, fetched);
-        setPlan(fetched);
+        setPlan(error ? 'growth' : (data?.plan || 'growth'));
         setPlanLoading(false);
         setPlanLoaded(true);
       });
