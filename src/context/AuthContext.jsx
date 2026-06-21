@@ -65,7 +65,7 @@ export default function AuthProvider({ children }) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     if (error) {
       console.error('Error fetching profile:', error);
       return null;
@@ -75,7 +75,7 @@ export default function AuthProvider({ children }) {
         .from('clients')
         .select('active')
         .eq('id', data.client_id)
-        .single();
+        .maybeSingle();
       if (clientData && clientData.active === false) {
         await supabase.auth.signOut();
         return null;
@@ -122,7 +122,42 @@ export default function AuthProvider({ children }) {
           }
           if (session?.user) {
             setUser(session.user);
-            const profileData = await fetchProfile(session.user.id);
+            let profileData = await fetchProfile(session.user.id);
+
+            // Brand-new user: no profile exists yet — create everything now with an active session
+            if (!profileData) {
+              try {
+                const selectedPlan = session.user.user_metadata?.selected_plan || 'growth';
+                const fullName     = session.user.user_metadata?.full_name || '';
+                const userEmail    = session.user.email;
+
+                await supabase.from('profiles').insert({
+                  id:        session.user.id,
+                  full_name: fullName,
+                  email:     userEmail,
+                  role:      'client',
+                });
+
+                const { data: clientData, error: clientError } = await supabase
+                  .from('clients')
+                  .insert({ name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true })
+                  .select('id')
+                  .single();
+
+                if (clientError) {
+                  console.error('Failed to create client row on first login:', clientError);
+                } else if (clientData?.id) {
+                  await supabase.from('profiles').update({ client_id: clientData.id }).eq('id', session.user.id);
+                  await ensureClientData(supabase, clientData.id);
+                }
+
+                // Re-fetch now that all rows exist
+                profileData = await fetchProfile(session.user.id);
+              } catch (err) {
+                console.error('Failed to create new user data on first login:', err);
+              }
+            }
+
             setProfile(profileData);
             setLoading(false);
             initialized.current = true;

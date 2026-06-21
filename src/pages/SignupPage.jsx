@@ -13,27 +13,18 @@ const PLAN_CARDS = [
   { key: 'free_trial', name: 'Free Trial', price: 'Free',    subtext: 'Full Scale features, no credit card required' },
 ];
 
-const INSTALL_CARDS = [
-  { key: 'self',     name: 'Self-Install',     price: '$249 one-time', subtext: 'You install the embed code yourself using our step-by-step guide.' },
-  { key: 'assisted', name: 'Assisted Install', price: '$999 one-time', subtext: 'Our team installs it for you within 48 hours.' },
-];
-
 export default function SignupPage() {
   const navigate = useNavigate();
 
-  const [fullName,          setFullName]          = useState('');
-  const [email,             setEmail]             = useState('');
-  const [password,          setPassword]          = useState('');
-  const [confirmPassword,   setConfirmPassword]   = useState('');
-  const [agreedToTerms,     setAgreedToTerms]     = useState(false);
-  const [error,             setError]             = useState('');
-  const [loading,           setLoading]           = useState(false);
-  const [emailSent,         setEmailSent]         = useState(false);
-  const [selectedPlan,      setSelectedPlan]      = useState('growth');
-  const [showInstallChoice, setShowInstallChoice] = useState(false);
-  const [installChoice,     setInstallChoice]     = useState('self');
-  const [newClientId,       setNewClientId]       = useState(null);
-  const [installSaving,     setInstallSaving]     = useState(false);
+  const [fullName,        setFullName]        = useState('');
+  const [email,           setEmail]           = useState('');
+  const [password,        setPassword]        = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreedToTerms,   setAgreedToTerms]   = useState(false);
+  const [error,           setError]           = useState('');
+  const [loading,         setLoading]         = useState(false);
+  const [emailSent,       setEmailSent]       = useState(false);
+  const [selectedPlan,    setSelectedPlan]    = useState('growth');
 
   useEffect(() => {
     const params    = new URLSearchParams(window.location.search);
@@ -42,7 +33,6 @@ export default function SignupPage() {
   }, []);
 
   async function handleSubmit() {
-    console.log("SUBMIT TRIGGERED");
     setError('');
 
     if (!agreedToTerms) {
@@ -64,14 +54,12 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    console.log("Starting signup with:", email);
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: fullName.trim() } },
+      options: { data: { full_name: fullName.trim(), selected_plan: selectedPlan } },
     });
 
-    console.log("SignUp response:", signUpData, signUpError);
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
@@ -85,90 +73,8 @@ export default function SignupPage() {
       return;
     }
 
-    await supabase.from('profiles').insert({
-      id:        user.id,
-      full_name: fullName.trim(),
-      email:     email.trim(),
-      role:      'client',
-    });
-
-    try {
-      const { data: clientData, error: clientError } = await supabase.from('clients').insert({
-        name:   fullName.trim(),
-        email:  email.trim(),
-        plan:   selectedPlan,
-        active: true,
-      }).select('id').single();
-
-      if (clientError || !clientData?.id) {
-        console.error('Failed to create client row', clientError);
-      } else {
-        setNewClientId(clientData.id);
-
-        const { error: profileLinkError } = await supabase
-          .from('profiles')
-          .update({ client_id: clientData.id })
-          .eq('id', user.id);
-
-        if (profileLinkError) {
-          console.error('Failed to link client_id to profile', profileLinkError);
-        }
-
-        await Promise.all([
-          supabase.from('client_settings').insert({
-            client_id:         clientData.id,
-            branding:          {},
-            pdf_content:       {},
-            email_settings:    {},
-            language_settings: {},
-          }).then(({ error }) => {
-            if (error) console.error('Failed to create client_settings', error);
-          }),
-          supabase.from('client_pricing').insert({
-            client_id:       clientData.id,
-            base_prices:     { bdt: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }, wc: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }, wc_bdt: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 } },
-            fixed_costs:     { planning: 0, establishment_zone1: 0, establishment_zone2: 0, de_establishment: 0, admin: 0, inspection: 0 },
-            per_meter_costs: { gravity_pipe: 0, pressure_pipe: 0, protection_pipe: 0, cable: 0, makadam: 0, labor: 0 },
-            addons:          { pump_well: 0, double_pump: 0, telescope_cover: 0, lawn_restoration_base: 0, mass_removal: 0, transport: 0 },
-            rot_enabled:     false,
-            rot_percentage:  30,
-            currency:        'SEK',
-          }).then(({ error }) => {
-            if (error) console.error('Failed to create client_pricing', error);
-          }),
-        ]);
-      }
-    } catch (err) {
-      console.error('Failed to create client row', err);
-    }
-
-    if (selectedPlan === 'free_trial') {
-      setShowInstallChoice(true);
-    } else {
-      setEmailSent(true);
-    }
-    setLoading(false);
-  }
-
-  async function handleInstallContinue() {
-    setInstallSaving(true);
-    if (newClientId) {
-      await supabase.from('clients').update({ install_preference: installChoice }).eq('id', newClientId).catch(() => {});
-    }
-    if (installChoice === 'assisted') {
-      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email:   'team@aiworldpartners.com',
-          subject: 'Assisted Install Requested - Free Trial Signup',
-          body:    `New free trial signup requesting assisted install.\n\nName: ${fullName.trim()}\nEmail: ${email.trim()}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
-        }),
-      }).catch(() => {});
-    }
-    setShowInstallChoice(false);
     setEmailSent(true);
-    setInstallSaving(false);
+    setLoading(false);
   }
 
   return (
@@ -194,31 +100,6 @@ export default function SignupPage() {
               </button>
             </div>
 
-          ) : showInstallChoice ? (
-            /* ── Install choice screen (free_trial only) ── */
-            <>
-              <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>One last step</h1>
-              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#6b7280' }}>How would you like to install QuickQuote360 on your website?</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
-                {INSTALL_CARDS.map(ic => (
-                  <div key={ic.key} onClick={() => setInstallChoice(ic.key)}
-                    style={{ border: `2px solid ${installChoice === ic.key ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', position: 'relative', backgroundColor: '#fff' }}>
-                    {installChoice === ic.key && (
-                      <span style={{ position: 'absolute', top: '12px', right: '14px', color: PRIMARY, fontWeight: '700', fontSize: '14px' }}>✓</span>
-                    )}
-                    <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>
-                      {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>— {ic.price}</span>
-                    </p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.4' }}>{ic.subtext}</p>
-                  </div>
-                ))}
-              </div>
-              <button type="button" disabled={installSaving} onClick={handleInstallContinue}
-                style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#ffffff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: installSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: installSaving ? 0.8 : 1 }}>
-                {installSaving ? 'Saving…' : 'Continue'}
-              </button>
-            </>
-
           ) : (
             /* ── Signup form ── */
             <>
@@ -231,11 +112,11 @@ export default function SignupPage() {
                 {PLAN_CARDS.map(p => (
                   <div key={p.key} onClick={() => setSelectedPlan(p.key)}
                     style={{
-                      border:        `2px solid ${selectedPlan === p.key ? (p.key === 'free_trial' ? '#a3e635' : PRIMARY) : (p.key === 'free_trial' ? '#a3e635' : '#e8ede8')}`,
-                      borderRadius:  '12px',
-                      padding:       '16px',
-                      cursor:        'pointer',
-                      position:      'relative',
+                      border:          `2px solid ${selectedPlan === p.key ? (p.key === 'free_trial' ? '#a3e635' : PRIMARY) : (p.key === 'free_trial' ? '#a3e635' : '#e8ede8')}`,
+                      borderRadius:    '12px',
+                      padding:         '16px',
+                      cursor:          'pointer',
+                      position:        'relative',
                       backgroundColor: '#fff',
                     }}>
                     {p.key === 'free_trial' && (

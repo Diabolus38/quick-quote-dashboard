@@ -26,6 +26,11 @@ function formatDate(str) {
 const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: 'none', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', padding: '24px' };
 const COLUMNS = ['Name', 'Municipality', 'Estimated Price', 'Status', 'Date'];
 
+const INSTALL_CARDS = [
+  { key: 'self',     name: 'Self-Install',     price: '$249 one-time', subtext: 'You install the embed code yourself using our step-by-step guide.' },
+  { key: 'assisted', name: 'Assisted Install', price: '$999 one-time', subtext: 'Our team installs it for you within 48 hours.' },
+];
+
 export default function ClientOverview() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +47,9 @@ export default function ClientOverview() {
   const [trialExpired,      setTrialExpired]      = useState(false);
   const [planEmailSent,     setPlanEmailSent]     = useState(false);
   const [installPreference, setInstallPreference] = useState(null);
+  const [showInstallChoice, setShowInstallChoice] = useState(false);
+  const [installChoice,     setInstallChoice]     = useState('self');
+  const [installSaving,     setInstallSaving]     = useState(false);
   const soundEnabledRef = useRef(soundEnabled);
   const dndRef = useRef(dnd);
 
@@ -50,12 +58,35 @@ export default function ClientOverview() {
   useEffect(() => {
     if (!profile?.client_id) return;
     supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).single()
-      .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+      .then(({ data }) => {
+        setInstallPreference(data?.install_preference || null);
+        if (data?.plan === 'free_trial' && !data?.install_preference) setShowInstallChoice(true);
+        if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true);
+      });
   }, [profile?.client_id]);
 
   async function sendPlanEmail(planName) {
     await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
     setPlanEmailSent(true);
+  }
+
+  async function handleInstallContinue() {
+    setInstallSaving(true);
+    await supabase.from('clients').update({ install_preference: installChoice }).eq('id', profile.client_id).catch(() => {});
+    if (installChoice === 'assisted') {
+      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:   'team@aiworldpartners.com',
+          subject: 'Assisted Install Requested - Free Trial Signup',
+          body:    `Free trial client has selected assisted install.\n\nName: ${profile?.full_name || ''}\nEmail: ${profile?.email || ''}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
+        }),
+      }).catch(() => {});
+    }
+    setInstallPreference(installChoice);
+    setShowInstallChoice(false);
+    setInstallSaving(false);
   }
   useEffect(() => { dndRef.current = dnd; }, [dnd]);
 
@@ -121,6 +152,34 @@ export default function ClientOverview() {
   return (
     <ClientLayout title="Overview">
       <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} clientId={profile?.client_id} installPreference={installPreference} />
+
+      {showInstallChoice && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(240,242,245,0.98)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, padding: '40px' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '460px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)' }}>
+            <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>One last step</h1>
+            <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#6b7280' }}>How would you like to install QuickQuote360 on your website?</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+              {INSTALL_CARDS.map(ic => (
+                <div key={ic.key} onClick={() => setInstallChoice(ic.key)}
+                  style={{ border: `2px solid ${installChoice === ic.key ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', position: 'relative', backgroundColor: '#fff' }}>
+                  {installChoice === ic.key && (
+                    <span style={{ position: 'absolute', top: '12px', right: '14px', color: PRIMARY, fontWeight: '700', fontSize: '14px' }}>✓</span>
+                  )}
+                  <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>
+                    {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>— {ic.price}</span>
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.4' }}>{ic.subtext}</p>
+                </div>
+              ))}
+            </div>
+            <button type="button" disabled={installSaving} onClick={handleInstallContinue}
+              style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: installSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: installSaving ? 0.8 : 1 }}>
+              {installSaving ? 'Saving…' : 'Continue'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {showToast && (
         <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '12px', padding: '14px 20px', fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
           New lead just came in!
