@@ -58,7 +58,13 @@ export default function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const initialized = useRef(false);
+
+  // initialized = fully resolved (profile set, loading cleared)
+  // initializing = work has been claimed by one path (prevents double-run race)
+  const initialized  = useRef(false);
+  const initializing = useRef(false);
+
+  // ─── Helpers ────────────────────────────────────────────────────────────────
 
   async function fetchProfile(userId) {
     const { data, error } = await supabase
@@ -89,25 +95,99 @@ export default function AuthProvider({ children }) {
     try { await ensureClientData(supabase, clientId); } catch (err) { console.error('initializeClientData failed:', err); }
   }
 
-  useEffect(() => {
-    // Check existing session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (initialized.current) return;
-      if (session?.user) {
-        setUser(session.user);
-        const profileData = await fetchProfile(session.user.id);
-        setProfile(profileData);
-        initialized.current = true;
-        if (profileData?.client_id) {
-          initializeClientData(profileData.client_id);
-        }
-      }
-      setLoading(false);
+  // Creates the profile + client rows for a first-time user, then returns a
+  // freshly-fetched profile. Called only when fetchProfile returns null.
+  async function ensureNewUserData(session) {
+    const selectedPlan = session.user.user_metadata?.selected_plan || 'growth';
+    const fullName     = session.user.user_metadata?.full_name || '';
+    const userEmail    = session.user.email;
+
+    await supabase.from('profiles').insert({
+      id:        session.user.id,
+      full_name: fullName,
+      email:     userEmail,
+      role:      'client',
     });
 
-    // Listen for auth state changes
+    const { data: clientData, error: clientError } = await supabase
+      .from('clients')
+      .insert({ name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true })
+      .select('id')
+      .single();
+
+    if (clientError) {
+      console.error('ensureNewUserData: failed to create client row:', clientError);
+    } else if (clientData?.id) {
+      await supabase.from('profiles').update({ client_id: clientData.id }).eq('id', session.user.id);
+      await ensureClientData(supabase, clientData.id);
+    }
+
+    // Re-fetch so the returned profile has client_id already linked
+    return fetchProfile(session.user.id);
+  }
+
+  // ─── Core session handler ────────────────────────────────────────────────────
+  //
+  // This is the single function that resolves profile state for any authenticated
+  // session. It is called from both the getSession() path and the deferred
+  // SIGNED_IN path. The initializing/initialized guards ensure only one invocation
+  // ever runs to completion regardless of which path fires first.
+
+  async function handleSession(session) {
+    if (initializing.current || initialized.current) return;
+    initializing.current = true;
+
+    try {
+      let profileData = await fetchProfile(session.user.id);
+
+      if (!profileData) {
+        try {
+          profileData = await ensureNewUserData(session);
+        } catch (err) {
+          console.error('Failed to create new user data on first login:', err);
+          profileData = null;
+        }
+      }
+
+      setProfile(profileData);
+      if (profileData?.client_id) {
+        initializeClientData(profileData.client_id);
+      }
+    } catch (err) {
+      console.error('handleSession error:', err);
+    } finally {
+      // Always runs — guarantees loading clears and initialized is marked true
+      setLoading(false);
+      initialized.current = true;
+    }
+  }
+
+  // ─── Effect ─────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    // Path A: check for an existing session on mount (safe — called outside any callback)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        await handleSession(session);
+      } else {
+        // No session at all — nothing to do, just stop the spinner
+        setLoading(false);
+      }
+    });
+
+    // Path B: listen for auth state changes.
+    //
+    // IMPORTANT: do NOT call any supabase.from(...) directly inside this callback.
+    // The Supabase JS v2 auth client holds an internal lock while firing these
+    // events. Any supabase.from() call would internally call getSession() which
+    // tries to acquire the same lock → deadlock → the promise never resolves.
+    //
+    // Rule: only synchronous state updates (setUser, setProfile, setLoading) are
+    // allowed in the callback body. All async Supabase work is deferred via
+    // setTimeout(..., 0) to escape the lock before any DB call is made.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === 'INITIAL_SESSION') return;
 
         if (event === 'TOKEN_REFRESHED') {
@@ -116,54 +196,11 @@ export default function AuthProvider({ children }) {
         }
 
         if (event === 'SIGNED_IN') {
-          if (initialized.current) {
-            if (session?.user) setUser(session.user);
-            return;
-          }
           if (session?.user) {
-            setUser(session.user);
-            let profileData = await fetchProfile(session.user.id);
-
-            // Brand-new user: no profile exists yet — create everything now with an active session
-            if (!profileData) {
-              try {
-                const selectedPlan = session.user.user_metadata?.selected_plan || 'growth';
-                const fullName     = session.user.user_metadata?.full_name || '';
-                const userEmail    = session.user.email;
-
-                await supabase.from('profiles').insert({
-                  id:        session.user.id,
-                  full_name: fullName,
-                  email:     userEmail,
-                  role:      'client',
-                });
-
-                const { data: clientData, error: clientError } = await supabase
-                  .from('clients')
-                  .insert({ name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true })
-                  .select('id')
-                  .single();
-
-                if (clientError) {
-                  console.error('Failed to create client row on first login:', clientError);
-                } else if (clientData?.id) {
-                  await supabase.from('profiles').update({ client_id: clientData.id }).eq('id', session.user.id);
-                  await ensureClientData(supabase, clientData.id);
-                }
-
-                // Re-fetch now that all rows exist
-                profileData = await fetchProfile(session.user.id);
-              } catch (err) {
-                console.error('Failed to create new user data on first login:', err);
-              }
-            }
-
-            setProfile(profileData);
-            setLoading(false);
-            initialized.current = true;
-            if (profileData?.client_id) {
-              initializeClientData(profileData.client_id);
-            }
+            setUser(session.user); // safe — synchronous only
+            // Defer all DB work; handleSession's guard prevents double-execution
+            // if Path A (getSession) already claimed the work.
+            setTimeout(() => { handleSession(session); }, 0);
           }
           return;
         }
@@ -171,27 +208,39 @@ export default function AuthProvider({ children }) {
         if (event === 'USER_UPDATED') {
           if (session?.user) {
             setUser(session.user);
-            const profileData = await fetchProfile(session.user.id);
-            setProfile(profileData);
-            setLoading(false);
-            if (profileData?.client_id) {
-              initializeClientData(profileData.client_id);
-            }
+            // Defer the profile re-fetch to escape the auth lock
+            setTimeout(async () => {
+              try {
+                const profileData = await fetchProfile(session.user.id);
+                setProfile(profileData);
+                if (profileData?.client_id) {
+                  initializeClientData(profileData.client_id);
+                }
+              } catch (err) {
+                console.error('USER_UPDATED profile re-fetch failed:', err);
+              } finally {
+                setLoading(false);
+              }
+            }, 0);
           }
           return;
         }
 
         if (event === 'SIGNED_OUT') {
+          // Synchronous state reset — no Supabase calls needed
           setUser(null);
           setProfile(null);
           setLoading(false);
-          initialized.current = false;
+          initialized.current  = false;
+          initializing.current = false;
         }
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // ─── Auth actions ────────────────────────────────────────────────────────────
 
   async function signIn(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
