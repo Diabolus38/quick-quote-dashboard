@@ -275,7 +275,7 @@ export default function Municipalities() {
   useEffect(() => {
     if (!clientId) return;
     supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
-      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+      .then(({ data }) => { if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [clientId]);
 
   async function sendPlanEmail(planName) {

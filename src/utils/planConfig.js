@@ -20,6 +20,9 @@ export const PLAN_FEATURES = {
     hasFreeTrialDays: 0,
     poweredByBadge: true,
     show_powered_by: true,
+    canEditPdfContent:  false,
+    canEditPdfBranding: false,
+    canRemovePoweredBy: false,
   },
   growth: {
     dashboardAccess: true,
@@ -37,6 +40,9 @@ export const PLAN_FEATURES = {
     hasFreeTrialDays: 0,
     poweredByBadge: true,
     show_powered_by: true,
+    canEditPdfContent:  true,
+    canEditPdfBranding: false,
+    canRemovePoweredBy: false,
   },
   scale: {
     dashboardAccess: true,
@@ -54,6 +60,9 @@ export const PLAN_FEATURES = {
     hasFreeTrialDays: 14,
     poweredByBadge: true,
     show_powered_by: true,
+    canEditPdfContent:  true,
+    canEditPdfBranding: true,
+    canRemovePoweredBy: false,
   },
   enterprise: {
     dashboardAccess: true,
@@ -71,6 +80,9 @@ export const PLAN_FEATURES = {
     hasFreeTrialDays: 0,
     poweredByBadge: false,
     show_powered_by: false,
+    canEditPdfContent:  true,
+    canEditPdfBranding: true,
+    canRemovePoweredBy: true,
   },
   free_trial: {
     dashboardAccess: true,
@@ -89,6 +101,9 @@ export const PLAN_FEATURES = {
     poweredByBadge: true,
     show_powered_by: true,
     trialPlan: true,
+    canEditPdfContent:  true,
+    canEditPdfBranding: true,
+    canRemovePoweredBy: false,
   },
 };
 

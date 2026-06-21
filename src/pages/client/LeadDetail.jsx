@@ -195,6 +195,7 @@ export default function LeadDetail() {
           pdf_content: settingsData?.pdf_content || {},
           pricing: pricingData || {},
           branding: settingsData?.branding || {},
+          plan: clientData?.plan || 'growth',
         },
       });
     } catch (err) {

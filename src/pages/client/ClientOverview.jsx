@@ -49,7 +49,7 @@ export default function ClientOverview() {
   useEffect(() => {
     if (!profile?.client_id) return;
     supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).single()
-      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+      .then(({ data }) => { if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [profile?.client_id]);
 
   async function sendPlanEmail(planName) {

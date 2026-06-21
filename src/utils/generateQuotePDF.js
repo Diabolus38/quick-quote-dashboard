@@ -27,7 +27,11 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   const contentW = pageW - margin * 2
   let y = 0
 
-  const primaryHex = settings.pdf_content?.pdf_primary_color || settings.branding?.primary_color || '#166534';
+  const plan = settings.plan || 'growth';
+  const canBrand = ['scale', 'enterprise', 'free_trial'].includes(plan);
+  const primaryHex = canBrand
+    ? (settings.pdf_content?.pdf_primary_color || settings.branding?.primary_color || '#166534')
+    : '#166534';
   const GREEN = hexToRgb(primaryHex);
   const DARK_GREEN = [13, 31, 18]
   const LIME = [163, 230, 53]
@@ -81,7 +85,9 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   doc.setFillColor(...GREEN)
   doc.rect(0, 0, 210, 44, 'F')
 
-  const logoUrl = settings.branding?.pdf_logo_url || settings.branding?.logo_url;
+  const logoUrl = canBrand
+    ? (settings.pdf_content?.pdf_logo_url || settings.branding?.pdf_logo_url || settings.branding?.logo_url)
+    : null;
   let logoLoaded = false;
   if (logoUrl) {
     try {
@@ -391,14 +397,16 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   // ── SIGNATURE ──
   checkPage(40)
   const showAuth = pdf.show_authorized_by === true
-  const fromText = pdf.from_text || ''
+  const canCustomizeFrom = ['scale', 'enterprise', 'free_trial'].includes(plan)
+  const fromText = canCustomizeFrom ? (pdf.from_text || '') : ''
+  const showPoweredBy = plan === 'enterprise' ? (pdf.show_powered_by !== false) : true
   const pwrX = margin + halfW + 10
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7)
   doc.setTextColor(...TEXT_LIGHT)
   if (showAuth) doc.text('AUTHORIZED BY', margin, y)
-  doc.text('POWERED BY', pwrX, y)
+  if (showPoweredBy) doc.text('POWERED BY', pwrX, y)
   y += 8
 
   if (showAuth) {
@@ -420,27 +428,29 @@ export default async function generateQuotePDF({ lead, client, settings }) {
     doc.text(pdf.signature_email || client.email || '', margin, y)
   }
 
-  const pwrY = showAuth ? y - 20 : y
-  if (fromText) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(...TEXT_DARK)
-    doc.text(fromText, pwrX, pwrY + 7)
-  } else {
-    doc.setFillColor(...GREEN)
-    doc.roundedRect(pwrX, pwrY, 12, 12, 2, 2, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(7)
-    doc.setTextColor(168, 240, 192)
-    doc.text('Q', pwrX + 6, pwrY + 7.5, { align: 'center' })
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(...TEXT_DARK)
-    doc.text('Quick Quote 360', pwrX + 15, pwrY + 5)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
-    doc.setTextColor(...TEXT_LIGHT)
-    doc.text('quickquote360.com', pwrX + 15, pwrY + 9.5)
+  if (showPoweredBy) {
+    const pwrY = showAuth ? y - 20 : y
+    if (fromText) {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...TEXT_DARK)
+      doc.text(fromText, pwrX, pwrY + 7)
+    } else {
+      doc.setFillColor(...GREEN)
+      doc.roundedRect(pwrX, pwrY, 12, 12, 2, 2, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7)
+      doc.setTextColor(168, 240, 192)
+      doc.text('Q', pwrX + 6, pwrY + 7.5, { align: 'center' })
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...TEXT_DARK)
+      doc.text('Quick Quote 360', pwrX + 15, pwrY + 5)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7.5)
+      doc.setTextColor(...TEXT_LIGHT)
+      doc.text('quickquote360.com', pwrX + 15, pwrY + 9.5)
+    }
   }
 
   if (pdf.disclaimer) {

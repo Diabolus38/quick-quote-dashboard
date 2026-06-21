@@ -188,7 +188,7 @@ function PDFContent({ clientId }) {
               <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo}
                 style={{ fontSize: '13px', fontFamily: FONT, color: '#374151' }} />
               {uploadingLogo && <span style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontFamily: FONT }}>Uploading...</span>}
-              {plan !== 'scale' && (
+              {!['scale', 'enterprise', 'free_trial'].includes(plan) && (
                 <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
                   <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600', fontFamily: FONT }}>🔒 Scale plan only</span>
                 </div>
@@ -202,7 +202,7 @@ function PDFContent({ clientId }) {
                   style={{ width: '40px', height: '36px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', padding: '2px' }} />
                 <TextInput value={previewColor} onChange={v => { if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setPreviewColor(v); }} placeholder="#166534" />
               </div>
-              {plan !== 'scale' && (
+              {!['scale', 'enterprise', 'free_trial'].includes(plan) && (
                 <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
                   <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '600', fontFamily: FONT }}>🔒 Scale plan only</span>
                 </div>
@@ -236,8 +236,14 @@ function PDFContent({ clientId }) {
           <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown in the Questions section at the bottom of the PDF.</p>
         </SettingsCard>
         <SettingsCard title="From Text">
-          <TextInput value={fromText} onChange={setFromText} placeholder="From AI World Partners" />
-          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown at the bottom of the PDF instead of Powered By QuickQuote360.</p>
+          {['scale', 'enterprise', 'free_trial'].includes(plan) ? (
+            <>
+              <TextInput value={fromText} onChange={setFromText} placeholder="From AI World Partners" />
+              <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown at the bottom of the PDF instead of Powered By QuickQuote360.</p>
+            </>
+          ) : (
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>The Powered by QuickQuote360 badge is shown on your PDF. Available on Scale plan to customize.</p>
+          )}
         </SettingsCard>
         <SettingsCard title="Show Authorized By">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -422,7 +428,7 @@ export default function PdfContent() {
   useEffect(() => {
     if (!clientId) return;
     supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
-      .then(({ data }) => { if (data?.plan === 'scale' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+      .then(({ data }) => { if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [clientId]);
 
   async function sendPlanEmail(planName) {
@@ -443,9 +449,9 @@ export default function PdfContent() {
     </ClientLayout>
   );
 
-  if (plan !== 'scale') return (
+  if (plan === 'starter') return (
     <ClientLayout title="PDF Content">
-      <UpgradeLock feature="PDF Content Editor" requiredPlan="scale" />
+      <UpgradeLock feature="PDF Content Editor" requiredPlan="growth" />
     </ClientLayout>
   );
 
