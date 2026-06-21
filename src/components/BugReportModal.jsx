@@ -37,7 +37,7 @@ export default function BugReportModal({ isOpen, onClose }) {
       `Page: ${window.location.href}`,
     ].join('\n');
     try {
-      const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: 'Bug Report: ' + subject, body }),
