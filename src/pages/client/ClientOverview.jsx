@@ -72,7 +72,8 @@ export default function ClientOverview() {
 
   async function handleInstallContinue() {
     setInstallSaving(true);
-    await supabase.from('clients').update({ install_preference: installChoice }).eq('id', profile.client_id).catch(() => {});
+    const { error: updateError } = await supabase.from('clients').update({ install_preference: installChoice }).eq('id', profile.client_id);
+    if (updateError) console.error('Failed to save install preference:', updateError);
     if (installChoice === 'assisted') {
       await fetch('https://estimator-widget-production.up.railway.app/send-email', {
         method:  'POST',
