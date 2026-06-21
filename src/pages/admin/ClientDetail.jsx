@@ -221,6 +221,13 @@ export default function ClientDetail() {
 
   async function handleDeleteClient() {
     if (!window.confirm('Permanently delete this client and all their data? This cannot be undone.')) return;
+    // Cascade: delete all dependent rows before deleting the client row itself
+    await supabase.from('leads').delete().eq('client_id', id);
+    await supabase.from('client_settings').delete().eq('client_id', id);
+    await supabase.from('client_pricing').delete().eq('client_id', id);
+    await supabase.from('client_questions').delete().eq('client_id', id);
+    await supabase.from('client_municipalities').delete().eq('client_id', id);
+    await supabase.from('profiles').delete().eq('client_id', id);
     await supabase.from('clients').delete().eq('id', id);
     navigate('/admin/clients');
   }

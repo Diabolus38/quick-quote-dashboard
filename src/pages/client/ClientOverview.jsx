@@ -50,6 +50,7 @@ export default function ClientOverview() {
   const [showInstallChoice, setShowInstallChoice] = useState(false);
   const [installChoice,     setInstallChoice]     = useState('self');
   const [installSaving,     setInstallSaving]     = useState(false);
+  const [installDone,       setInstallDone]       = useState(false);
   const soundEnabledRef = useRef(soundEnabled);
   const dndRef = useRef(dnd);
 
@@ -74,20 +75,35 @@ export default function ClientOverview() {
     setInstallSaving(true);
     const { error: updateError } = await supabase.from('clients').update({ install_preference: installChoice }).eq('id', profile.client_id);
     if (updateError) console.error('Failed to save install preference:', updateError);
+
     if (installChoice === 'assisted') {
-      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email:   'team@aiworldpartners.com',
-          subject: 'Assisted Install Requested - Free Trial Signup',
-          body:    `Free trial client has selected assisted install.\n\nName: ${profile?.full_name || ''}\nEmail: ${profile?.email || ''}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
-        }),
-      }).catch(() => {});
+      const emailPayload = {
+        email:   'team@aiworldpartners.com',
+        subject: 'Assisted Install Requested - Free Trial Signup',
+        body:    `Free trial client has selected assisted install.\n\nName: ${profile?.full_name || ''}\nEmail: ${profile?.email || ''}\nClient ID: ${profile?.client_id || ''}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
+      };
+      console.log('Sending assisted install notification:', emailPayload);
+      try {
+        const response = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(emailPayload),
+        });
+        if (!response.ok) {
+          console.error('Failed to send assisted install notification:', response.status, response.statusText);
+        }
+      } catch (err) {
+        console.error('Failed to send assisted install notification:', err);
+      }
     }
+
     setInstallPreference(installChoice);
-    setShowInstallChoice(false);
     setInstallSaving(false);
+    if (installChoice === 'assisted') {
+      setInstallDone(true); // show confirmation screen inside the modal
+    } else {
+      setShowInstallChoice(false); // self-install: close immediately, no action needed from team
+    }
   }
   useEffect(() => { dndRef.current = dnd; }, [dnd]);
 
@@ -157,26 +173,44 @@ export default function ClientOverview() {
       {showInstallChoice && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(240,242,245,0.98)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, padding: '40px' }}>
           <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '460px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)' }}>
-            <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>One last step</h1>
-            <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#6b7280' }}>How would you like to install QuickQuote360 on your website?</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
-              {INSTALL_CARDS.map(ic => (
-                <div key={ic.key} onClick={() => setInstallChoice(ic.key)}
-                  style={{ border: `2px solid ${installChoice === ic.key ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', position: 'relative', backgroundColor: '#fff' }}>
-                  {installChoice === ic.key && (
-                    <span style={{ position: 'absolute', top: '12px', right: '14px', color: PRIMARY, fontWeight: '700', fontSize: '14px' }}>✓</span>
-                  )}
-                  <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>
-                    {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>— {ic.price}</span>
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.4' }}>{ic.subtext}</p>
+            {installDone ? (
+              /* ── Assisted-install confirmation ── */
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 20px' }}>✓</div>
+                <h2 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '700', color: '#0d1117' }}>Request received!</h2>
+                <p style={{ margin: '0 auto', fontSize: '13.5px', color: '#6b7280', lineHeight: '1.6', textAlign: 'center', maxWidth: '360px' }}>
+                  We've received your request. Our team will contact you to schedule the installation. Please check your email within 24 hours.
+                </p>
+                <button type="button" onClick={() => { setShowInstallChoice(false); setInstallDone(false); }}
+                  style={{ marginTop: '20px', padding: '12px 24px', fontSize: '14px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: FONT }}>
+                  Continue to Dashboard
+                </button>
+              </div>
+            ) : (
+              /* ── Install choice form ── */
+              <>
+                <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>One last step</h1>
+                <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#6b7280' }}>How would you like to install QuickQuote360 on your website?</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+                  {INSTALL_CARDS.map(ic => (
+                    <div key={ic.key} onClick={() => setInstallChoice(ic.key)}
+                      style={{ border: `2px solid ${installChoice === ic.key ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', position: 'relative', backgroundColor: '#fff' }}>
+                      {installChoice === ic.key && (
+                        <span style={{ position: 'absolute', top: '12px', right: '14px', color: PRIMARY, fontWeight: '700', fontSize: '14px' }}>✓</span>
+                      )}
+                      <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>
+                        {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>— {ic.price}</span>
+                      </p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.4' }}>{ic.subtext}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <button type="button" disabled={installSaving} onClick={handleInstallContinue}
-              style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: installSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: installSaving ? 0.8 : 1 }}>
-              {installSaving ? 'Saving…' : 'Continue'}
-            </button>
+                <button type="button" disabled={installSaving} onClick={handleInstallContinue}
+                  style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: installSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: installSaving ? 0.8 : 1 }}>
+                  {installSaving ? 'Saving…' : 'Continue'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
