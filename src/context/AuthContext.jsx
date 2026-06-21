@@ -166,6 +166,7 @@ export default function AuthProvider({ children }) {
 
   async function signOut() {
     await supabase.auth.signOut();
+    window.location.href = '/login';
   }
 
   const value = { user, profile, loading, signIn, signOut };

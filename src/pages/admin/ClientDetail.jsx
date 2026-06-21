@@ -213,6 +213,7 @@ export default function ClientDetail() {
 
   async function handleSavePlan() {
     await supabase.from('clients').update({ plan: changePlan }).eq('id', id);
+    await supabase.from('profiles').update({ updated_at: new Date().toISOString() }).eq('client_id', id);
     setClient(prev => ({ ...prev, plan: changePlan }));
     setPlanSaved(true);
     setTimeout(() => setPlanSaved(false), 2000);
