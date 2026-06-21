@@ -457,13 +457,14 @@ export default function Pricing() {
   const { profile } = useAuth();
   const clientId    = profile?.client_id;
   const { plan, planLoading } = useClientPlan();
-  const [trialExpired, setTrialExpired] = useState(false);
-  const [planEmailSent, setPlanEmailSent] = useState(false);
+  const [trialExpired,      setTrialExpired]      = useState(false);
+  const [planEmailSent,     setPlanEmailSent]     = useState(false);
+  const [installPreference, setInstallPreference] = useState(null);
 
   useEffect(() => {
     if (!clientId) return;
-    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
-      .then(({ data }) => { if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', clientId).single()
+      .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [clientId]);
 
   async function sendPlanEmail(planName) {
@@ -492,7 +493,7 @@ export default function Pricing() {
 
   return (
     <ClientLayout title="Pricing">
-      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} clientId={clientId} installPreference={installPreference} />
       <ConfigStatusCard />
       <PricingContent clientId={clientId} />
     </ClientLayout>

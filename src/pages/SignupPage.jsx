@@ -1,22 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { AuthLeft } from '../LoginPage';
 
-const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
+const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
+
+const PLAN_CARDS = [
+  { key: 'starter',    name: 'Starter',    price: '$140/mo', subtext: 'No dashboard access, unlimited estimates' },
+  { key: 'growth',     name: 'Growth',     price: '$300/mo', subtext: 'Full dashboard, 30 estimates/mo' },
+  { key: 'scale',      name: 'Scale',      price: '$600/mo', subtext: 'Everything, 75 estimates/mo' },
+  { key: 'free_trial', name: 'Free Trial', price: 'Free',    subtext: 'Full Scale features, no credit card required' },
+];
+
+const INSTALL_CARDS = [
+  { key: 'self',     name: 'Self-Install',     price: '$249 one-time', subtext: 'You install the embed code yourself using our step-by-step guide.' },
+  { key: 'assisted', name: 'Assisted Install', price: '$999 one-time', subtext: 'Our team installs it for you within 48 hours.' },
+];
 
 export default function SignupPage() {
   const navigate = useNavigate();
 
-  const [fullName,         setFullName]         = useState('');
-  const [email,            setEmail]            = useState('');
-  const [password,         setPassword]         = useState('');
-  const [confirmPassword,  setConfirmPassword]  = useState('');
-  const [agreedToTerms,    setAgreedToTerms]    = useState(false);
-  const [error,            setError]            = useState('');
-  const [loading,          setLoading]          = useState(false);
-  const [emailSent,        setEmailSent]        = useState(false);
+  const [fullName,          setFullName]          = useState('');
+  const [email,             setEmail]             = useState('');
+  const [password,          setPassword]          = useState('');
+  const [confirmPassword,   setConfirmPassword]   = useState('');
+  const [agreedToTerms,     setAgreedToTerms]     = useState(false);
+  const [error,             setError]             = useState('');
+  const [loading,           setLoading]           = useState(false);
+  const [emailSent,         setEmailSent]         = useState(false);
+  const [selectedPlan,      setSelectedPlan]      = useState('growth');
+  const [showInstallChoice, setShowInstallChoice] = useState(false);
+  const [installChoice,     setInstallChoice]     = useState('self');
+  const [newClientId,       setNewClientId]       = useState(null);
+  const [installSaving,     setInstallSaving]     = useState(false);
+
+  useEffect(() => {
+    const params    = new URLSearchParams(window.location.search);
+    const planParam = params.get('plan');
+    if (['starter', 'growth', 'scale', 'free_trial'].includes(planParam)) setSelectedPlan(planParam);
+  }, []);
 
   async function handleSubmit() {
     console.log("SUBMIT TRIGGERED");
@@ -73,13 +96,15 @@ export default function SignupPage() {
       const { data: clientData, error: clientError } = await supabase.from('clients').insert({
         name:   fullName.trim(),
         email:  email.trim(),
-        plan:   'starter',
+        plan:   selectedPlan,
         active: true,
       }).select('id').single();
 
       if (clientError || !clientData?.id) {
         console.error('Failed to create client row', clientError);
       } else {
+        setNewClientId(clientData.id);
+
         const { error: profileLinkError } = await supabase
           .from('profiles')
           .update({ client_id: clientData.id })
@@ -117,8 +142,33 @@ export default function SignupPage() {
       console.error('Failed to create client row', err);
     }
 
-    setEmailSent(true);
+    if (selectedPlan === 'free_trial') {
+      setShowInstallChoice(true);
+    } else {
+      setEmailSent(true);
+    }
     setLoading(false);
+  }
+
+  async function handleInstallContinue() {
+    setInstallSaving(true);
+    if (newClientId) {
+      await supabase.from('clients').update({ install_preference: installChoice }).eq('id', newClientId).catch(() => {});
+    }
+    if (installChoice === 'assisted') {
+      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:   'team@aiworldpartners.com',
+          subject: 'Assisted Install Requested - Free Trial Signup',
+          body:    `New free trial signup requesting assisted install.\n\nName: ${fullName.trim()}\nEmail: ${email.trim()}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
+        }),
+      }).catch(() => {});
+    }
+    setShowInstallChoice(false);
+    setEmailSent(true);
+    setInstallSaving(false);
   }
 
   return (
@@ -126,10 +176,11 @@ export default function SignupPage() {
       <AuthLeft />
 
       {/* Right panel */}
-      <div style={{ flex: 1, backgroundColor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)', border: 'none' }}>
+      <div style={{ flex: 1, backgroundColor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', overflowY: 'auto' }}>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '480px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)', border: 'none' }}>
 
           {emailSent ? (
+            /* ── Check-your-email screen ── */
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '48px', margin: '0 0 20px', color: '#0d1f12' }}>✉</p>
               <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#0d1117', margin: '0 0 14px' }}>Check your email</h2>
@@ -142,10 +193,65 @@ export default function SignupPage() {
                 Go to login
               </button>
             </div>
+
+          ) : showInstallChoice ? (
+            /* ── Install choice screen (free_trial only) ── */
+            <>
+              <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>One last step</h1>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#6b7280' }}>How would you like to install QuickQuote360 on your website?</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+                {INSTALL_CARDS.map(ic => (
+                  <div key={ic.key} onClick={() => setInstallChoice(ic.key)}
+                    style={{ border: `2px solid ${installChoice === ic.key ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', position: 'relative', backgroundColor: '#fff' }}>
+                    {installChoice === ic.key && (
+                      <span style={{ position: 'absolute', top: '12px', right: '14px', color: PRIMARY, fontWeight: '700', fontSize: '14px' }}>✓</span>
+                    )}
+                    <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>
+                      {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>— {ic.price}</span>
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.4' }}>{ic.subtext}</p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" disabled={installSaving} onClick={handleInstallContinue}
+                style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#ffffff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: installSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: installSaving ? 0.8 : 1 }}>
+                {installSaving ? 'Saving…' : 'Continue'}
+              </button>
+            </>
+
           ) : (
+            /* ── Signup form ── */
             <>
               <h1 style={{ margin: '0 0 6px', fontSize: '24px', fontWeight: '700', color: '#0d1117' }}>Create your account</h1>
-              <p style={{ margin: '0 0 32px', fontSize: '14px', color: '#9ca3af' }}>Start your free trial today</p>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#9ca3af' }}>Start your free trial today</p>
+
+              {/* Plan selection */}
+              <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Choose Your Plan</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+                {PLAN_CARDS.map(p => (
+                  <div key={p.key} onClick={() => setSelectedPlan(p.key)}
+                    style={{
+                      border:        `2px solid ${selectedPlan === p.key ? (p.key === 'free_trial' ? '#a3e635' : PRIMARY) : (p.key === 'free_trial' ? '#a3e635' : '#e8ede8')}`,
+                      borderRadius:  '12px',
+                      padding:       '16px',
+                      cursor:        'pointer',
+                      position:      'relative',
+                      backgroundColor: '#fff',
+                    }}>
+                    {p.key === 'free_trial' && (
+                      <span style={{ position: 'absolute', top: '-8px', right: '12px', backgroundColor: '#a3e635', color: '#0d1f12', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px' }}>
+                        14 DAYS FREE
+                      </span>
+                    )}
+                    {selectedPlan === p.key && (
+                      <span style={{ position: 'absolute', top: '8px', right: '10px', color: p.key === 'free_trial' ? '#3f6212' : PRIMARY, fontWeight: '700', fontSize: '13px' }}>✓</span>
+                    )}
+                    <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>{p.name}</p>
+                    <p style={{ margin: '0 0 4px', fontWeight: '800', color: '#0d1117', fontSize: '15px' }}>{p.price}</p>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: '1.4' }}>{p.subtext}</p>
+                  </div>
+                ))}
+              </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={labelStyle}>Full name</label>
@@ -212,4 +318,4 @@ export default function SignupPage() {
 }
 
 const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' };
-const inputStyle = { width: '100%', padding: '10px 14px', fontSize: '13.5px', color: '#0d1117', border: '1px solid #d1d5db', borderRadius: '10px', outline: 'none', boxSizing: 'border-box', fontFamily: FONT, backgroundColor: '#fff' };
+const inputStyle  = { width: '100%', padding: '10px 14px', fontSize: '13.5px', color: '#0d1117', border: '1px solid #d1d5db', borderRadius: '10px', outline: 'none', boxSizing: 'border-box', fontFamily: FONT, backgroundColor: '#fff' };

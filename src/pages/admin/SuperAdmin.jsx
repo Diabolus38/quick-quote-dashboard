@@ -226,7 +226,7 @@ export default function SuperAdmin() {
   async function fetchAll() {
     setLoading(true);
     const [clientsRes, leadsRes, profilesRes] = await Promise.all([
-      supabase.from('clients').select('id, name, email, plan, active, created_at').order('created_at', { ascending: false }),
+      supabase.from('clients').select('id, name, email, plan, active, created_at, install_preference').order('created_at', { ascending: false }),
       supabase.from('leads').select('id, client_id, name, created_at, status, estimated_price').order('created_at', { ascending: false }).limit(500),
       supabase.from('profiles').select('id, client_id, role'),
     ]);
@@ -501,6 +501,9 @@ export default function SuperAdmin() {
                               <div>
                                 <div style={{ fontWeight: '700', color: '#0d1117' }}>{client.name || '—'}</div>
                                 <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '1px' }}>{client.email || '—'}</div>
+                                {client.plan === 'free_trial' && client.install_preference === 'assisted' && (
+                                  <span style={{ display: 'inline-block', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '20px', padding: '2px 10px', fontSize: '10px', fontWeight: '600', marginTop: '4px' }}>🔧 Assisted Install Requested</span>
+                                )}
                               </div>
                             </div>
                           </td>

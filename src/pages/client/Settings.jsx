@@ -1247,13 +1247,14 @@ export default function ClientSettingsPage() {
   const saveRef = useRef(null);
   const [navDone, setNavDone] = useState({});
   const [cmdSToast, setCmdSToast] = useState(false);
-  const [trialExpired, setTrialExpired] = useState(false);
-  const [planEmailSent, setPlanEmailSent] = useState(false);
+  const [trialExpired,      setTrialExpired]      = useState(false);
+  const [planEmailSent,     setPlanEmailSent]     = useState(false);
+  const [installPreference, setInstallPreference] = useState(null);
 
   useEffect(() => {
     if (!clientId) return;
-    supabase.from('clients').select('plan, created_at').eq('id', clientId).single()
-      .then(({ data }) => { if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', clientId).single()
+      .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [clientId]);
 
   async function sendPlanEmail(planName) {
@@ -1305,7 +1306,7 @@ export default function ClientSettingsPage() {
 
   return (
     <ClientLayout title="Settings">
-      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} />
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} clientId={clientId} installPreference={installPreference} />
       {cmdSToast && (
         <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 9999, backgroundColor: '#0d1f12', color: '#fff', borderRadius: '10px', padding: '10px 18px', fontSize: '12px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontFamily: FONT }}>
           Saved with ⌘S
