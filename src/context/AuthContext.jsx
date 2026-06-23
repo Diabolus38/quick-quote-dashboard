@@ -102,6 +102,8 @@ export default function AuthProvider({ children }) {
     const fullName     = session.user.user_metadata?.full_name || '';
     const userEmail    = session.user.email;
 
+    console.log('ensureNewUserData: creating account for', userEmail, 'plan:', selectedPlan);
+
     await supabase.from('profiles').insert({
       id:        session.user.id,
       full_name: fullName,
@@ -109,17 +111,48 @@ export default function AuthProvider({ children }) {
       role:      'client',
     });
 
-    const { data: clientData, error: clientError } = await supabase
+    const { data: clientData } = await supabase
       .from('clients')
       .insert({ name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true })
       .select('id')
       .single();
 
-    if (clientError) {
-      console.error('ensureNewUserData: failed to create client row:', clientError);
-    } else if (clientData?.id) {
-      await supabase.from('profiles').update({ client_id: clientData.id }).eq('id', session.user.id);
-      await ensureClientData(supabase, clientData.id);
+    let clientId = clientData?.id || null;
+
+    // Path 2: insert succeeded but SELECT policy (or network) blocked read-back —
+    // try to recover the row by email lookup before giving up.
+    if (!clientId) {
+      const { data: retryData } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', userEmail)
+        .maybeSingle();
+      if (retryData?.id) {
+        console.warn('Client row recovered via email lookup after initial insert failed');
+        clientId = retryData.id;
+      }
+    }
+
+    // Path 3: row truly missing — attempt a bare insert (no .select()) then look up again.
+    if (!clientId) {
+      await supabase
+        .from('clients')
+        .insert({ name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true });
+      const { data: finalData } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('email', userEmail)
+        .maybeSingle();
+      if (finalData?.id) {
+        clientId = finalData.id;
+      }
+    }
+
+    if (clientId) {
+      await supabase.from('profiles').update({ client_id: clientId }).eq('id', session.user.id);
+      await ensureClientData(supabase, clientId);
+    } else {
+      console.error('CRITICAL: Failed to create client row for user after all retries:', session.user.id, userEmail);
     }
 
     // Re-fetch so the returned profile has client_id already linked
