@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
 
 export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendPlanEmail, clientId, installPreference }) {
+  const { profile } = useAuth();
   const [localInstallChoice, setLocalInstallChoice] = useState('self');
+  const [redirectingPlan, setRedirectingPlan] = useState(null);
 
   useEffect(() => {
     if (installPreference) setLocalInstallChoice(installPreference);
@@ -46,9 +49,23 @@ export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendP
               {plan.features.map(f => <li key={f}>{f}</li>)}
             </ul>
             <button type="button"
-              onClick={() => plan.planKey === 'enterprise' ? sendPlanEmail(plan.name) : choosePlan(plan.planKey)}
-              style={{ width: '100%', backgroundColor: plan.btnBg, color: plan.btnColor, border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-              {plan.btnLabel}
+              disabled={redirectingPlan === plan.planKey}
+              onClick={async () => {
+                if (plan.planKey === 'enterprise') { sendPlanEmail(plan.name); return; }
+                setRedirectingPlan(plan.planKey);
+                try {
+                  const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, email: profile?.email, planKey: plan.planKey, billingInterval: 'month', installType: installPreference || 'none' }),
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                  else { console.error('No checkout URL:', data); setRedirectingPlan(null); }
+                } catch (err) { console.error(err); setRedirectingPlan(null); }
+              }}
+              style={{ width: '100%', backgroundColor: plan.btnBg, color: plan.btnColor, border: 'none', borderRadius: '10px', padding: '10px', fontSize: '13.5px', fontWeight: '600', cursor: redirectingPlan === plan.planKey ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: redirectingPlan === plan.planKey ? 0.7 : 1 }}>
+              {redirectingPlan === plan.planKey ? 'Redirecting...' : plan.btnLabel}
             </button>
           </div>
         ))}

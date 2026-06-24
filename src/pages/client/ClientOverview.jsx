@@ -51,6 +51,9 @@ export default function ClientOverview() {
   const [installChoice,     setInstallChoice]     = useState('self');
   const [installSaving,     setInstallSaving]     = useState(false);
   const [installDone,       setInstallDone]       = useState(false);
+  const [checkoutLoading,   setCheckoutLoading]   = useState(false);
+  const [clientPlan,        setClientPlan]        = useState('free_trial');
+  const [checkoutBanner,    setCheckoutBanner]    = useState(null);
   const soundEnabledRef = useRef(soundEnabled);
   const dndRef = useRef(dnd);
 
@@ -61,6 +64,7 @@ export default function ClientOverview() {
     supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).single()
       .then(({ data }) => {
         setInstallPreference(data?.install_preference || null);
+        setClientPlan(data?.plan || 'free_trial');
         if (data?.plan === 'free_trial' && !data?.install_preference) setShowInstallChoice(true);
         if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true);
       });
@@ -99,13 +103,43 @@ export default function ClientOverview() {
 
     setInstallPreference(installChoice);
     setInstallSaving(false);
-    if (installChoice === 'assisted') {
+    if (clientPlan !== 'free_trial') {
+      setCheckoutLoading(true);
+      try {
+        const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: profile.client_id,
+            email: profile.email,
+            planKey: clientPlan,
+            billingInterval: 'month',
+            installType: installChoice
+          })
+        });
+        const checkoutData = await res.json();
+        if (checkoutData.url) window.location.href = checkoutData.url;
+        else { console.error('No checkout URL returned:', checkoutData); setCheckoutLoading(false); }
+      } catch (err) {
+        console.error('Checkout session error:', err);
+        setCheckoutLoading(false);
+      }
+    } else if (installChoice === 'assisted') {
       setInstallDone(true); // show confirmation screen inside the modal
     } else {
       setShowInstallChoice(false); // self-install: close immediately, no action needed from team
     }
   }
   useEffect(() => { dndRef.current = dnd; }, [dnd]);
+
+  useEffect(() => {
+    const checkout = new URLSearchParams(window.location.search).get('checkout');
+    if (checkout === 'success' || checkout === 'cancelled') {
+      setCheckoutBanner(checkout);
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => setCheckoutBanner(null), 5000);
+    }
+  }, []);
 
   function playChime() {
     try {
@@ -168,6 +202,16 @@ export default function ClientOverview() {
 
   return (
     <ClientLayout title="Overview">
+      {checkoutBanner === 'success' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: '#166534', color: '#fff', padding: '16px', textAlign: 'center', fontSize: '14px', fontWeight: '600', zIndex: 9999 }}>
+          Payment successful. Your plan is now active.
+        </div>
+      )}
+      {checkoutBanner === 'cancelled' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, backgroundColor: '#fef9c3', color: '#854d0e', padding: '16px', textAlign: 'center', fontSize: '14px', fontWeight: '600', zIndex: 9999 }}>
+          Payment was cancelled. You can upgrade anytime from Settings.
+        </div>
+      )}
       <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} clientId={profile?.client_id} installPreference={installPreference} />
 
       {showInstallChoice && (
@@ -205,9 +249,9 @@ export default function ClientOverview() {
                     </div>
                   ))}
                 </div>
-                <button type="button" disabled={installSaving} onClick={handleInstallContinue}
-                  style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: installSaving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: installSaving ? 0.8 : 1 }}>
-                  {installSaving ? 'Saving…' : 'Continue'}
+                <button type="button" disabled={installSaving || checkoutLoading} onClick={handleInstallContinue}
+                  style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: (installSaving || checkoutLoading) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: (installSaving || checkoutLoading) ? 0.8 : 1 }}>
+                  {checkoutLoading ? 'Redirecting to payment...' : installSaving ? 'Saving…' : 'Continue'}
                 </button>
               </>
             )}

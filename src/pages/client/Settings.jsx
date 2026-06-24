@@ -1178,6 +1178,10 @@ function SubscriptionSection() {
   const [createdAt, setCreatedAt] = useState(null);
   const [cancelMsg, setCancelMsg] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [showUpgradeCards, setShowUpgradeCards] = useState(false);
+  const [selectedUpgradePlan, setSelectedUpgradePlan] = useState('growth');
+  const [selectedInterval, setSelectedInterval] = useState('month');
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -1212,6 +1216,38 @@ function SubscriptionSection() {
     }
   }
 
+  const PLAN_ORDER = ['starter', 'growth', 'scale'];
+  const UPGRADE_PLAN_OPTIONS = [
+    { key: 'starter', label: 'Starter', monthly: '1,400kr', yearly: '14,000kr' },
+    { key: 'growth',  label: 'Growth',  monthly: '3,000kr', yearly: '30,000kr' },
+    { key: 'scale',   label: 'Scale',   monthly: '6,000kr', yearly: '60,000kr' },
+  ];
+  const planIdx = PLAN_ORDER.indexOf(plan);
+  const upgradeOptions = UPGRADE_PLAN_OPTIONS.filter(p => planIdx < 0 || PLAN_ORDER.indexOf(p.key) > planIdx);
+
+  async function handleProceedToPayment() {
+    setUpgradeLoading(true);
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: profile.client_id,
+          email: profile.email,
+          planKey: selectedUpgradePlan,
+          billingInterval: selectedInterval,
+          installType: 'none',
+        }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else { console.error('No checkout URL:', data); setUpgradeLoading(false); }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setUpgradeLoading(false);
+    }
+  }
+
   return (
     <>
       <div style={{ marginBottom: '20px' }}>
@@ -1238,8 +1274,8 @@ function SubscriptionSection() {
       </div>
 
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        {plan !== 'scale' && (
-          <button type="button" onClick={() => window.open('https://quickquote360.com/pricing', '_blank')}
+        {upgradeOptions.length > 0 && (
+          <button type="button" onClick={() => { setSelectedUpgradePlan(upgradeOptions[0]?.key || 'growth'); setShowUpgradeCards(true); }}
             style={{ backgroundColor: PRIMARY, color: '#fff', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
             Upgrade Plan →
           </button>
@@ -1249,6 +1285,44 @@ function SubscriptionSection() {
           Cancel Subscription
         </button>
       </div>
+      {showUpgradeCards && (
+        <div style={{ marginTop: '16px', border: '1px solid #e8ede8', borderRadius: '16px', padding: '24px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+            {['month', 'year'].map(interval => (
+              <button key={interval} type="button" onClick={() => setSelectedInterval(interval)}
+                style={{ padding: '6px 18px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', backgroundColor: selectedInterval === interval ? PRIMARY : '#f3f4f6', color: selectedInterval === interval ? '#fff' : '#6b7280', fontFamily: FONT }}>
+                {interval === 'month' ? 'Monthly' : 'Yearly'}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+            {upgradeOptions.map(p => (
+              <div key={p.key} onClick={() => setSelectedUpgradePlan(p.key)}
+                style={{ border: `2px solid ${selectedUpgradePlan === p.key ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', cursor: 'pointer', minWidth: '140px', flex: 1, position: 'relative' }}>
+                {selectedUpgradePlan === p.key && (
+                  <span style={{ position: 'absolute', top: '10px', right: '12px', color: PRIMARY, fontWeight: '700', fontSize: '13px' }}>✓</span>
+                )}
+                <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '13px', color: '#0d1117', fontFamily: FONT, textTransform: 'capitalize' }}>{p.label}</p>
+                <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>
+                  {selectedInterval === 'month' ? p.monthly : p.yearly}
+                  <span style={{ fontSize: '12px', fontWeight: '400', color: '#9ca3af', fontFamily: FONT }}>/{selectedInterval === 'month' ? 'mo' : 'yr'}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button type="button" disabled={upgradeLoading} onClick={handleProceedToPayment}
+              style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', cursor: upgradeLoading ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: upgradeLoading ? 0.7 : 1 }}>
+              {upgradeLoading ? 'Redirecting...' : 'Proceed to Payment'}
+            </button>
+            <button type="button" onClick={() => setShowUpgradeCards(false)}
+              style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '13.5px', cursor: 'pointer', fontFamily: FONT, padding: '10px 0' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {cancelMsg && <p style={{ margin: '12px 0 0', fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{cancelMsg}</p>}
     </>
   );
