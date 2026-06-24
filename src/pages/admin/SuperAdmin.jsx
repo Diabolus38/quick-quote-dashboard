@@ -156,9 +156,9 @@ function AddClientModal({ onClose, onSaved }) {
         <div style={{ marginBottom: '28px' }}>
           <label style={lbl}>Plan</label>
           <select value={plan} onChange={e => setPlan(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-            <option value="starter">Starter — ${PLAN_FEES.starter}/mo</option>
-            <option value="growth">Growth — ${PLAN_FEES.growth}/mo</option>
-            <option value="scale">Scale — ${PLAN_FEES.scale}/mo</option>
+            <option value="starter">Starter — {PLAN_FEES.starter.toLocaleString()} kr/mo</option>
+            <option value="growth">Growth — {PLAN_FEES.growth.toLocaleString()} kr/mo</option>
+            <option value="scale">Scale — {PLAN_FEES.scale.toLocaleString()} kr/mo</option>
           </select>
         </div>
 
@@ -415,9 +415,9 @@ export default function SuperAdmin() {
               <div style={CARD}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '22px', fontWeight: '800', color: LIME }}>$</div>
                 <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Monthly Revenue</p>
-                <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>${mrr.toLocaleString()}</p>
-                {mrrDiff > 0 && <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ +${mrrDiff.toLocaleString()} vs last month</p>}
-                {mrrDiff < 0 && <p style={{ margin: 0, fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>↓ −${Math.abs(mrrDiff).toLocaleString()} vs last month</p>}
+                <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{mrr.toLocaleString()} kr</p>
+                {mrrDiff > 0 && <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ +{mrrDiff.toLocaleString()} kr vs last month</p>}
+                {mrrDiff < 0 && <p style={{ margin: 0, fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>↓ −{Math.abs(mrrDiff).toLocaleString()} kr vs last month</p>}
                 {mrrDiff === 0 && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>— Same as last month</p>}
               </div>
 
@@ -524,7 +524,7 @@ export default function SuperAdmin() {
 
                           {/* Revenue */}
                           <td style={{ ...TD, fontWeight: '700', color: '#0d1117' }}>
-                            ${(PLAN_FEES[client.plan] || PLAN_FEES.starter).toLocaleString()}/mo
+                            {(PLAN_FEES[client.plan] || PLAN_FEES.starter).toLocaleString()} kr/mo
                           </td>
 
                           {/* Estimates Used */}
@@ -628,9 +628,9 @@ export default function SuperAdmin() {
                 <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Plan Distribution</p>
 
                 {[
-                  { label: 'Starter', count: starterCount, fill: LIME,    sub: `$${PLAN_FEES.starter}/mo each`  },
-                  { label: 'Growth',  count: growthCount,  fill: PRIMARY, sub: `$${PLAN_FEES.growth}/mo each`   },
-                  { label: 'Scale',   count: scaleCount,   fill: DARK,    sub: `$${PLAN_FEES.scale}/mo each`    },
+                  { label: 'Starter', count: starterCount, fill: LIME,    sub: `${PLAN_FEES.starter.toLocaleString()} kr/mo each`  },
+                  { label: 'Growth',  count: growthCount,  fill: PRIMARY, sub: `${PLAN_FEES.growth.toLocaleString()} kr/mo each`   },
+                  { label: 'Scale',   count: scaleCount,   fill: DARK,    sub: `${PLAN_FEES.scale.toLocaleString()} kr/mo each`    },
                 ].map(row => (
                   <div key={row.label} style={{ marginBottom: '18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>
@@ -648,7 +648,7 @@ export default function SuperAdmin() {
 
                 <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid #e8ede8' }}>
                   <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total MRR</p>
-                  <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>${mrr.toLocaleString()}</p>
+                  <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>{mrr.toLocaleString()} kr</p>
                 </div>
               </div>
             </div>

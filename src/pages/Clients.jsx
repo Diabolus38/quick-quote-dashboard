@@ -99,9 +99,9 @@ function ClientModal({ title, initial, onClose, onSave }) {
         <div style={{ marginBottom: '28px' }}>
           <label style={LBL}>Plan</label>
           <select value={plan} onChange={e => setPlan(e.target.value)} style={{ ...INP, cursor: 'pointer' }}>
-            <option value="starter">Starter — $300/mo</option>
-            <option value="growth">Growth — $600/mo</option>
-            <option value="scale">Scale — $1,149/mo</option>
+            <option value="starter">Starter — 1,400 kr/mo</option>
+            <option value="growth">Growth — 3,000 kr/mo</option>
+            <option value="scale">Scale — 6,000 kr/mo</option>
           </select>
         </div>
 

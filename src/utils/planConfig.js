@@ -1,7 +1,7 @@
-export const PLAN_FEES = { starter: 140, growth: 300, scale: 600, enterprise: 0, free_trial: 0 };
+export const PLAN_FEES = { starter: 1400, growth: 3000, scale: 6000, enterprise: 0, free_trial: 0 };
 export const PLAN_LIMITS = { starter: Infinity, growth: 30, scale: 75, enterprise: Infinity, free_trial: Infinity };
-export const OVERAGE_RATES = { starter: 0, growth: 25, scale: 18, enterprise: 0, free_trial: 0 };
-export const PLAN_YEARLY = { starter: 1400, growth: 3000, scale: 6000, enterprise: 0 };
+export const OVERAGE_RATES = { starter: 0, growth: 250, scale: 180, enterprise: 0, free_trial: 0 };
+export const PLAN_YEARLY = { starter: 14000, growth: 30000, scale: 60000 };
 
 // Trial-to-paid conversion: when a free_trial client selects a plan after trial expiry, their plan
 // field is updated directly (starter/growth/scale) with no payment step, since Stripe is not yet

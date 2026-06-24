@@ -10,7 +10,7 @@ const SECTIONS = [
   },
   {
     title: '2. Subscription and Billing',
-    body: `Plans are billed monthly. The following plans are available:\n\n• Starter — $300/mo (30 estimates per month)\n• Growth — $600/mo (75 estimates per month)\n• Scale — $1,149/mo (unlimited estimates)\n\nOverages are charged at the end of each billing period. No refunds are issued on monthly subscriptions once a billing period has commenced.`,
+    body: `Plans are billed monthly. The following plans are available:\n\n• Starter — 1,400 kr/mo (unlimited estimates)\n• Growth — 3,000 kr/mo (30 estimates per month)\n• Scale — 6,000 kr/mo (75 estimates per month)\n\nOverages are charged at the end of each billing period. No refunds are issued on monthly subscriptions once a billing period has commenced.`,
   },
   {
     title: '3. Acceptable Use',

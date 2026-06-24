@@ -1164,7 +1164,7 @@ const PLAN_FEATURES = {
   scale:   ['Everything in Growth', '75 estimates/month', 'Full pricing editor', 'PDF content editor', 'Brand colors', 'Email settings', 'Lead status tracking', 'ROT deduction'],
 };
 
-const PLAN_PRICES = { starter: '$140/month', growth: '$300/month', scale: '$600/month' };
+const PLAN_PRICES = { starter: '1,400 kr/month', growth: '3,000 kr/month', scale: '6,000 kr/month', free_trial: 'Free (14-day trial)', enterprise: 'Custom' };
 
 const PLAN_BADGE = {
   starter: { bg: '#f3f4f6', color: '#374151' },
@@ -1256,10 +1256,17 @@ function SubscriptionSection() {
       </div>
 
       <div style={CARD}>
-        <span style={{ display: 'inline-block', padding: '6px 20px', borderRadius: '20px', fontSize: '15px', fontWeight: '700', marginBottom: '16px', backgroundColor: badge.bg, color: badge.color, fontFamily: FONT, textTransform: 'capitalize' }}>
-          {plan || 'starter'}
+        <span style={{ display: 'inline-block', padding: '6px 20px', borderRadius: '20px', fontSize: '15px', fontWeight: '700', marginBottom: '16px', backgroundColor: badge.bg, color: badge.color, fontFamily: FONT }}>
+          {(plan || 'starter').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
         </span>
-        <p style={{ margin: '0 0 16px', fontSize: '28px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>{price}</p>
+        {plan === 'free_trial' ? (
+          <>
+            <p style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>Free</p>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>14-day trial with Scale features</p>
+          </>
+        ) : (
+          <p style={{ margin: '0 0 16px', fontSize: '28px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>{price}</p>
+        )}
         <div style={{ marginBottom: '16px' }}>
           {features.map(f => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>

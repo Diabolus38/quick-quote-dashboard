@@ -224,7 +224,7 @@ export default function AdminOverview() {
           <div onClick={() => navigate('/admin/billing')} onMouseEnter={() => setHoveredCard('mrr')} onMouseLeave={() => setHoveredCard(null)} style={{ ...CARD, cursor: 'pointer', boxShadow: hoveredCard === 'mrr' ? '0 4px 24px rgba(0,0,0,0.12)' : CARD.boxShadow }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '22px', fontWeight: '800', color: LIME }}>$</div>
             <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Monthly Revenue</p>
-            <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{'$' + mrr.toLocaleString()}</p>
+            <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{mrr.toLocaleString()} kr</p>
             <p style={{ margin: 0, fontSize: '12px', color: LIME, fontWeight: '600' }}>+{mrrGrowth} new this month</p>
           </div>
 
@@ -372,7 +372,7 @@ export default function AdminOverview() {
 
             <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e8ede8' }}>
               <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Estimated MRR</p>
-              <p style={{ margin: '0 0 16px', fontSize: '22px', fontWeight: '800', color: '#0d1117' }}>{'$' + mrr.toLocaleString()}</p>
+              <p style={{ margin: '0 0 16px', fontSize: '22px', fontWeight: '800', color: '#0d1117' }}>{mrr.toLocaleString()} kr</p>
 
               {[
                 { label: 'Active clients',   value: activeClients },
@@ -452,7 +452,7 @@ export default function AdminOverview() {
             return visibleClients;
           })().map((client, idx) => {
             const count    = rankMode === 'revenue' ? (PLAN_FEE_OV[client.plan] || 0) : rankMode === 'conversion' ? conversionRatePerClient[client.id] || 0 : (leadCountPerClient[client.id] || 0);
-            const display  = rankMode === 'revenue' ? `$${count.toLocaleString()}/mo` : rankMode === 'conversion' ? `${count}%` : String(count);
+            const display  = rankMode === 'revenue' ? `${count.toLocaleString()} kr/mo` : rankMode === 'conversion' ? `${count}%` : String(count);
             const pct      = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
             const rankColors = [
               { bg: '#d97706', color: '#fff' },

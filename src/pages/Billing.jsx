@@ -245,9 +245,9 @@ export default function Billing() {
   const collectedRevenue = billingRows.filter(r => paidStatus[r.id]).reduce((s, r) => s + r.total, 0);
 
   const statCards = [
-    { label: 'Monthly Revenue',      value: `$${totalRevenue.toLocaleString()}`,     bg: '#ecfccb', color: '#3f6212' },
-    { label: 'Collected Revenue',    value: `$${collectedRevenue.toLocaleString()}`, bg: '#dcfce7', color: '#166534' },
-    { label: 'Pending Overages',     value: `$${totalOverages.toLocaleString()}`,    bg: '#fef9c3', color: '#854d0e' },
+    { label: 'Monthly Revenue',      value: `${totalRevenue.toLocaleString()} kr`,     bg: '#ecfccb', color: '#3f6212' },
+    { label: 'Collected Revenue',    value: `${collectedRevenue.toLocaleString()} kr`, bg: '#dcfce7', color: '#166534' },
+    { label: 'Pending Overages',     value: `${totalOverages.toLocaleString()} kr`,    bg: '#fef9c3', color: '#854d0e' },
     { label: 'Active Subscriptions', value: activeCount,                              bg: '#dbeafe', color: '#1d4ed8' },
   ];
 
@@ -361,7 +361,7 @@ export default function Billing() {
               return (
                 <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
                   <span style={{ fontSize: '10px', fontWeight: '700', color: isSelected ? '#3f6212' : '#374151', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                    {total > 0 ? `$${total.toLocaleString()}` : ''}
+                    {total > 0 ? `${total.toLocaleString()} kr` : ''}
                   </span>
                   <div style={{ width: '100%', height: `${barHeight}%`, backgroundColor: isSelected ? '#a3e635' : PRIMARY, borderRadius: '6px 6px 2px 2px', minHeight: barHeight > 0 ? '4px' : '0' }} />
                 </div>
@@ -406,19 +406,19 @@ export default function Billing() {
               <div style={{ display: 'flex', gap: '48px', alignItems: 'center' }}>
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Projected Annual</p>
-                  <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${projectedAnnual.toLocaleString()}</p>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>{projectedAnnual.toLocaleString()} kr</p>
                 </div>
                 <div style={{ width: '1px', height: '60px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Year to Date</p>
-                  <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${ytdTotal.toLocaleString()}</p>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>{ytdTotal.toLocaleString()} kr</p>
                 </div>
                 <div style={{ width: '1px', height: '60px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Best Month</p>
                   {bestMonthEntry.total > 0 ? (
                     <>
-                      <p style={{ margin: '0 0 2px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>${bestMonthEntry.total.toLocaleString()}</p>
+                      <p style={{ margin: '0 0 2px', fontSize: '32px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1, fontFamily: FONT }}>{bestMonthEntry.total.toLocaleString()} kr</p>
                       <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{bestMonthEntry.label}</p>
                     </>
                   ) : (
@@ -446,7 +446,7 @@ export default function Billing() {
                 {atRiskCount} client{atRiskCount !== 1 ? 's' : ''} at risk
               </span>
               <span style={{ backgroundColor: 'rgba(22,101,52,0.08)', border: '1px solid #166534', borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', color: '#166534' }}>
-                ${projectedOverageRevenue.toLocaleString()} projected overage next month
+                {projectedOverageRevenue.toLocaleString()} kr projected overage next month
               </span>
               <span style={{ backgroundColor: 'rgba(29,78,216,0.08)', border: '1px solid #1d4ed8', borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: '600', color: '#1d4ed8' }}>
                 {unlimitedCount} on unlimited
@@ -562,7 +562,7 @@ export default function Billing() {
                       <div
                         onClick={e => e.stopPropagation()}
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', minWidth: '180px' }}>
-                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>${row.total.toLocaleString()}</div>
+                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>{row.total.toLocaleString()} kr</div>
                         <span
                           onClick={() => {
                             const next = { ...paidStatus, [row.id]: !paidStatus[row.id] };
@@ -653,23 +653,23 @@ export default function Billing() {
                 return (
                   <>
                     <span style={{ fontSize: '13px', fontWeight: '600', color: '#166534' }}>
-                      Paid: {paidRows.length} client{paidRows.length !== 1 ? 's' : ''} · ${collectedRevenue.toLocaleString()} collected
+                      Paid: {paidRows.length} client{paidRows.length !== 1 ? 's' : ''} · {collectedRevenue.toLocaleString()} kr collected
                     </span>
                     <span style={{ fontSize: '13px', fontWeight: '600', color: '#d97706' }}>
-                      Pending: {pendingRows.length} client{pendingRows.length !== 1 ? 's' : ''} · ${outstanding.toLocaleString()} outstanding
+                      Pending: {pendingRows.length} client{pendingRows.length !== 1 ? 's' : ''} · {outstanding.toLocaleString()} kr outstanding
                     </span>
                     <div style={{ width: '1px', height: '24px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
                   </>
                 );
               })()}
               <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
-                MRR: <span style={{ color: '#0d1117' }}>${totalMRR.toLocaleString()}</span>
+                MRR: <span style={{ color: '#0d1117' }}>{totalMRR.toLocaleString()} kr</span>
               </span>
               <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
-                Overages: <span style={{ color: totalOverages > 0 ? '#dc2626' : '#0d1117' }}>${totalOverages.toLocaleString()}</span>
+                Overages: <span style={{ color: totalOverages > 0 ? '#dc2626' : '#0d1117' }}>{totalOverages.toLocaleString()} kr</span>
               </span>
               <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>
-                Total: ${totalRevenue.toLocaleString()}
+                Total: {totalRevenue.toLocaleString()} kr
               </span>
             </div>
           )}

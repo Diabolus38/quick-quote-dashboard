@@ -619,9 +619,9 @@ export default function ClientDetail() {
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>Change Plan</label>
                 <select value={changePlan} onChange={e => setChangePlan(e.target.value)}
                   style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '10px 14px', fontSize: '13.5px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', marginBottom: '8px' }}>
-                  <option value="starter">Starter — ${PLAN_FEES.starter}/mo</option>
-                  <option value="growth">Growth — ${PLAN_FEES.growth}/mo</option>
-                  <option value="scale">Scale — ${PLAN_FEES.scale}/mo</option>
+                  <option value="starter">Starter — {PLAN_FEES.starter.toLocaleString()} kr/mo</option>
+                  <option value="growth">Growth — {PLAN_FEES.growth.toLocaleString()} kr/mo</option>
+                  <option value="scale">Scale — {PLAN_FEES.scale.toLocaleString()} kr/mo</option>
                 </select>
                 <button type="button" onClick={handleSavePlan}
                   style={{ width: '100%', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 0', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>

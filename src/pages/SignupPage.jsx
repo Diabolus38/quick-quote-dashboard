@@ -7,9 +7,9 @@ const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
 
 const PLAN_CARDS = [
-  { key: 'starter',    name: 'Starter',    price: '$140/mo', subtext: 'No dashboard access, unlimited estimates' },
-  { key: 'growth',     name: 'Growth',     price: '$300/mo', subtext: 'Full dashboard, 30 estimates/mo' },
-  { key: 'scale',      name: 'Scale',      price: '$600/mo', subtext: 'Everything, 75 estimates/mo' },
+  { key: 'starter',    name: 'Starter',    price: '1,400 kr/mo', subtext: 'No dashboard access, unlimited estimates' },
+  { key: 'growth',     name: 'Growth',     price: '3,000 kr/mo', subtext: 'Full dashboard, 30 estimates/mo' },
+  { key: 'scale',      name: 'Scale',      price: '6,000 kr/mo', subtext: 'Everything, 75 estimates/mo' },
   { key: 'free_trial', name: 'Free Trial', price: 'Free',    subtext: 'Full Scale features, no credit card required' },
 ];
 
