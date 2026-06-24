@@ -46,6 +46,8 @@ export default function ClientLayout({ title, subtitle, children }) {
   const [leadsThisMonth, setLeadsThisMonth] = useState(0);
   const [planLimit,      setPlanLimit]      = useState(30);
   const [sidebarSearch,  setSidebarSearch]  = useState('');
+  const [clientPlan,      setClientPlan]      = useState('starter');
+  const [clientCreatedAt, setClientCreatedAt] = useState(null);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -61,19 +63,24 @@ export default function ClientLayout({ title, subtitle, children }) {
         .gte('created_at', monthStart.toISOString()),
       supabase
         .from('clients')
-        .select('plan')
+        .select('plan, created_at')
         .eq('id', profile.client_id)
         .single(),
     ]).then(([leadsRes, clientRes]) => {
       setLeadsThisMonth(leadsRes.count || 0);
       const plan = clientRes.data?.plan || 'starter';
       setPlanLimit(PLAN_LIMITS[plan] || 30);
+      setClientPlan(plan);
+      setClientCreatedAt(clientRes.data?.created_at || null);
     });
   }, [profile?.client_id]);
 
-  const pct       = planLimit > 0 ? Math.min(100, Math.round((leadsThisMonth / planLimit) * 100)) : 0;
-  const remaining = Math.max(0, planLimit - leadsThisMonth);
-  const barColor  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : '#a3e635';
+  const pct           = planLimit > 0 ? Math.min(100, Math.round((leadsThisMonth / planLimit) * 100)) : 0;
+  const remaining     = Math.max(0, planLimit - leadsThisMonth);
+  const barColor      = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : '#a3e635';
+  const trialDaysLeft = clientPlan === 'free_trial' && clientCreatedAt
+    ? Math.max(0, 14 - Math.floor((Date.now() - new Date(clientCreatedAt).getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: FONT, backgroundColor: '#f0f2f5' }}>
@@ -141,6 +148,9 @@ export default function ClientLayout({ title, subtitle, children }) {
 
           {/* Usage Card */}
           <div style={{ backgroundColor: '#f9faf9', borderRadius: '12px', padding: '14px', border: '1px solid #e8ede8' }}>
+            {trialDaysLeft !== null && (
+              <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: '#854d0e', fontFamily: FONT }}>Trial: {trialDaysLeft} days left</p>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0' }}>
               <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Estimates this month</span>
               <span style={{ fontSize: '11px', fontWeight: '700', color: '#111827', fontFamily: FONT }}>{leadsThisMonth}/{planLimit}</span>

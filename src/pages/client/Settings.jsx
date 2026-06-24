@@ -1195,6 +1195,9 @@ function SubscriptionSection() {
   const features = PLAN_FEATURES[plan] || PLAN_FEATURES.starter;
   const price = PLAN_PRICES[plan] || PLAN_PRICES.starter;
   const memberSince = createdAt ? (() => { const d = new Date(createdAt); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : '';
+  const daysLeft = plan === 'free_trial' && createdAt
+    ? Math.max(0, 14 - Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   async function handleCancel() {
     if (!window.confirm('Are you sure you want to cancel your subscription? Your account will remain active until the end of your billing period.')) return;
@@ -1259,6 +1262,12 @@ function SubscriptionSection() {
         <span style={{ display: 'inline-block', padding: '6px 20px', borderRadius: '20px', fontSize: '15px', fontWeight: '700', marginBottom: '16px', backgroundColor: badge.bg, color: badge.color, fontFamily: FONT }}>
           {(plan || 'starter').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
         </span>
+        {plan === 'free_trial' && daysLeft !== null && (
+          <div style={{ backgroundColor: daysLeft <= 3 ? '#fee2e2' : '#fef9c3', borderRadius: '12px', padding: '14px 20px', border: `1px solid ${daysLeft <= 3 ? '#fca5a5' : '#fde68a'}`, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '28px', fontWeight: '800', color: daysLeft <= 3 ? '#dc2626' : '#854d0e', lineHeight: 1, fontFamily: FONT }}>{daysLeft}</span>
+            <span style={{ fontSize: '14px', color: daysLeft <= 3 ? '#dc2626' : '#854d0e', fontFamily: FONT }}>days left on your free trial</span>
+          </div>
+        )}
         {plan === 'free_trial' ? (
           <>
             <p style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>Free</p>
