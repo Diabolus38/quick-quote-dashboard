@@ -1231,6 +1231,7 @@ function SubscriptionSection() {
   async function handleProceedToPayment() {
     setUpgradeLoading(true);
     try {
+      console.log('Checkout payload:', { clientId: profile.client_id, email: profile.email, planKey: selectedUpgradePlan, billingInterval: selectedInterval, installType: 'none' });
       const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
