@@ -67,7 +67,7 @@ export default function ClientOverview() {
   }, [profile?.client_id]);
 
   async function sendPlanEmail(planName) {
-    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
+    await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
     setPlanEmailSent(true);
   }
 
@@ -84,7 +84,7 @@ export default function ClientOverview() {
       };
       console.log('Sending assisted install notification:', emailPayload);
       try {
-        const response = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+        const response = await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify(emailPayload),

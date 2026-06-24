@@ -19,7 +19,7 @@ export default function UpgradeLock({ feature, requiredPlan }) {
   const handleRequestUpgrade = async () => {
     setSending(true);
     try {
-      await fetch('https://estimator-widget-production.up.railway.app/send-email', {
+      await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
