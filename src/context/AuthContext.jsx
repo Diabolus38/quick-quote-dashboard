@@ -111,15 +111,35 @@ export default function AuthProvider({ children }) {
       role:      'client',
     });
 
-    const { data: clientData } = await supabase
+    const { data: existingClient } = await supabase
       .from('clients')
-      .insert({ name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true })
       .select('id')
-      .single();
+      .eq('email', userEmail)
+      .maybeSingle();
 
-    let clientId = clientData?.id || null;
+    let clientId = existingClient?.id || null;
+    if (clientId) {
+      console.log('ensureNewUserData: found existing client row, skipping insert:', clientId);
+    }
 
-    // Path 2: insert succeeded but SELECT policy (or network) blocked read-back —
+    if (!clientId) {
+      const { data: upsertData, error: upsertError } = await supabase
+        .from('clients')
+        .upsert(
+          { name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true },
+          { onConflict: 'email', ignoreDuplicates: false }
+        )
+        .select('id')
+        .single();
+      if (upsertError) {
+        console.error('ensureNewUserData: clients upsert error:', upsertError);
+      } else if (upsertData?.id) {
+        clientId = upsertData.id;
+        console.log('ensureNewUserData: client row created/updated via upsert:', clientId);
+      }
+    }
+
+    // Path 2: upsert succeeded but SELECT policy (or network) blocked read-back —
     // try to recover the row by email lookup before giving up.
     if (!clientId) {
       const { data: retryData } = await supabase
@@ -149,10 +169,18 @@ export default function AuthProvider({ children }) {
     }
 
     if (clientId) {
-      await supabase.from('profiles').update({ client_id: clientId }).eq('id', session.user.id);
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({ client_id: clientId })
+        .eq('id', session.user.id);
+      if (profileUpdateError) {
+        console.error('CRITICAL: Failed to link profile to client:', profileUpdateError);
+      } else {
+        console.log('ensureNewUserData: profile linked to client successfully:', clientId);
+      }
       await ensureClientData(supabase, clientId);
     } else {
-      console.error('CRITICAL: Failed to create client row for user after all retries:', session.user.id, userEmail);
+      console.error('CRITICAL: All registration paths failed for:', userEmail);
       try {
         await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
           method: 'POST',
@@ -160,12 +188,10 @@ export default function AuthProvider({ children }) {
           body: JSON.stringify({
             to: 'team@aiworldpartners.com',
             subject: 'CRITICAL: Failed signup - client row not created',
-            text: `User ${userEmail} (${session.user.id}) signed up but client row was not created after all retries. Manual intervention required in Supabase.`
+            text: 'User ' + userEmail + ' (auth ID: ' + session.user.id + ') signed up but client row was never created after all retries. Please fix manually in Supabase.'
           })
         });
-      } catch (emailErr) {
-        console.error('Failed to send critical alert email:', emailErr);
-      }
+      } catch (e) { console.error('Alert email failed:', e); }
     }
 
     // Re-fetch so the returned profile has client_id already linked

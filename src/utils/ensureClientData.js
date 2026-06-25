@@ -1,3 +1,5 @@
+// REQUIRED SQL: ALTER TABLE clients ADD CONSTRAINT clients_email_unique UNIQUE (email);
+
 export async function ensureClientData(supabase, clientId) {
   let healthy = true;
 
@@ -12,13 +14,10 @@ export async function ensureClientData(supabase, clientId) {
       console.error('ensureClientData error:', settingsCheckErr);
       healthy = false;
     } else if (!existingSettings) {
-      const { error: settingsInsertErr } = await supabase.from('client_settings').insert({
-        client_id:         clientId,
-        branding:          {},
-        pdf_content:       {},
-        email_settings:    {},
-        language_settings: {},
-      });
+      const { error: settingsInsertErr } = await supabase.from('client_settings').upsert(
+        { client_id: clientId, branding: {}, pdf_content: {}, email_settings: {}, language_settings: {} },
+        { onConflict: 'client_id', ignoreDuplicates: true }
+      );
       if (settingsInsertErr) {
         console.error('ensureClientData error:', settingsInsertErr);
         healthy = false;
@@ -40,16 +39,10 @@ export async function ensureClientData(supabase, clientId) {
       console.error('ensureClientData error:', pricingCheckErr);
       healthy = false;
     } else if (!existingPricing) {
-      const { error: pricingInsertErr } = await supabase.from('client_pricing').insert({
-        client_id:       clientId,
-        base_prices:     {},
-        fixed_costs:     {},
-        per_meter_costs: {},
-        addons:          {},
-        rot_enabled:     false,
-        rot_percentage:  30,
-        currency:        'SEK',
-      });
+      const { error: pricingInsertErr } = await supabase.from('client_pricing').upsert(
+        { client_id: clientId, base_prices: {}, fixed_costs: {}, per_meter_costs: {}, addons: {}, rot_enabled: false, rot_percentage: 30, currency: 'SEK' },
+        { onConflict: 'client_id', ignoreDuplicates: true }
+      );
       if (pricingInsertErr) {
         console.error('ensureClientData error:', pricingInsertErr);
         healthy = false;
