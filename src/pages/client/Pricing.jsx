@@ -88,7 +88,7 @@ const PRICE_DEFAULTS = {
   gravity_pipe: 149, pressure_pipe: 39, protection_pipe: 42,
   cable: 49, labor: 1500, makadam: 400,
   pump_well: 15500, double_pump: 4500, telescope_cover: 2800,
-  lawn_restoration_base: 15000, mass_removal: 7904, transport: 5000,
+  lawn_restoration_base: 15000, lawn_restoration_labor: 1500, mass_removal: 7904, transport: 5000,
 };
 
 const BASE_DEFAULTS = {
@@ -151,8 +151,9 @@ function PricingContent({ clientId }) {
     ['pump_well',             'Pump Well'],
     ['double_pump',           'Double Pump'],
     ['telescope_cover',       'Telescope + Well Cover'],
-    ['lawn_restoration_base', 'Lawn Restoration Base'],
-    ['mass_removal',          'Mass Removal'],
+    ['lawn_restoration_base',  'Lawn Restoration Base'],
+    ['lawn_restoration_labor', 'Lawn restoration labor surcharge'],
+    ['mass_removal',           'Mass Removal'],
     ['transport',             'Transport'],
   ];
 
@@ -464,8 +465,28 @@ function PricingContent({ clientId }) {
             ROT deduction (Rot-avdrag) is a Swedish tax deduction for labor costs on repair, conversion, and extension work. Customers can deduct 30% of labor costs directly from their invoice.
           </p>
           <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.5', fontFamily: FONT }}>
-            Note: the 1,500 kr lawn restoration labor charge is always added regardless of ROT deduction settings.
+            This charge is always added on top of the lawn restoration base price regardless of ROT settings.
           </p>
+          {(() => {
+            const idx = addOns.findIndex(item => item.key === 'lawn_restoration_labor');
+            const item = addOns[idx];
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>Lawn restoration labor surcharge</span>
+                <input type="number" className="price-input"
+                  value={item?.value === '0' || item?.value === 0 ? '' : (item?.value || '')}
+                  placeholder="1500"
+                  onChange={e => {
+                    const raw = parseFloat(e.target.value);
+                    updateList(setAddOns, idx, isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
+                  }}
+                  style={{ width: '110px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '13px', textAlign: 'right', fontFamily: FONT, color: '#0d1117', outline: 'none' }} />
+                <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{getCurrencySymbol(currency)}</span>
+                <button type="button" title="Reset to default" onClick={() => updateList(setAddOns, idx, '1500')}
+                  style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '2px 4px' }}>↺</button>
+              </div>
+            );
+          })()}
         </SettingsCard>
 
         <SettingsCard title="Currency">
