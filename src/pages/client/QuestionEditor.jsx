@@ -483,27 +483,43 @@ export default function QuestionEditor() {
       return;
     }
     setHasChanges(false);
-    setSaveMsg('Translating to all languages...');
+    setSaveMsg('Saved! Translating to all languages...');
     fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questions: rows.map(r => ({ key: r.question_key, label: r.label_en, helper: r.helper_en || '' })).filter(r => r.label) })
+      body: JSON.stringify({ questions: rows.map(r => ({ key: r.question_key, label: r.label_en, helper: r.helper_en || '' })).filter(r => r.label && r.label.trim()) })
     })
     .then(r => r.json())
     .then(data => {
       const translations = data.translations || [];
       if (translations.length > 0) {
         supabase.from('client_questions').upsert(
-          translations.map(t => ({ client_id: clientId, question_key: t.key, label_en: t.label_en || '', label_sv: t.label_sv || '', label_de: t.label_de || '', label_fr: t.label_fr || '', helper_en: t.helper_en || '', helper_sv: t.helper_sv || '', helper_de: t.helper_de || '', helper_fr: t.helper_fr || '' })),
+          translations.map(t => ({
+            client_id: clientId,
+            question_key: t.key,
+            label_en: t.label_en || '',
+            label_sv: t.label_sv || '',
+            label_de: t.label_de || '',
+            label_fr: t.label_fr || '',
+            helper_en: t.helper_en || '',
+            helper_sv: t.helper_sv || '',
+            helper_de: t.helper_de || '',
+            helper_fr: t.helper_fr || '',
+          })),
           { onConflict: 'client_id,question_key' }
-        ).then(() => { setSaveMsg('Saved in all 4 languages ✓'); setTimeout(() => setSaveMsg(''), 4000); });
+        ).then(() => { setSaveMsg('Saved in all 4 languages ✓'); setSaving(false); setTimeout(() => setSaveMsg(''), 4000); });
       } else {
         setSaveMsg('Saved!');
+        setSaving(false);
         setTimeout(() => setSaveMsg(''), 3000);
       }
     })
-    .catch(err => { console.error('Translation failed:', err); setSaveMsg('Saved in English only.'); setTimeout(() => setSaveMsg(''), 3000); });
-    setSaving(false);
+    .catch(err => {
+      console.error('Translation failed:', err);
+      setSaveMsg('Saved in English. Translation failed.');
+      setSaving(false);
+      setTimeout(() => setSaveMsg(''), 3000);
+    });
   }
 
   if (planLoading) return (
