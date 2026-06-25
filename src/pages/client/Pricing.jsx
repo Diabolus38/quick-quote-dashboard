@@ -64,7 +64,7 @@ function FieldRow({ label, children }) {
 
 function PriceInput({ value, onChange, placeholder }) {
   return (
-    <input type="number" value={value === '0' || value === 0 ? '' : value} className="price-input"
+    <input type="number" value={value} className="price-input"
       placeholder={placeholder !== undefined ? String(placeholder) : undefined}
       onChange={e => {
         const raw = parseFloat(e.target.value);
@@ -128,7 +128,10 @@ function PricingContent({ clientId }) {
   const hh = ['1','2','3','4','5'];
 
   function makeList(obj, entries) {
-    return entries.map(([key, label]) => ({ key, label, value: obj[key] === 0 ? '' : String(obj[key] ?? '') }));
+    return entries.map(([key, label]) => {
+      const v = obj[key];
+      return { key, label, value: (v && v !== 0) ? String(v) : String(PRICE_DEFAULTS[key] ?? '') };
+    });
   }
 
   const FIXED_ENTRIES = [
@@ -191,9 +194,9 @@ function PricingContent({ clientId }) {
         const pm = p.per_meter_costs || {};
         const ao = p.addons          || {};
         setBaseGrid([
-          { key: 'bdt',    label: 'BDT',     sub: 'Biological drain field',      values: hh.map(h => { const v = bp.bdt?.[h];    return v === 0 ? '' : String(v ?? ''); }) },
-          { key: 'wc',     label: 'WC only', sub: 'Water closet, no grey water', values: hh.map(h => { const v = bp.wc?.[h];     return v === 0 ? '' : String(v ?? ''); }) },
-          { key: 'wc_bdt', label: 'WC+BDT',  sub: 'Full system',                 values: hh.map(h => { const v = bp.wc_bdt?.[h]; return v === 0 ? '' : String(v ?? ''); }) },
+          { key: 'bdt',    label: 'BDT',     sub: 'Biological drain field',      values: hh.map(h => { const v = bp.bdt?.[h];    return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.bdt[h]    ?? ''); }) },
+          { key: 'wc',     label: 'WC only', sub: 'Water closet, no grey water', values: hh.map(h => { const v = bp.wc?.[h];     return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc[h]     ?? ''); }) },
+          { key: 'wc_bdt', label: 'WC+BDT',  sub: 'Full system',                 values: hh.map(h => { const v = bp.wc_bdt?.[h]; return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc_bdt[h] ?? ''); }) },
         ]);
         setFixedCosts(makeList(fc, FIXED_ENTRIES));
         setPerMeter(makeList(pm, PER_METER_ENTRIES));
