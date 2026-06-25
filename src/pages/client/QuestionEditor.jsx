@@ -486,7 +486,9 @@ export default function QuestionEditor() {
     })
     .then(r => r.json())
     .then(data => {
+      console.log('TRANSLATE RESPONSE:', JSON.stringify(data));
       const translations = data.translations || [];
+      console.log('TRANSLATIONS COUNT:', translations.length, JSON.stringify(translations));
       if (translations.length > 0) {
         supabase.from('client_questions').upsert(
           translations.map(t => ({
@@ -502,7 +504,7 @@ export default function QuestionEditor() {
             helper_fr: t.helper_fr || '',
           })),
           { onConflict: 'client_id,question_key' }
-        ).then(() => { setSaveMsg('Saved in all 4 languages ✓'); setSaving(false); setTimeout(() => setSaveMsg(''), 4000); });
+        ).then(() => { console.log('UPSERT COMPLETE'); setSaveMsg('Saved in all 4 languages ✓'); setSaving(false); setTimeout(() => setSaveMsg(''), 4000); });
       } else {
         setSaveMsg('Saved!');
         setSaving(false);
@@ -510,6 +512,7 @@ export default function QuestionEditor() {
       }
     })
     .catch(err => {
+      console.error('FETCH ERROR:', err);
       console.error('Translation failed:', err);
       setSaveMsg('Saved in English. Translation failed.');
       setSaving(false);
