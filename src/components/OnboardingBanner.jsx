@@ -10,38 +10,43 @@ export default function OnboardingBanner() {
   const { profile } = useAuth();
   const navigate    = useNavigate();
 
-  const [visible,  setVisible]  = useState(false);
+  const [visible,   setVisible]   = useState(false);
   const [checklist, setChecklist] = useState(null);
+  const [allDone,   setAllDone]   = useState(false);
 
   useEffect(() => {
     if (!profile?.client_id) return;
 
-    const dismissKey = `qq360_onboarding_dismissed_${profile.client_id}`;
-    if (localStorage.getItem(dismissKey)) return;
-
     async function fetchStatus() {
-      const [settingsRes, pricingRes, clientRes] = await Promise.all([
-        supabase.from('client_settings').select('branding').eq('client_id', profile.client_id).single(),
+      const [settingsRes, pricingRes, municipalitiesRes, questionsRes] = await Promise.all([
+        supabase.from('client_settings').select('branding, pdf_content').eq('client_id', profile.client_id).single(),
         supabase.from('client_pricing').select('base_prices').eq('client_id', profile.client_id).single(),
-        supabase.from('clients').select('website_url').eq('id', profile.client_id).single(),
+        supabase.from('client_municipalities').select('id').eq('client_id', profile.client_id).limit(1),
+        supabase.from('client_questions').select('id').eq('client_id', profile.client_id).not('label_en', 'is', null).limit(1),
       ]);
 
-      const branding   = settingsRes.data?.branding;
-      const basePrices = pricingRes.data?.base_prices;
-      const websiteUrl = clientRes.data?.website_url;
+      const branding   = settingsRes.data?.branding    || {};
+      const pdfContent = settingsRes.data?.pdf_content || {};
+      const basePrices = pricingRes.data?.base_prices  || {};
 
-      const brandingDone  = !!(branding && branding.company_name);
-      const pricingDone   = !!(basePrices && Object.values(basePrices).some(v => Number(v) > 0));
-      const installedDone = !!(websiteUrl && websiteUrl.trim());
+      const brandingDone       = !!(branding.company_name);
+      const pricingDone        = !!(Object.values(basePrices).some(v => Number(v) > 0));
+      const pdfDone            = !!(pdfContent.introduction);
+      const municipalitiesDone = !!(municipalitiesRes.data && municipalitiesRes.data.length > 0);
+      const questionsDone      = !!(questionsRes.data && questionsRes.data.length > 0);
 
       const items = [
-        { label: 'Set up your branding',    done: brandingDone,  route: '/client/settings'  },
-        { label: 'Configure your pricing',  done: pricingDone,   route: '/client/pricing'   },
-        { label: 'Customize your questions', done: false,         route: '/client/questions' },
-        { label: 'Install on your website', done: installedDone, route: '/client/settings'  },
+        { label: 'Set up your branding',     done: brandingDone,       route: '/client/settings'       },
+        { label: 'Configure your pricing',   done: pricingDone,        route: '/client/pricing'        },
+        { label: 'Set up your PDF content',  done: pdfDone,            route: '/client/pdf'            },
+        { label: 'Add service areas',        done: municipalitiesDone, route: '/client/municipalities' },
+        { label: 'Customize your questions', done: questionsDone,      route: '/client/questions'      },
       ];
 
-      if (items.every(i => i.done)) return;
+      if (items.every(i => i.done)) {
+        setAllDone(true);
+        return;
+      }
 
       setChecklist(items);
       setVisible(true);
@@ -50,19 +55,14 @@ export default function OnboardingBanner() {
     fetchStatus();
   }, [profile?.client_id]);
 
-  function dismiss() {
-    const dismissKey = `qq360_onboarding_dismissed_${profile.client_id}`;
-    localStorage.setItem(dismissKey, 'true');
-    setVisible(false);
-  }
-
+  if (allDone) return null;
   if (!visible || !checklist) return null;
 
   return (
     <div style={{ backgroundColor: '#0d1f12', borderRadius: '16px', padding: '24px', marginBottom: '24px', position: 'relative', fontFamily: FONT }}>
 
-      {/* Dismiss button */}
-      <button type="button" onClick={dismiss}
+      {/* Dismiss button — in-session only */}
+      <button type="button" onClick={() => setVisible(false)}
         style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px 8px', borderRadius: '6px' }}>
         ×
       </button>
