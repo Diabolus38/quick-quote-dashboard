@@ -277,15 +277,13 @@ function PricingContent({ clientId }) {
   }
 
   async function handleConvertPrices() {
-    if (prevCurrency === currency) {
-      setConvertMsg('Already in ' + currency);
-      setTimeout(() => setConvertMsg(''), 2000);
-      return;
-    }
+    console.log('Converting from:', prevCurrency, 'to:', currency);
     try {
       const res = await fetch(`https://api.frankfurter.dev/v1/latest?from=${prevCurrency}&to=${currency}`);
       const data = await res.json();
       const rate = data.rates?.[currency];
+      console.log('Exchange rate:', rate);
+      console.log('Before conversion:', baseGrid[0].values[0]);
       if (!rate) throw new Error('No rate');
       const conv = v => (!v || v === '' || v === '0') ? v : String(Math.round(Number(v) * rate));
       setBaseGrid(prev => prev.map(row => ({ ...row, values: row.values.map(v => (!v || v === '' || v === '0') ? v : String(Math.round(Number(v) * rate))) })));
@@ -295,6 +293,7 @@ function PricingContent({ clientId }) {
       setPrevCurrency(currency);
       setConvertMsg('Converted!');
       setTimeout(() => setConvertMsg(''), 2500);
+      console.log('After conversion:', baseGrid[0]?.values[0]);
     } catch {
       setConvertMsg('Conversion failed — please update prices manually');
       setTimeout(() => setConvertMsg(''), 4000);
