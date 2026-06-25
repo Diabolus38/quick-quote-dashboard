@@ -164,7 +164,7 @@ function PricingContent({ clientId }) {
   const [rotEnabled,  setRotEnabled]  = useState(false);
   const [rotPercent,  setRotPercent]  = useState('30');
   const [rotMode,     setRotMode]     = useState('percentage');
-  const [rotFixedAmount, setRotFixedAmount] = useState('');
+  const [rotFixedAmount, setRotFixedAmount] = useState('0');
   const [currency,    setCurrency]    = useState('SEK');
   const [prevCurrency, setPrevCurrency] = useState('SEK');
   const [convertMsg,  setConvertMsg]  = useState('');
@@ -196,7 +196,7 @@ function PricingContent({ clientId }) {
         setRotEnabled(p.rot_enabled    ?? false);
         setRotPercent(String(p.rot_percentage ?? 30));
         setRotMode(p.rot_mode || 'percentage');
-        setRotFixedAmount(p.rot_fixed_amount ? String(p.rot_fixed_amount) : '');
+        setRotFixedAmount(p.rot_fixed_amount ? String(p.rot_fixed_amount) : '0');
         setCurrency(p.currency || 'SEK');
         setPrevCurrency(p.currency || 'SEK');
         setLoading(false);
@@ -411,39 +411,42 @@ function PricingContent({ clientId }) {
           </div>
           {rotEnabled && (
             <>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
-                {[['percentage', 'Percentage %'], ['fixed', 'Fixed amount kr']].map(([mode, label]) => (
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                {[['percentage', 'Percentage %'], ['fixed', 'Fixed amount (kr)']].map(([mode, label]) => (
                   <button key={mode} type="button" onClick={() => setRotMode(mode)}
-                    style={{ flex: 1, padding: '7px 0', borderRadius: '20px', border: `1px solid ${rotMode === mode ? PRIMARY : '#e8ede8'}`, backgroundColor: rotMode === mode ? PRIMARY : '#fff', color: rotMode === mode ? '#fff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s' }}>
+                    style={{ borderRadius: '20px', padding: '6px 16px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, border: rotMode === mode ? 'none' : '1px solid #e8ede8', backgroundColor: rotMode === mode ? PRIMARY : '#fff', color: rotMode === mode ? '#fff' : '#374151' }}>
                     {label}
                   </button>
                 ))}
               </div>
-              {rotMode === 'percentage' ? (
-                <FieldRow label="Deduction Percentage">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <PriceInput value={rotPercent} onChange={setRotPercent} placeholder="30" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                {rotMode === 'percentage' ? (
+                  <>
+                    <input type="number" value={rotPercent} className="price-input"
+                      onChange={e => { const raw = parseFloat(e.target.value); setRotPercent(isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 100))); }}
+                      style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
                     <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>%</span>
-                  </div>
-                </FieldRow>
-              ) : (
-                <FieldRow label="Fixed Deduction Amount">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <PriceInput value={rotFixedAmount} onChange={setRotFixedAmount} placeholder="0" />
+                  </>
+                ) : (
+                  <>
+                    <input type="number" value={rotFixedAmount} className="price-input"
+                      onChange={e => { const raw = parseFloat(e.target.value); setRotFixedAmount(isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999))); }}
+                      style={{ width: '110px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
                     <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>kr</span>
-                  </div>
-                </FieldRow>
-              )}
+                  </>
+                )}
+              </div>
               {(() => {
                 const base = 100000;
-                const deduction = rotMode === 'percentage'
-                  ? Math.round(base * (Number(rotPercent) || 0) / 100)
-                  : Number(rotFixedAmount) || 0;
+                const pct = Number(rotPercent) || 0;
+                const fixedAmt = Number(rotFixedAmount) || 0;
+                const deduction = rotMode === 'percentage' ? Math.round(base * pct / 100) : fixedAmt;
                 return (
-                  <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#166534', lineHeight: '1.6', marginTop: '12px', fontFamily: FONT }}>
-                    <strong>Example:</strong> A job priced at 100,000 kr{rotMode === 'percentage' ? ` with ${Number(rotPercent) || 0}% ROT deduction` : ` with ${deduction.toLocaleString()} kr fixed ROT deduction`}.<br />
-                    Customer pays: <strong>{(base - deduction).toLocaleString()} kr</strong><br />
-                    Tax deduction: <strong>{deduction.toLocaleString()} kr</strong>
+                  <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#166534', lineHeight: '1.6', fontFamily: FONT }}>
+                    {rotMode === 'percentage'
+                      ? `Example: a job priced at 100,000 kr with ${pct}% ROT deduction. Customer pays: ${(base - deduction).toLocaleString()} kr. Tax deduction: ${deduction.toLocaleString()} kr.`
+                      : `Example: a job priced at 100,000 kr with ${fixedAmt.toLocaleString()} kr fixed ROT deduction. Customer pays: ${(base - deduction).toLocaleString()} kr. Tax deduction: ${deduction.toLocaleString()} kr.`
+                    }
                   </div>
                 );
               })()}
@@ -467,6 +470,7 @@ function PricingContent({ clientId }) {
             style={{ backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, marginTop: '4px' }}>
             Convert all prices
           </button>
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Converts all prices you have entered to the selected currency using live exchange rates.</p>
           {convertMsg && (
             <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: '600', color: convertMsg.startsWith('Conversion') ? '#dc2626' : '#16a34a', fontFamily: FONT }}>
               {convertMsg}
