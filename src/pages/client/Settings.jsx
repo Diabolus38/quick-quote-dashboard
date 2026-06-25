@@ -922,8 +922,9 @@ function EmbedCodeSection({ clientId }) {
 
 function AccountSection({ setHasUnsaved, setSaveRef }) {
   const { profile } = useAuth();
-  const [fullName,    setFullName]    = useState('');
-  const [avatarUrl,   setAvatarUrl]   = useState('');
+  const [fullName,        setFullName]        = useState('');
+  const [avatarUrl,       setAvatarUrl]       = useState('');
+  const [companyLocation, setCompanyLocation] = useState('');
   const [saveMsg,     flash]          = useSaveMsg();
   const [pwMsg,       setPwMsg]       = useState('');
   const [uploading,   setUploading]   = useState(false);
@@ -942,11 +943,21 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
   }, [profile?.id]);
 
   useEffect(() => {
+    if (!profile?.client_id) return;
+    supabase.from('clients').select('company_location').eq('id', profile.client_id).single()
+      .then(({ data }) => { if (data) setCompanyLocation(data.company_location || ''); });
+  }, [profile?.client_id]);
+
+  useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [fullName]);
+  }, [fullName, companyLocation]);
 
   async function handleSave() {
     await supabase.from('profiles').update({ full_name: fullName }).eq('id', profile.id);
+    if (profile?.client_id) {
+      /* Requires Supabase column: ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_location TEXT DEFAULT NULL; */
+      await supabase.from('clients').update({ company_location: companyLocation }).eq('id', profile.client_id);
+    }
     flash();
     setHasUnsaved?.(false);
   }
@@ -1040,6 +1051,10 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
           <input type="email" value={profile?.email || ''} readOnly
             style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#6b7280', outline: 'none', fontFamily: FONT, backgroundColor: '#f9fafb', cursor: 'not-allowed' }} />
           <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Contact support to change your email.</p>
+        </FieldRow>
+        <FieldRow label="Company location / Office address">
+          <TextInput value={companyLocation} onChange={setCompanyLocation} placeholder="e.g. Storgatan 12, Stockholm" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Used to calculate travel distance to customer municipalities.</p>
         </FieldRow>
       </div>
       <SaveRow onClick={handleSave} msg={saveMsg} />
@@ -1182,11 +1197,16 @@ function SubscriptionSection() {
   const [selectedUpgradePlan, setSelectedUpgradePlan] = useState('growth');
   const [selectedInterval, setSelectedInterval] = useState('month');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [stripeCustomerId, setStripeCustomerId] = useState(null);
 
   useEffect(() => {
     if (!profile?.client_id) return;
-    supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).single()
-      .then(({ data }) => { if (data?.created_at) setCreatedAt(data.created_at); });
+    supabase.from('clients').select('plan, created_at, stripe_customer_id').eq('id', profile.client_id).single()
+      .then(({ data }) => {
+        if (data?.created_at) setCreatedAt(data.created_at);
+        setStripeCustomerId(data?.stripe_customer_id || null);
+      });
   }, [profile?.client_id]);
 
   if (planLoading) return <SettingsSkeleton />;
@@ -1198,6 +1218,23 @@ function SubscriptionSection() {
   const daysLeft = plan === 'free_trial' && createdAt
     ? Math.max(0, 14 - Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24)))
     : null;
+
+  async function handleManageBilling() {
+    setPortalLoading(true);
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: profile.client_id }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else console.error('No portal URL:', data);
+    } catch (err) {
+      console.error('Portal error:', err);
+    }
+    setPortalLoading(false);
+  }
 
   async function handleCancel() {
     if (!window.confirm('Are you sure you want to cancel your subscription? Your account will remain active until the end of your billing period.')) return;
@@ -1297,11 +1334,16 @@ function SubscriptionSection() {
             Upgrade Plan →
           </button>
         )}
+        <button type="button" onClick={handleManageBilling} disabled={portalLoading || !stripeCustomerId}
+          style={{ backgroundColor: '#fff', border: '1px solid #d1d5db', color: '#374151', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', cursor: (portalLoading || !stripeCustomerId) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: (portalLoading || !stripeCustomerId) ? 0.7 : 1 }}>
+          {portalLoading ? 'Redirecting...' : 'Manage Billing'}
+        </button>
         <button type="button" onClick={handleCancel} disabled={cancelling}
           style={{ backgroundColor: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', cursor: cancelling ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: cancelling ? 0.7 : 1 }}>
           Cancel Subscription
         </button>
       </div>
+      {!stripeCustomerId && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Manage Billing will be available once your first payment is processed.</p>}
       {showUpgradeCards && (
         <div style={{ marginTop: '16px', border: '1px solid #e8ede8', borderRadius: '16px', padding: '24px' }}>
           <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>

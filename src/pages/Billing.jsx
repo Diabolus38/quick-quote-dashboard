@@ -186,7 +186,9 @@ export default function Billing() {
     const fee     = PLAN_FEE[plan]     ?? 300;
     const limit   = PLAN_LIMIT[plan]   ?? 30;
     const rate    = OVERAGE_RATE[plan] ?? 25;
-    const used    = leadsThisMonth[c.id] || 0;
+    const used    = (c.billing_period_start && c.billing_period_end)
+      ? allLeads.filter(l => l.client_id === c.id && l.created_at >= c.billing_period_start && l.created_at < c.billing_period_end).length
+      : (leadsThisMonth[c.id] || 0);
     const overage = limit === Infinity ? 0 : Math.max(0, used - limit);
     const overageCharge = overage * rate;
     const total   = fee + overageCharge;
@@ -204,6 +206,8 @@ export default function Billing() {
       overageCharge,
       total,
       status:        'Paid',
+      billing_period_start: c.billing_period_start || null,
+      billing_period_end:   c.billing_period_end   || null,
     };
   });
 
@@ -606,6 +610,16 @@ export default function Billing() {
                             <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Lead Dates This Period</p>
                             <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>First: <strong>{firstLead}</strong></p>
                             <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>Last: <strong>{lastLead}</strong></p>
+                          </div>
+                          <div>
+                            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Billing Period</p>
+                            {row.billing_period_start && row.billing_period_end ? (
+                              <p style={{ margin: 0, fontSize: '13px', color: '#0d1117', fontFamily: FONT }}>
+                                {new Date(row.billing_period_start).toLocaleDateString('en-GB')} – {new Date(row.billing_period_end).toLocaleDateString('en-GB')}
+                              </p>
+                            ) : (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Not yet set — will update after first payment.</p>
+                            )}
                           </div>
                           <div>
                             <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Usage Pace</p>
