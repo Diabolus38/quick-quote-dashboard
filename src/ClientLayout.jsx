@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
@@ -29,6 +29,15 @@ const CONFIG_ITEMS = [
 ];
 
 
+function timeAgo(dateStr) {
+  const m = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
 function getInitials(name) {
   if (!name) return 'CL';
   const parts = name.trim().split(' ').filter(Boolean);
@@ -41,13 +50,19 @@ export default function ClientLayout({ title, subtitle, children }) {
   const navigate             = useNavigate();
   const initials             = getInitials(profile?.full_name);
 
-  const [showNotif,      setShowNotif]      = useState(false);
-  const [showBugReport,  setShowBugReport]  = useState(false);
-  const [leadsThisMonth, setLeadsThisMonth] = useState(0);
-  const [planLimit,      setPlanLimit]      = useState(30);
-  const [sidebarSearch,  setSidebarSearch]  = useState('');
+  const [showNotif,       setShowNotif]       = useState(false);
+  const [notifications,   setNotifications]   = useState([]);
+  const [showBugReport,   setShowBugReport]   = useState(false);
+  const [leadsThisMonth,  setLeadsThisMonth]  = useState(0);
+  const [planLimit,       setPlanLimit]       = useState(30);
+  const [sidebarSearch,   setSidebarSearch]   = useState('');
   const [clientPlan,      setClientPlan]      = useState('starter');
   const [clientCreatedAt, setClientCreatedAt] = useState(null);
+
+  const leadsThisMonthRef = useRef(0);
+  const planLimitRef      = useRef(30);
+  useEffect(() => { leadsThisMonthRef.current = leadsThisMonth; }, [leadsThisMonth]);
+  useEffect(() => { planLimitRef.current = planLimit; }, [planLimit]);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -74,6 +89,66 @@ export default function ClientLayout({ title, subtitle, children }) {
       setClientCreatedAt(clientRes.data?.created_at || null);
     });
   }, [profile?.client_id]);
+
+  useEffect(() => {
+    if (!profile?.client_id) return;
+    supabase.from('notifications')
+      .select('*')
+      .eq('client_id', profile.client_id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => setNotifications(data || []));
+  }, [profile?.client_id]);
+
+  useEffect(() => {
+    if (!profile?.client_id) return;
+    const clientId = profile.client_id;
+    const channel = supabase
+      .channel('new-leads-notify-' + clientId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: 'client_id=eq.' + clientId }, async (payload) => {
+        const { data: inserted } = await supabase.from('notifications').insert({
+          client_id: clientId,
+          type: 'new_lead',
+          title: 'New lead received',
+          message: (payload.new.name || 'A visitor') + ' requested a quote' + (payload.new.municipality ? ' in ' + payload.new.municipality : '') + '.',
+          read: false,
+        }).select('*').single();
+        if (inserted) setNotifications(prev => [inserted, ...prev]);
+
+        const newCount    = leadsThisMonthRef.current + 1;
+        setLeadsThisMonth(newCount);
+        const remaining   = Math.max(0, planLimitRef.current - newCount);
+        for (const threshold of [10, 5, 3, 0]) {
+          const key = 'qq360_notif_' + clientId + '_' + threshold;
+          if (remaining === threshold && !localStorage.getItem(key)) {
+            localStorage.setItem(key, '1');
+            const title = threshold === 0 ? 'Estimate limit reached' : 'Running low on estimates';
+            const msg   = threshold === 0
+              ? 'You have reached your monthly estimate limit.'
+              : 'You have ' + threshold + ' estimate' + (threshold === 1 ? '' : 's') + ' remaining this month.';
+            const { data: tw } = await supabase.from('notifications').insert({
+              client_id: clientId, type: 'usage_warning', title, message: msg, read: false,
+            }).select('*').single();
+            if (tw) setNotifications(prev => [tw, ...prev]);
+          }
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.client_id]);
+
+  async function markNotifRead(id) {
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  }
+
+  async function markAllRead() {
+    if (!profile?.client_id) return;
+    await supabase.from('notifications').update({ read: true }).eq('client_id', profile.client_id).eq('read', false);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const pct           = planLimit > 0 ? Math.min(100, Math.round((leadsThisMonth / planLimit) * 100)) : 0;
   const remaining     = Math.max(0, planLimit - leadsThisMonth);
@@ -210,10 +285,37 @@ export default function ClientLayout({ title, subtitle, children }) {
               <button type="button" onClick={() => setShowNotif(v => !v)}
                 style={{ position: 'relative', background: 'transparent', border: 'none', padding: '6px', borderRadius: '8px', fontSize: '18px', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 🔔
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: '2px', right: '2px', minWidth: '16px', height: '16px', borderRadius: '99px', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', fontFamily: FONT, lineHeight: 1 }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
               {showNotif && (
-                <div style={{ position: 'absolute', top: '44px', right: 0, backgroundColor: '#ffffff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', zIndex: 100, minWidth: '200px', fontFamily: FONT }}>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', textAlign: 'center' }}>No new notifications 🔔</p>
+                <div style={{ position: 'absolute', top: '100%', right: 0, width: '320px', backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', zIndex: 100, maxHeight: '400px', overflowY: 'auto', fontFamily: FONT, border: '1px solid #ebebeb' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px', borderBottom: '1px solid #f3f4f6' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#111827' }}>Notifications</span>
+                    {unreadCount > 0 && (
+                      <button type="button" onClick={markAllRead} style={{ background: 'none', border: 'none', fontSize: '12px', color: PRIMARY, cursor: 'pointer', fontWeight: '600', fontFamily: FONT, padding: 0 }}>
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', textAlign: 'center', padding: '24px 16px' }}>No notifications yet</p>
+                  ) : notifications.map(n => (
+                    <div key={n.id} onClick={() => markNotifRead(n.id)}
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #f9fafb', cursor: 'pointer', backgroundColor: n.read ? '#fff' : '#f0fdf4', transition: 'background 0.15s' }}>
+                      <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>{n.type === 'new_lead' ? '👤' : n.type === 'usage_warning' ? '⚠️' : '🔔'}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: n.read ? '500' : '700', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</span>
+                          <span style={{ fontSize: '11px', color: '#9ca3af', flexShrink: 0 }}>{timeAgo(n.created_at)}</span>
+                        </div>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#6b7280', lineHeight: 1.4 }}>{n.message}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

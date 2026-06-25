@@ -410,6 +410,15 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   y += 8
 
   if (showAuth) {
+    if (pdf.authorized_signature_url) {
+      try {
+        const sigBase64 = await fetchImageAsBase64(pdf.authorized_signature_url);
+        const sigFmt = /jpeg|jpg/i.test(sigBase64) ? 'JPEG' : 'PNG';
+        doc.addImage(sigBase64, sigFmt, margin, y, 50, 14);
+        y += 16;
+      } catch {}
+    }
+
     doc.setDrawColor(...BORDER)
     doc.setLineWidth(0.5)
     doc.line(margin, y, margin + 60, y)
@@ -418,14 +427,12 @@ export default async function generateQuotePDF({ lead, client, settings }) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(10)
     doc.setTextColor(...TEXT_DARK)
-    doc.text(pdf.signature_name || client.name || '—', margin, y)
+    doc.text(pdf.authorized_by_name || 'Authorized representative', margin, y)
     y += 4.5
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor(...TEXT_LIGHT)
-    if (pdf.signature_title) { doc.text(pdf.signature_title, margin, y); y += 4 }
-    if (pdf.signature_phone) { doc.text(pdf.signature_phone, margin, y); y += 4 }
-    doc.text(pdf.signature_email || client.email || '', margin, y)
+    if (pdf.authorized_by_title) { doc.text(pdf.authorized_by_title, margin, y); y += 4 }
   }
 
   if (showPoweredBy) {

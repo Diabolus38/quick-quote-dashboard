@@ -1438,9 +1438,99 @@ function SubscriptionSection() {
   );
 }
 
+/* ── Get Help ────────────────────────────────────────────────── */
+
+function GetHelpSection() {
+  const { profile } = useAuth();
+  const { plan } = useClientPlan();
+  const [subject,  setSubject]  = useState('');
+  const [category, setCategory] = useState('General Question');
+  const [message,  setMessage]  = useState('');
+  const [sending,  setSending]  = useState(false);
+  const [sent,     setSent]     = useState(false);
+  const [sendErr,  setSendErr]  = useState('');
+
+  async function handleSend() {
+    if (!subject.trim() || !message.trim()) return;
+    setSending(true);
+    setSendErr('');
+    const body = [
+      'Category: ' + category,
+      'Subject: ' + subject,
+      '',
+      'Message:',
+      message,
+      '',
+      'From: ' + (profile?.full_name || 'Unknown') + ' (' + (profile?.email || '') + ')',
+      'Plan: ' + (plan || 'unknown'),
+    ].join('\n');
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: 'Help Request: ' + subject, body }),
+      });
+      if (res.ok) {
+        setSent(true);
+        setSubject(''); setCategory('General Question'); setMessage('');
+      } else { setSendErr('Failed to send. Please try again.'); }
+    } catch { setSendErr('Failed to send. Please try again.'); }
+    setSending(false);
+  }
+
+  const planLabel = (plan || 'starter').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Get Help</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Send us a message and we will get back to you.</p>
+      </div>
+      <div style={CARD}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f3f4f6' }}>
+          <div>
+            <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Current plan</span>
+            <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{planLabel}</p>
+          </div>
+          <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Response time: typically within 24 hours.</span>
+        </div>
+        {sent ? (
+          <p style={{ textAlign: 'center', fontSize: '14px', fontWeight: '600', color: '#166534', padding: '20px 0', fontFamily: FONT }}>Message sent! We will get back to you shortly.</p>
+        ) : (
+          <>
+            <FieldRow label="Category">
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', cursor: 'pointer' }}>
+                <option>General Question</option>
+                <option>Technical Issue</option>
+                <option>Billing Question</option>
+                <option>Feature Request</option>
+              </select>
+            </FieldRow>
+            <FieldRow label="Subject">
+              <TextInput value={subject} onChange={setSubject} placeholder="Brief description of your question" />
+            </FieldRow>
+            <FieldRow label="Message">
+              <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Describe your question or issue in detail..."
+                style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '12px 14px', fontSize: '13.5px', color: '#0d1117', fontFamily: FONT, resize: 'vertical', outline: 'none', backgroundColor: '#fff', minHeight: '120px' }} />
+            </FieldRow>
+            {sendErr && <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{sendErr}</p>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={handleSend} disabled={sending || !subject.trim() || !message.trim()}
+                style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 24px', fontSize: '13.5px', fontWeight: '600', cursor: (sending || !subject.trim() || !message.trim()) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: (sending || !subject.trim() || !message.trim()) ? 0.7 : 1 }}>
+                {sending ? 'Sending…' : 'Send Message'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 /* ── Root ────────────────────────────────────────────────────── */
 
-const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Subscription', 'Danger Zone'];
+const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Subscription', 'Get Help', 'Danger Zone'];
 
 export default function ClientSettingsPage() {
   const { profile } = useAuth();
@@ -1542,6 +1632,7 @@ export default function ClientSettingsPage() {
           {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
           {activeSection === 'Account'        && <AccountSection setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeSection === 'Subscription'   && <SubscriptionSection />}
+          {activeSection === 'Get Help'       && <GetHelpSection />}
           {activeSection === 'Danger Zone'    && <DangerZoneSection />}
         </div>
       </div>

@@ -94,6 +94,11 @@ function PDFContent({ clientId }) {
   const [questionsText,     setQuestionsText]     = useState('');
   const [fromText,          setFromText]          = useState('');
   const [showAuthorizedBy,  setShowAuthorizedBy]  = useState(false);
+  const [authorizedByName,  setAuthorizedByName]  = useState('');
+  const [authorizedByTitle, setAuthorizedByTitle] = useState('');
+  const [authorizedSigUrl,  setAuthorizedSigUrl]  = useState('');
+  const [uploadingSig,      setUploadingSig]      = useState(false);
+  const [sigUploadErr,      setSigUploadErr]      = useState('');
   const [saveMsg, flash] = useSaveMsg();
   const [lastSavedPdf, setLastSavedPdf] = useState(() => localStorage.getItem(`qq360_last_saved_pdf_${profile?.id || 'anon'}`) || '');
   const [sectionVisible, setSectionVisible] = useState({ intro: true, systemDesc: true, serviceAg: true, payTerms: true, legal: true });
@@ -122,6 +127,9 @@ function PDFContent({ clientId }) {
         setQuestionsText(pc.questions_text || '');
         setFromText(pc.from_text || '');
         setShowAuthorizedBy(pc.show_authorized_by ?? false);
+        setAuthorizedByName(pc.authorized_by_name   || '');
+        setAuthorizedByTitle(pc.authorized_by_title || '');
+        setAuthorizedSigUrl(pc.authorized_signature_url || '');
         setLoading(false);
       });
   }, [clientId]);
@@ -168,6 +176,24 @@ function PDFContent({ clientId }) {
     setUploadingLogo(false);
   }
 
+  async function handleSigUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setSigUploadErr('Please select an image file.'); setTimeout(() => setSigUploadErr(''), 3000); return; }
+    if (file.size > 5 * 1024 * 1024) { setSigUploadErr('Image must be smaller than 5MB.'); setTimeout(() => setSigUploadErr(''), 3000); return; }
+    setUploadingSig(true);
+    const path = `${clientId}/signature/${file.name}`;
+    const { error } = await supabase.storage.from('client-assets').upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from('client-assets').getPublicUrl(path);
+      setAuthorizedSigUrl(urlData.publicUrl);
+    } else {
+      setSigUploadErr('Upload failed. Please try again.');
+      setTimeout(() => setSigUploadErr(''), 3000);
+    }
+    setUploadingSig(false);
+  }
+
   async function handleSave() {
     await supabase.from('client_settings').update({
       pdf_content: {
@@ -185,7 +211,10 @@ function PDFContent({ clientId }) {
         quote_validity_text: quoteValidityText,
         questions_text:      questionsText,
         from_text:           fromText,
-        show_authorized_by:  showAuthorizedBy,
+        show_authorized_by:       showAuthorizedBy,
+        authorized_by_name:       authorizedByName,
+        authorized_by_title:      authorizedByTitle,
+        authorized_signature_url: authorizedSigUrl,
       },
     }).eq('client_id', clientId);
     flash();
@@ -273,6 +302,31 @@ function PDFContent({ clientId }) {
             <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>Show Authorized By section</span>
           </div>
           <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>When enabled shows an Authorized By signature line on the PDF.</p>
+          {showAuthorizedBy && (
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <FieldRow label="Authorized By Name">
+                <TextInput value={authorizedByName} onChange={setAuthorizedByName} placeholder="e.g. Jane Smith" />
+              </FieldRow>
+              <FieldRow label="Authorized By Title">
+                <TextInput value={authorizedByTitle} onChange={setAuthorizedByTitle} placeholder="e.g. Operations Manager" />
+              </FieldRow>
+              <FieldRow label="Signature Image (optional)">
+                {authorizedSigUrl && (
+                  <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img src={authorizedSigUrl} alt="signature" style={{ maxHeight: '60px', maxWidth: '200px', borderRadius: '6px', border: '1px solid #e8ede8', objectFit: 'contain' }} />
+                    <button type="button" onClick={() => setAuthorizedSigUrl('')}
+                      style={{ fontSize: '12px', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT, fontWeight: '600', padding: 0 }}>
+                      Remove
+                    </button>
+                  </div>
+                )}
+                <input type="file" accept="image/*" onChange={handleSigUpload} disabled={uploadingSig}
+                  style={{ fontSize: '13px', fontFamily: FONT, color: '#374151', cursor: 'pointer' }} />
+                {uploadingSig && <span style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontFamily: FONT }}>Uploading...</span>}
+                {sigUploadErr && <span style={{ display: 'block', fontSize: '12px', color: '#dc2626', marginTop: '4px', fontFamily: FONT }}>{sigUploadErr}</span>}
+              </FieldRow>
+            </div>
+          )}
         </SettingsCard>
         <SaveButton onClick={handleSave} saveMsg={saveMsg} />
         {lastSavedPdf && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPdf); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}

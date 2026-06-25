@@ -13,6 +13,7 @@ export default function BugReportModal({ isOpen, onClose }) {
   const [subject,       setSubject]       = useState('');
   const [description,   setDescription]   = useState('');
   const [steps,         setSteps]         = useState('');
+  const [screenshots,   setScreenshots]   = useState([]);
   const [sending,       setSending]       = useState(false);
   const [sent,          setSent]          = useState(false);
   const [sendError,     setSendError]     = useState('');
@@ -23,6 +24,13 @@ export default function BugReportModal({ isOpen, onClose }) {
     if (!subject.trim() || !description.trim()) return;
     setSending(true);
     setSendError('');
+    const toBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const base64Images = await Promise.all(screenshots.map(toBase64));
     const body = [
       `Category: ${category}`,
       `Subject: ${subject}`,
@@ -35,6 +43,11 @@ export default function BugReportModal({ isOpen, onClose }) {
       ``,
       `Reported by: ${profile?.full_name || 'Unknown'} (${profile?.email || 'no email'})`,
       `Page: ${window.location.href}`,
+      ...(base64Images.length ? [
+        ``,
+        `Attached screenshots: ${base64Images.length}`,
+        ...base64Images.map((b64, i) => `\nScreenshot ${i + 1}:\n${b64}`),
+      ] : []),
     ].join('\n');
     try {
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
@@ -44,7 +57,7 @@ export default function BugReportModal({ isOpen, onClose }) {
       });
       if (res.ok) {
         setSent(true);
-        setTimeout(() => { setSent(false); setSubject(''); setDescription(''); setSteps(''); onClose(); }, 3000);
+        setTimeout(() => { setSent(false); setSubject(''); setDescription(''); setSteps(''); setScreenshots([]); onClose(); }, 3000);
       } else {
         setSendError('Failed to send. Please try again.');
       }
@@ -83,10 +96,28 @@ export default function BugReportModal({ isOpen, onClose }) {
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What happened? What did you expect to happen?"
                 style={{ ...INP, minHeight: '120px', resize: 'vertical', padding: '9px 14px' }} />
             </div>
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label style={LBL}>Steps to Reproduce <span style={{ fontWeight: '400', color: '#9ca3af' }}>(optional)</span></label>
               <textarea value={steps} onChange={e => setSteps(e.target.value)} placeholder="1. Go to...\n2. Click on...\n3. See error"
                 style={{ ...INP, minHeight: '80px', resize: 'vertical', padding: '9px 14px' }} />
+            </div>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={LBL}>Screenshot <span style={{ fontWeight: '400', color: '#9ca3af' }}>(optional)</span></label>
+              <input type="file" accept="image/*" multiple
+                onChange={e => {
+                  const files = Array.from(e.target.files).slice(0, 3).filter(f => f.size <= 5 * 1024 * 1024);
+                  setScreenshots(files);
+                }}
+                style={{ display: 'block', fontSize: '13px', fontFamily: FONT, color: '#374151', cursor: 'pointer' }} />
+              {screenshots.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                  {screenshots.map((f, i) => (
+                    <img key={i} src={URL.createObjectURL(f)} alt={`screenshot-${i + 1}`}
+                      style={{ height: '48px', width: 'auto', borderRadius: '6px', border: '1px solid #e5e7eb', objectFit: 'cover' }} />
+                  ))}
+                </div>
+              )}
+              <p style={{ margin: '5px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>You can attach up to 3 screenshots. Max 5MB each.</p>
             </div>
             {sendError && <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{sendError}</p>}
             <button type="button" onClick={handleSubmit} disabled={sending || !subject.trim() || !description.trim()}
