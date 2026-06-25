@@ -482,47 +482,34 @@ export default function QuestionEditor() {
       setError('Failed to save. Please try again.');
       return;
     }
-    setSaveMsg('Saved! Translating to all languages...');
     setHasChanges(false);
+    setSaveMsg('Saved! Translating to all languages...');
     try {
-      const questionsToTranslate = rows.filter(r => r.label_en && r.label_en.trim());
-      if (questionsToTranslate.length > 0) {
-        const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      const toTranslate = rows.filter(r => r.label_en && r.label_en.trim());
+      if (toTranslate.length > 0) {
+        const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
             max_tokens: 4000,
-            messages: [{
-              role: 'user',
-              content: 'Translate these wastewater estimator questions to Swedish (sv), German (de), and French (fr). Return ONLY a JSON array, no markdown, no explanation.\n\nInput: ' + JSON.stringify(questionsToTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en }))) + '\n\nReturn: [{"key":"...","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]'
-            }]
+            messages: [{ role: 'user', content: 'Translate these wastewater estimator questions to Swedish (sv), German (de), and French (fr). Return ONLY a JSON array, no markdown.\n\nInput: ' + JSON.stringify(toTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en }))) + '\n\nReturn: [{"key":"...","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]' }]
           })
         });
-        const apiData = await apiResponse.json();
-        const rawText = apiData.content?.[0]?.text || '[]';
-        const cleanText = rawText.replace(/```json|```/g, '').trim();
-        const translations = JSON.parse(cleanText);
+        const apiData = await apiRes.json();
+        const raw = (apiData.content?.[0]?.text || '[]').replace(/```json|```/g, '').trim();
+        const translations = JSON.parse(raw);
         if (Array.isArray(translations) && translations.length > 0) {
           await supabase.from('client_questions').upsert(
-            translations.map(t => ({
-              client_id: clientId,
-              question_key: t.key,
-              label_sv: t.label_sv || '',
-              label_de: t.label_de || '',
-              label_fr: t.label_fr || '',
-              helper_sv: t.helper_sv || '',
-              helper_de: t.helper_de || '',
-              helper_fr: t.helper_fr || '',
-            })),
+            translations.map(t => ({ client_id: clientId, question_key: t.key, label_sv: t.label_sv || '', label_de: t.label_de || '', label_fr: t.label_fr || '', helper_sv: t.helper_sv || '', helper_de: t.helper_de || '', helper_fr: t.helper_fr || '' })),
             { onConflict: 'client_id,question_key' }
           );
           setSaveMsg('Saved in all 4 languages ✓');
         }
       }
-    } catch (translationErr) {
-      console.error('Translation error:', translationErr);
-      setSaveMsg('Saved in English. Translation failed — try again.');
+    } catch (err) {
+      console.error('Translation error:', err);
+      setSaveMsg('Saved in English. Translation failed.');
     }
     setSaving(false);
     setTimeout(() => setSaveMsg(''), 4000);
