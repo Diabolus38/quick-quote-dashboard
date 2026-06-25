@@ -980,6 +980,15 @@ function EmbedCodeSection({ clientId }) {
               : 'You can hide the Powered by QuickQuote360 badge in the Branding section.'}
           </p>
         </div>
+
+        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e8ede8' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Need help installing?</p>
+          <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Detailed step-by-step installation guides for every platform.</p>
+          <a href="/install-guide" target="_blank"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: '#0d1f12', color: '#a3e635', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '600', textDecoration: 'none', fontFamily: FONT }}>
+            📖 View Installation Guide →
+          </a>
+        </div>
       </div>
     </>
   );

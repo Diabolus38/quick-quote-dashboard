@@ -13,6 +13,7 @@ const SignupPage     = lazy(() => import('./pages/SignupPage'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const PrivacyPolicy  = lazy(() => import('./pages/PrivacyPolicy'));
+const InstallGuide   = lazy(() => import('./pages/InstallGuide'));
 
 // Admin pages
 const AdminOverview  = lazy(() => import('./pages/AdminOverview'));
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ErrorBoundary><ForgotPassword /></ErrorBoundary>} />
             <Route path="/terms"           element={<ErrorBoundary><TermsOfService /></ErrorBoundary>} />
             <Route path="/privacy"         element={<ErrorBoundary><PrivacyPolicy /></ErrorBoundary>} />
+            <Route path="/install-guide"   element={<ErrorBoundary><InstallGuide /></ErrorBoundary>} />
 
             {/* ── Super-admin protected ── */}
             <Route path="/admin"             element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><AdminOverview /></ProtectedRoute></ErrorBoundary>} />
