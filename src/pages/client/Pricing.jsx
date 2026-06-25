@@ -64,7 +64,7 @@ function FieldRow({ label, children }) {
 
 function PriceInput({ value, onChange, placeholder }) {
   return (
-    <input type="number" value={value} className="price-input"
+    <input type="number" value={value === '0' || value === 0 ? '' : value} className="price-input"
       placeholder={placeholder !== undefined ? String(placeholder) : undefined}
       onChange={e => {
         const raw = parseFloat(e.target.value);
@@ -102,7 +102,7 @@ function PricingContent({ clientId }) {
   const hh = ['1','2','3','4','5'];
 
   function makeList(obj, entries) {
-    return entries.map(([key, label]) => ({ key, label, value: String(obj[key] ?? '') }));
+    return entries.map(([key, label]) => ({ key, label, value: obj[key] === 0 ? '' : String(obj[key] ?? '') }));
   }
 
   const [hoveredRowLabel, setHoveredRowLabel] = useState(null);
@@ -164,9 +164,9 @@ function PricingContent({ clientId }) {
         const pm = p.per_meter_costs || {};
         const ao = p.addons          || {};
         setBaseGrid([
-          { key: 'bdt',    label: 'BDT',     values: hh.map(h => String(bp.bdt?.[h]    ?? '')) },
-          { key: 'wc',     label: 'WC only', values: hh.map(h => String(bp.wc?.[h]     ?? '')) },
-          { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(h => String(bp.wc_bdt?.[h] ?? '')) },
+          { key: 'bdt',    label: 'BDT',     values: hh.map(h => { const v = bp.bdt?.[h];    return v === 0 ? '' : String(v ?? ''); }) },
+          { key: 'wc',     label: 'WC only', values: hh.map(h => { const v = bp.wc?.[h];     return v === 0 ? '' : String(v ?? ''); }) },
+          { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(h => { const v = bp.wc_bdt?.[h]; return v === 0 ? '' : String(v ?? ''); }) },
         ]);
         setFixedCosts(makeList(fc, [
           ['planning',           'Planning/Municipality Application'],
