@@ -307,35 +307,30 @@ function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
     if (error) { console.error('Failed to save question:', error); setBtnMsg(''); return; }
 
     setBtnMsg('Translating…');
-    try {
-      const singleApiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `Translate this wastewater estimator question label and helper text to Swedish (sv), German (de), and French (fr). Return ONLY valid JSON, no markdown.\n\nlabel_en: "${localLabel}"\nhelper_en: "${localHelper}"\n\nReturn: {"label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}`,
-          }],
-        }),
-      });
-      const singleData = await singleApiResponse.json();
-      const singleRaw = singleData.content?.[0]?.text || '{}';
-      const singleTranslations = JSON.parse(singleRaw.replace(/```json|```/g, '').trim());
-      await supabase.from('client_questions').upsert({
-        client_id:    clientId,
-        question_key: nodeKey,
-        label_sv:  singleTranslations.label_sv  || localLabel,
-        label_de:  singleTranslations.label_de  || localLabel,
-        label_fr:  singleTranslations.label_fr  || localLabel,
-        helper_sv: singleTranslations.helper_sv || localHelper,
-        helper_de: singleTranslations.helper_de || localHelper,
-        helper_fr: singleTranslations.helper_fr || localHelper,
-      }, { onConflict: 'client_id,question_key' });
-    } catch (err) {
-      console.error('Translation failed:', err);
-    }
+    fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions: [{ key: nodeKey, label: localLabel, helper: localHelper || '' }] })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const t = (data.translations || [])[0];
+      if (t) {
+        supabase.from('client_questions').upsert({
+          client_id: clientId,
+          question_key: t.key,
+          label_en: t.label_en || localLabel,
+          label_sv: t.label_sv || localLabel,
+          label_de: t.label_de || localLabel,
+          label_fr: t.label_fr || localLabel,
+          helper_en: t.helper_en || localHelper,
+          helper_sv: t.helper_sv || localHelper,
+          helper_de: t.helper_de || localHelper,
+          helper_fr: t.helper_fr || localHelper,
+        }, { onConflict: 'client_id,question_key' });
+      }
+    })
+    .catch(err => console.error('Translation error:', err));
 
     setBtnMsg('Saved in 4 languages ✓');
     setTimeout(() => { setBtnMsg(''); onClose(); }, 2000);
