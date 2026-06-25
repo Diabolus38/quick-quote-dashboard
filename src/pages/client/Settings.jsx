@@ -125,6 +125,9 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [companyPhone,        setCompanyPhone]        = useState('');
   const [companyAddress,      setCompanyAddress]      = useState('');
   const [companyLocation,     setCompanyLocation]     = useState('');
+  const [companyLat,          setCompanyLat]          = useState(null);
+  const [companyLng,          setCompanyLng]          = useState(null);
+  const locationInputRef = useRef(null);
   const [widgetHeadline,      setWidgetHeadline]      = useState('');
   const [widgetSubtext,       setWidgetSubtext]       = useState('');
   const [bubbleText,          setBubbleText]          = useState('');
@@ -173,9 +176,54 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
       });
-    supabase.from('clients').select('company_location').eq('id', clientId).single()
-      .then(({ data }) => { if (data) setCompanyLocation(data.company_location || ''); });
+    supabase.from('clients').select('company_location, company_lat, company_lng').eq('id', clientId).single()
+      .then(({ data }) => {
+        if (data) {
+          setCompanyLocation(data.company_location || '');
+          setCompanyLat(data.company_lat ?? null);
+          setCompanyLng(data.company_lng ?? null);
+        }
+      });
   }, [clientId]);
+
+  useEffect(() => {
+    if (window.google) return;
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    const initAutocomplete = () => {
+      if (!locationInputRef.current || !window.google) return;
+      const autocomplete = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: ['se', 'no', 'dk', 'fi', 'de', 'nl', 'be', 'fr'] },
+      });
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) return;
+        setCompanyLocation(place.formatted_address);
+        setCompanyLat(place.geometry.location.lat());
+        setCompanyLng(place.geometry.location.lng());
+      });
+    };
+    if (window.google) {
+      initAutocomplete();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) { clearInterval(interval); initAutocomplete(); }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading && locationInputRef.current) {
+      locationInputRef.current.value = companyLocation;
+    }
+  }, [companyLocation, loading]);
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
@@ -197,8 +245,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       { client_id: clientId, branding: currentBranding() },
       { onConflict: 'client_id' }
     );
-    /* Requires Supabase column: ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_location TEXT DEFAULT NULL; */
-    await supabase.from('clients').update({ company_location: companyLocation }).eq('id', clientId);
+    /* Requires Supabase columns: ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_location TEXT DEFAULT NULL; ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_lat FLOAT8 DEFAULT NULL; ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_lng FLOAT8 DEFAULT NULL; */
+    await supabase.from('clients').update({ company_location: companyLocation, company_lat: companyLat, company_lng: companyLng }).eq('id', clientId);
     flash();
     setHasUnsaved?.(false);
     const ts = new Date().toISOString();
@@ -345,8 +393,19 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
           <TextInput value={companyAddress} onChange={setCompanyAddress} placeholder="123 Main St, Stockholm" />
         </FieldRow>
 
-        <FieldRow label="Company location / Depot address" onReset={() => setCompanyLocation('')}>
-          <TextInput value={companyLocation} onChange={setCompanyLocation} placeholder="e.g. Malmövägen 12, Lund" />
+        <FieldRow label="Company location / Depot address" onReset={() => { setCompanyLocation(''); setCompanyLat(null); setCompanyLng(null); if (locationInputRef.current) locationInputRef.current.value = ''; }}>
+          <input
+            ref={locationInputRef}
+            type="text"
+            placeholder="Start typing your address..."
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px' }}>
+            {companyLat !== null
+              ? <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>📍 Verified</span>
+              : <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Not verified</span>
+            }
+          </div>
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Used to calculate travel distance to customer locations.</p>
         </FieldRow>
 
