@@ -269,7 +269,7 @@ function FlowMap({ questions, editNodeKey, onSelectNode }) {
   );
 }
 
-function EditPanel({ nodeKey, questions, onSave, onClose }) {
+function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
   const node = QUESTION_FLOW_MAP[nodeKey] || {};
   const q    = questions[nodeKey] || makeDefault(nodeKey);
 
@@ -286,10 +286,59 @@ function EditPanel({ nodeKey, questions, onSave, onClose }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeKey]);
 
-  function handleSave() {
+  async function handleSave() {
+    if (btnMsg) return;
     onSave(nodeKey, localLabel, localHelper, localVisible);
-    setBtnMsg('Saved');
-    setTimeout(() => { setBtnMsg(''); onClose(); }, 1500);
+    setBtnMsg('Saving…');
+
+    const { error } = await supabase.from('client_questions').upsert({
+      client_id:    clientId,
+      question_key: nodeKey,
+      label_en:     localLabel,
+      helper_en:    localHelper,
+      label_sv:     localLabel,
+      label_de:     localLabel,
+      label_fr:     localLabel,
+      helper_sv:    localHelper,
+      helper_de:    localHelper,
+      helper_fr:    localHelper,
+      visible:      localVisible,
+    }, { onConflict: 'client_id,question_key' });
+    if (error) { console.error('Failed to save question:', error); setBtnMsg(''); return; }
+
+    setBtnMsg('Translating…');
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Translate this wastewater estimator question to Swedish (sv), German (de), and French (fr). Return ONLY valid JSON, no other text, no markdown.\n\nlabel: "${localLabel}"\nhelper: "${localHelper}"\n\nReturn format: {"label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}`,
+          }],
+        }),
+      });
+      const data = await response.json();
+      const text = data.content?.[0]?.text || '{}';
+      const translations = JSON.parse(text.replace(/```json|```/g, '').trim());
+      await supabase.from('client_questions').upsert({
+        client_id:    clientId,
+        question_key: nodeKey,
+        label_sv:     translations.label_sv  || localLabel,
+        label_de:     translations.label_de  || localLabel,
+        label_fr:     translations.label_fr  || localLabel,
+        helper_sv:    translations.helper_sv || localHelper,
+        helper_de:    translations.helper_de || localHelper,
+        helper_fr:    translations.helper_fr || localHelper,
+      }, { onConflict: 'client_id,question_key' });
+    } catch (err) {
+      console.error('Translation failed:', err);
+    }
+
+    setBtnMsg('Saved in 4 languages ✓');
+    setTimeout(() => { setBtnMsg(''); onClose(); }, 2000);
   }
 
   return (
@@ -405,7 +454,7 @@ export default function QuestionEditor() {
     setHasChanges(true);
   }
 
-  /* ── Save all rows via upsert, auto-fill sv/de/fr from en ── */
+  /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
   async function handleSave() {
     if (!clientId) return;
     setSaving(true);
@@ -428,14 +477,53 @@ export default function QuestionEditor() {
     });
     const { error: upsertErr } = await supabase
       .from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
-    setSaving(false);
     if (upsertErr) {
+      setSaving(false);
       setError('Failed to save. Please try again.');
-    } else {
-      setSaveMsg('Saved! Changes will reflect in your tool.');
-      setHasChanges(false);
-      setTimeout(() => setSaveMsg(''), 3000);
+      return;
     }
+
+    setSaveMsg('Translating…');
+    try {
+      const toTranslate = rows.map(r => ({ key: r.question_key, label: r.label_en, helper: r.helper_en }));
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8000,
+          messages: [{
+            role: 'user',
+            content: `Translate these wastewater estimator questions to Swedish (sv), German (de), and French (fr). Return ONLY a valid JSON array, no other text, no markdown.\n\n${JSON.stringify(toTranslate)}\n\nReturn format: [{"key":"...","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]`,
+          }],
+        }),
+      });
+      const data = await response.json();
+      const text = data.content?.[0]?.text || '[]';
+      const translations = JSON.parse(text.replace(/```json|```/g, '').trim());
+      const transMap = Object.fromEntries(translations.map(t => [t.key, t]));
+      const translatedRows = rows.map(r => {
+        const t = transMap[r.question_key] || {};
+        return {
+          client_id:    clientId,
+          question_key: r.question_key,
+          label_sv:     t.label_sv  || r.label_en,
+          label_de:     t.label_de  || r.label_en,
+          label_fr:     t.label_fr  || r.label_en,
+          helper_sv:    t.helper_sv || r.helper_en,
+          helper_de:    t.helper_de || r.helper_en,
+          helper_fr:    t.helper_fr || r.helper_en,
+        };
+      });
+      await supabase.from('client_questions').upsert(translatedRows, { onConflict: 'client_id,question_key' });
+    } catch (err) {
+      console.error('Bulk translation failed:', err);
+    }
+
+    setSaving(false);
+    setSaveMsg('Saved! Questions translated to all languages.');
+    setHasChanges(false);
+    setTimeout(() => setSaveMsg(''), 3000);
   }
 
   if (planLoading) return (
@@ -525,6 +613,7 @@ export default function QuestionEditor() {
                     questions={questions}
                     onSave={handleEditSave}
                     onClose={() => setEditNodeKey(null)}
+                    clientId={clientId}
                   />
                 )}
               </>
