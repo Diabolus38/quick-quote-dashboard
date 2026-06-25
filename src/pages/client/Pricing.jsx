@@ -279,7 +279,7 @@ function PricingContent({ clientId }) {
       return;
     }
     try {
-      const res = await fetch(`https://api.frankfurter.app/latest?from=${prevCurrency}&to=${currency}`);
+      const res = await fetch(`https://api.frankfurter.dev/v1/latest?from=${prevCurrency}&to=${currency}`);
       const data = await res.json();
       const rate = data.rates?.[currency];
       if (!rate) throw new Error('No rate');
