@@ -97,7 +97,11 @@ const BASE_DEFAULTS = {
   wc_bdt: { '1': 99900, '2': 119900, '3': 149900, '4': 179900, '5': 219900 },
 };
 
-function PriceRow({ item, onChange, onReset }) {
+function getCurrencySymbol(c) {
+  return { SEK: 'kr', EUR: '€', GBP: '£', NOK: 'kr', DKK: 'kr' }[c] || c;
+}
+
+function PriceRow({ item, onChange, onReset, currencySymbol }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
       <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
@@ -111,7 +115,7 @@ function PriceRow({ item, onChange, onReset }) {
             onChange(isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
           }}
           style={{ width: '110px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '13px', textAlign: 'right', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, minWidth: '18px' }}>kr</span>
+        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, minWidth: '18px' }}>{currencySymbol || 'kr'}</span>
         <button type="button" title="Reset to default" onClick={onReset}
           style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '2px 4px', lineHeight: 1 }}>↺</button>
       </div>
@@ -357,7 +361,7 @@ function PricingContent({ clientId }) {
             </tbody>
           </table>
         </div>
-        <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices are in the currency selected below.</p>
+        <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices are in {getCurrencySymbol(currency)} ({currency}), as selected below.</p>
         <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.5' }}>Underground installation automatically adds a 1.2x multiplier to the base price. This is built into the tool and cannot be changed from the dashboard.</p>
       </SettingsCard>
 
@@ -367,14 +371,16 @@ function PricingContent({ clientId }) {
           {fixedCosts.map((item, i) => (
             <PriceRow key={item.key} item={item}
               onChange={val => updateList(setFixedCosts, i, val)}
-              onReset={() => updateList(setFixedCosts, i, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+              onReset={() => updateList(setFixedCosts, i, String(PRICE_DEFAULTS[item.key] ?? ''))}
+              currencySymbol={getCurrencySymbol(currency)} />
           ))}
         </SettingsCard>
         <SettingsCard title="Add-on Services" subtitle="Added when the customer selects these options during the estimator. Lawn restoration base price has 1,500 kr labor added on top automatically by the tool.">
           {addOns.map((item, i) => (
             <PriceRow key={item.key} item={item}
               onChange={val => updateList(setAddOns, i, val)}
-              onReset={() => updateList(setAddOns, i, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+              onReset={() => updateList(setAddOns, i, String(PRICE_DEFAULTS[item.key] ?? ''))}
+              currencySymbol={getCurrencySymbol(currency)} />
           ))}
         </SettingsCard>
       </div>
@@ -389,14 +395,16 @@ function PricingContent({ clientId }) {
             {perMeter.slice(0, 3).map((item, i) => (
               <PriceRow key={item.key} item={item}
                 onChange={val => updateList(setPerMeter, i, val)}
-                onReset={() => updateList(setPerMeter, i, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+                onReset={() => updateList(setPerMeter, i, String(PRICE_DEFAULTS[item.key] ?? ''))}
+                currencySymbol={getCurrencySymbol(currency)} />
             ))}
           </div>
           <div>
             {perMeter.slice(3).map((item, i) => (
               <PriceRow key={item.key} item={item}
                 onChange={val => updateList(setPerMeter, i + 3, val)}
-                onReset={() => updateList(setPerMeter, i + 3, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+                onReset={() => updateList(setPerMeter, i + 3, String(PRICE_DEFAULTS[item.key] ?? ''))}
+                currencySymbol={getCurrencySymbol(currency)} />
             ))}
           </div>
         </div>
@@ -432,7 +440,7 @@ function PricingContent({ clientId }) {
                     <input type="number" value={rotFixedAmount} className="price-input"
                       onChange={e => { const raw = parseFloat(e.target.value); setRotFixedAmount(isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999))); }}
                       style={{ width: '110px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-                    <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>kr</span>
+                    <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>{getCurrencySymbol(currency)}</span>
                   </>
                 )}
               </div>
@@ -564,14 +572,14 @@ function PricingContent({ clientId }) {
                   <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: '13px' }}>
                     <span style={{ color: 'rgba(255,255,255,0.6)' }}>{item.label}</span>
                     <span style={{ fontWeight: '600', color: item.negative ? '#f87171' : 'rgba(255,255,255,0.85)' }}>
-                      {item.negative ? '−' : ''}{Math.abs(item.amount).toLocaleString()} {currency}
+                      {item.negative ? '−' : ''}{Math.abs(item.amount).toLocaleString()} {getCurrencySymbol(currency)}
                     </span>
                   </div>
                 ))}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: '10px', paddingTop: '12px', textAlign: 'center' }}>
                   <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total</p>
                   <p style={{ margin: 0, fontSize: '36px', fontWeight: '800', color: '#a3e635', letterSpacing: '-1px', lineHeight: 1 }}>
-                    {total > 0 ? `${total.toLocaleString()} ${currency}` : '—'}
+                    {total > 0 ? `${total.toLocaleString()} ${getCurrencySymbol(currency)}` : '—'}
                   </p>
                 </div>
               </div>
