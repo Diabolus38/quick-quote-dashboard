@@ -487,13 +487,16 @@ export default function QuestionEditor() {
     try {
       const toTranslate = rows.filter(r => r.label_en && r.label_en.trim());
       if (toTranslate.length > 0) {
+        console.log('Translation request:', JSON.stringify({ questions: toTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en || '' })) }));
         const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ questions: toTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en || '' })) })
         });
         const transData = await transRes.json();
+        console.log('Translation response:', JSON.stringify(transData));
         const translations = transData.translations || [];
+        console.log('Parsed translations:', JSON.stringify(translations));
         if (translations.length > 0) {
           await supabase.from('client_questions').upsert(
             translations.map(t => ({
@@ -510,14 +513,15 @@ export default function QuestionEditor() {
             })),
             { onConflict: 'client_id,question_key' }
           );
+          console.log('Translation upsert complete');
           setSaveMsg('Saved in all 4 languages ✓');
         }
       } else {
         setSaveMsg('Saved! Changes will reflect in your tool.');
       }
     } catch (err) {
-      console.error('Translation error:', err);
-      setSaveMsg('Saved in English. Translation failed.');
+      console.error('TRANSLATION FAILED:', err.message, err.stack);
+      setSaveMsg('Saved in English. Translation failed: ' + err.message);
     }
     setSaving(false);
     setTimeout(() => setSaveMsg(''), 4000);
