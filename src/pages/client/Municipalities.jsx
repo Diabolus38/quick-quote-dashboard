@@ -120,14 +120,15 @@ function MunicipalitiesContent({ clientId }) {
   async function handleAddZone() {
     const name = newZoneName.trim();
     const price = Number(newZonePrice) || 0;
+    console.log('handleAddZone called, name:', name, 'existing zones:', rows.filter(r => r.municipality === '__zone_placeholder__').map(r => r.zone));
     if (!name) return;
+    console.log('duplicate check:', rows.some(r => r.municipality === '__zone_placeholder__' && r.zone === name));
     if (rows.some(r => r.municipality === '__zone_placeholder__' && r.zone === name)) return;
     const { error: insertError } = await supabase.from('client_municipalities')
       .insert({ client_id: clientId, municipality: '__zone_placeholder__', zone: name, custom_price: price });
     if (insertError) { console.error('Failed to add zone:', insertError); return; }
-    const { data: newRow } = await supabase.from('client_municipalities')
-      .select('*').eq('client_id', clientId).eq('zone', name).eq('municipality', '__zone_placeholder__').maybeSingle();
-    setRows(prev => [...prev, newRow || { id: Date.now().toString(), client_id: clientId, municipality: '__zone_placeholder__', zone: name, custom_price: price }]);
+    const { data: allRows } = await supabase.from('client_municipalities').select('*').eq('client_id', clientId);
+    if (allRows) setRows(allRows);
     setNewZoneName('');
     setNewZonePrice('');
   }
@@ -140,7 +141,8 @@ function MunicipalitiesContent({ clientId }) {
       .update({ zone: newName, custom_price: newPrice })
       .eq('client_id', clientId).eq('zone', originalName);
     if (error) { console.error('handleZoneSave error:', error); return; }
-    setRows(prev => prev.map(r => r.zone === originalName ? { ...r, zone: newName, custom_price: newPrice } : r));
+    const { data: allRows } = await supabase.from('client_municipalities').select('*').eq('client_id', clientId);
+    if (allRows) setRows(allRows);
     setZoneEditId(null);
   }
 
@@ -149,7 +151,8 @@ function MunicipalitiesContent({ clientId }) {
     const { error } = await supabase.from('client_municipalities')
       .delete().eq('client_id', clientId).eq('zone', zoneName);
     if (error) { console.error('handleZoneDelete error:', error); return; }
-    setRows(prev => prev.filter(r => r.zone !== zoneName));
+    const { data: allRows } = await supabase.from('client_municipalities').select('*').eq('client_id', clientId);
+    if (allRows) setRows(allRows);
   }
 
   async function addMunicipality(name) {
@@ -160,9 +163,8 @@ function MunicipalitiesContent({ clientId }) {
     const { error: insErr } = await supabase.from('client_municipalities')
       .insert({ client_id: clientId, municipality: name, zone: firstZone, custom_price: zonePrice });
     if (insErr) { console.error('addMunicipality insert error:', insErr); return; }
-    const { data: newRow } = await supabase.from('client_municipalities')
-      .select('*').eq('client_id', clientId).eq('municipality', name).neq('municipality', '__zone_placeholder__').maybeSingle();
-    setRows(prev => [...prev, newRow || { id: Date.now().toString(), client_id: clientId, municipality: name, zone: firstZone, custom_price: zonePrice }]);
+    const { data: allRows } = await supabase.from('client_municipalities').select('*').eq('client_id', clientId);
+    if (allRows) setRows(allRows);
     setSearch('');
     setShowSearch(false);
   }
@@ -170,7 +172,8 @@ function MunicipalitiesContent({ clientId }) {
   async function removeMunicipality(rowId) {
     const { error } = await supabase.from('client_municipalities').delete().eq('id', rowId);
     if (error) { console.error('removeMunicipality error:', error); return; }
-    setRows(prev => prev.filter(r => r.id !== rowId));
+    const { data: allRows } = await supabase.from('client_municipalities').select('*').eq('client_id', clientId);
+    if (allRows) setRows(allRows);
   }
 
   async function updateMunicipalityZone(rowId, newZoneName) {
