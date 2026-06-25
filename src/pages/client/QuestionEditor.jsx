@@ -462,12 +462,6 @@ export default function QuestionEditor() {
         visible:   q.visible   ?? true,
         label_en:  q.label_en  || '',
         helper_en: q.helper_en || '',
-        label_sv:  q.label_sv  || q.label_en  || '',
-        label_de:  q.label_de  || q.label_en  || '',
-        label_fr:  q.label_fr  || q.label_en  || '',
-        helper_sv: q.helper_sv || q.helper_en || '',
-        helper_de: q.helper_de || q.helper_en || '',
-        helper_fr: q.helper_fr || q.helper_en || '',
       };
     });
     const { error: upsertErr } = await supabase
