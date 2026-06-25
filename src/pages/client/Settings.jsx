@@ -187,36 +187,33 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   }, [clientId]);
 
   useEffect(() => {
-    if (window.google) return;
+    if (window.google || document.querySelector('#google-maps-script')) return;
     const script = document.createElement('script');
+    script.id = 'google-maps-script';
     script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     document.head.appendChild(script);
   }, []);
 
   useEffect(() => {
-    const initAutocomplete = () => {
+    const init = () => {
       if (!locationInputRef.current || !window.google) return;
-      const autocomplete = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+      const ac = new window.google.maps.places.Autocomplete(locationInputRef.current, {
         types: ['address'],
-        componentRestrictions: { country: ['se', 'no', 'dk', 'fi', 'de', 'nl', 'be', 'fr'] },
       });
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
         if (!place.geometry) return;
         setCompanyLocation(place.formatted_address);
         setCompanyLat(place.geometry.location.lat());
         setCompanyLng(place.geometry.location.lng());
       });
     };
-    if (window.google) {
-      initAutocomplete();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google) { clearInterval(interval); initAutocomplete(); }
-      }, 200);
-      return () => clearInterval(interval);
-    }
+    if (window.google) { init(); return; }
+    const interval = setInterval(() => {
+      if (window.google) { clearInterval(interval); init(); }
+    }, 300);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -397,13 +394,14 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
           <input
             ref={locationInputRef}
             type="text"
+            defaultValue={companyLocation}
             placeholder="Start typing your address..."
             style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff' }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px' }}>
             {companyLat !== null
-              ? <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>📍 Verified</span>
-              : <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Not verified</span>
+              ? <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>📍 Location verified</span>
+              : <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Enter your address above to verify location.</span>
             }
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Used to calculate travel distance to customer locations.</p>

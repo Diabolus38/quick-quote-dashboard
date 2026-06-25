@@ -89,6 +89,7 @@ const PRICE_DEFAULTS = {
   cable: 49, labor: 1500, makadam: 400,
   pump_well: 15500, double_pump: 4500, telescope_cover: 2800,
   lawn_restoration_base: 15000, lawn_restoration_labor: 1500, mass_removal: 7904, transport: 5000,
+  travel_cost_per_km: 0,
 };
 
 const BASE_DEFAULTS = {
@@ -158,6 +159,7 @@ function PricingContent({ clientId }) {
     ['lawn_restoration_labor', 'Lawn restoration labor surcharge'],
     ['mass_removal',           'Mass Removal'],
     ['transport',             'Transport'],
+    ['travel_cost_per_km',    'Travel cost per km'],
   ];
 
   const [loading,    setLoading]    = useState(true);
@@ -388,6 +390,7 @@ function PricingContent({ clientId }) {
               onReset={() => updateList(setAddOns, i, String(PRICE_DEFAULTS[item.key] ?? ''))}
               currencySymbol={getCurrencySymbol(currency)} />
           ))}
+          <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Added to the estimate based on driving distance from your depot to the customer. Set to 0 to disable travel cost.</p>
         </SettingsCard>
       </div>
 
