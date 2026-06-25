@@ -60,5 +60,6 @@ export async function ensureClientData(supabase, clientId) {
     healthy = false;
   }
 
+  console.log('ensureClientData completed for client:', clientId, 'healthy:', healthy);
   return healthy;
 }

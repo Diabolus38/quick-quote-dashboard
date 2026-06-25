@@ -153,6 +153,19 @@ export default function AuthProvider({ children }) {
       await ensureClientData(supabase, clientId);
     } else {
       console.error('CRITICAL: Failed to create client row for user after all retries:', session.user.id, userEmail);
+      try {
+        await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'team@aiworldpartners.com',
+            subject: 'CRITICAL: Failed signup - client row not created',
+            text: `User ${userEmail} (${session.user.id}) signed up but client row was not created after all retries. Manual intervention required in Supabase.`
+          })
+        });
+      } catch (emailErr) {
+        console.error('Failed to send critical alert email:', emailErr);
+      }
     }
 
     // Re-fetch so the returned profile has client_id already linked
