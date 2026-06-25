@@ -121,13 +121,12 @@ function MunicipalitiesContent({ clientId }) {
     const name = newZoneName.trim();
     const price = Number(newZonePrice) || 0;
     if (!name) return;
-    if (rows.some(r => r.zone === name)) return;
-    const { error } = await supabase.from('client_municipalities')
+    if (rows.some(r => r.municipality === '__zone_placeholder__' && r.zone === name)) return;
+    const { error: insertError } = await supabase.from('client_municipalities')
       .insert({ client_id: clientId, municipality: '__zone_placeholder__', zone: name, custom_price: price });
-    if (error) { console.error('handleAddZone error:', error); return; }
-    const { data: newRow, error: fetchErr } = await supabase.from('client_municipalities')
+    if (insertError) { console.error('Failed to add zone:', insertError); return; }
+    const { data: newRow } = await supabase.from('client_municipalities')
       .select('*').eq('client_id', clientId).eq('zone', name).eq('municipality', '__zone_placeholder__').maybeSingle();
-    if (fetchErr) { console.error('handleAddZone fetch error:', fetchErr); }
     setRows(prev => [...prev, newRow || { id: Date.now().toString(), client_id: clientId, municipality: '__zone_placeholder__', zone: name, custom_price: price }]);
     setNewZoneName('');
     setNewZonePrice('');
@@ -154,15 +153,15 @@ function MunicipalitiesContent({ clientId }) {
   }
 
   async function addMunicipality(name) {
-    if (zones.length === 0) return;
-    const firstZone = zones[0].name;
-    const zonePrice = zones[0].price;
+    const placeholderZones = rows.filter(r => r.municipality === '__zone_placeholder__');
+    if (placeholderZones.length === 0) return;
+    const firstZone = placeholderZones[0].zone;
+    const zonePrice = placeholderZones[0].custom_price || 0;
     const { error: insErr } = await supabase.from('client_municipalities')
       .insert({ client_id: clientId, municipality: name, zone: firstZone, custom_price: zonePrice });
     if (insErr) { console.error('addMunicipality insert error:', insErr); return; }
-    const { data: newRow, error: fetchErr } = await supabase.from('client_municipalities')
+    const { data: newRow } = await supabase.from('client_municipalities')
       .select('*').eq('client_id', clientId).eq('municipality', name).neq('municipality', '__zone_placeholder__').maybeSingle();
-    if (fetchErr) { console.error('addMunicipality fetch error:', fetchErr); }
     setRows(prev => [...prev, newRow || { id: Date.now().toString(), client_id: clientId, municipality: name, zone: firstZone, custom_price: zonePrice }]);
     setSearch('');
     setShowSearch(false);
@@ -347,7 +346,9 @@ function MunicipalitiesContent({ clientId }) {
                     value={r.zone || ''}
                     onChange={e => updateMunicipalityZone(r.id, e.target.value)}
                     style={selStyle}>
-                    {zones.map(z => <option key={z.name} value={z.name}>{z.name}</option>)}
+                    {rows.filter(r => r.municipality === '__zone_placeholder__').map(r => (
+                      <option key={r.zone} value={r.zone}>{r.zone} — {(r.custom_price || 0).toLocaleString()} kr</option>
+                    ))}
                   </select>
                 </div>
                 <button type="button" onClick={() => removeMunicipality(r.id)}
