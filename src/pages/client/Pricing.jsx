@@ -22,10 +22,11 @@ function SectionHeader({ title, subtitle }) {
   );
 }
 
-function SettingsCard({ title, children }) {
+function SettingsCard({ title, subtitle, children }) {
   return (
     <div style={CARD}>
-      {title && <p style={{ margin: '0 0 16px', fontSize: '14px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{title}</p>}
+      {title && <p style={{ margin: subtitle ? '0 0 4px' : '0 0 16px', fontSize: '14px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>{title}</p>}
+      {subtitle && <p style={{ margin: '0 0 16px', fontSize: '12.5px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.5' }}>{subtitle}</p>}
       {children}
     </div>
   );
@@ -61,14 +62,16 @@ function FieldRow({ label, children }) {
   );
 }
 
-function PriceInput({ value, onChange }) {
+function PriceInput({ value, onChange, placeholder }) {
   return (
-    <input type="number" value={value} onChange={e => {
-      const raw = parseFloat(e.target.value);
-      if (isNaN(raw)) { onChange('0'); return; }
-      const clamped = Math.min(Math.max(raw, 0), 999999);
-      onChange(String(clamped));
-    }}
+    <input type="number" value={value} className="price-input"
+      placeholder={placeholder !== undefined ? String(placeholder) : undefined}
+      onChange={e => {
+        const raw = parseFloat(e.target.value);
+        if (isNaN(raw)) { onChange(''); return; }
+        const clamped = Math.min(Math.max(raw, 0), 999999);
+        onChange(String(clamped));
+      }}
       style={{ width: '80px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
   );
 }
@@ -78,6 +81,21 @@ function useSaveMsg() {
   function flash() { setSaveMsg('Saved!'); setTimeout(() => setSaveMsg(''), 2000); }
   return [saveMsg, flash];
 }
+
+const PRICE_DEFAULTS = {
+  planning: 5000, establishment_zone1: 12000, establishment_zone2: 30000,
+  de_establishment: 5000, admin: 1200, inspection: 3500,
+  gravity_pipe: 149, pressure_pipe: 39, protection_pipe: 42,
+  cable: 49, labor: 1500, makadam: 400,
+  pump_well: 15500, double_pump: 4500, telescope_cover: 2800,
+  lawn_restoration_base: 15000, mass_removal: 7904, transport: 5000,
+};
+
+const BASE_DEFAULTS = {
+  bdt:    { '1': 39900, '2': 54900,  '3': 74900,  '4': 99900,  '5': 119900 },
+  wc:     { '1': 74900, '2': 99900,  '3': 129900, '4': 149900, '5': 169900 },
+  wc_bdt: { '1': 99900, '2': 119900, '3': 149900, '4': 179900, '5': 219900 },
+};
 
 function PricingContent({ clientId }) {
   const { profile } = useAuth();
@@ -248,7 +266,7 @@ function PricingContent({ clientId }) {
     return items.map((item, i) => (
       <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
         <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
-        <PriceInput value={item.value} onChange={val => updateList(setter, i, val)} />
+        <PriceInput value={item.value} onChange={val => updateList(setter, i, val)} placeholder={PRICE_DEFAULTS[item.key]} />
       </div>
     ));
   }
@@ -257,9 +275,14 @@ function PricingContent({ clientId }) {
 
   return (
     <>
+      <style>{`.price-input::placeholder{color:#9ca3af}.price-input::-webkit-inner-spin-button,.price-input::-webkit-outer-spin-button{display:none}.price-input{-moz-appearance:textfield}`}</style>
       <SectionHeader title="Pricing" subtitle="Set your pricing for the estimator tool." />
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: '600', marginBottom: '16px', fontFamily: FONT }}>
+        <div style={{ width: '6px', height: '6px', backgroundColor: '#16a34a', borderRadius: '50%', flexShrink: 0 }} />
+        Prices update live in your estimator tool after saving
+      </div>
 
-      <SettingsCard title="Base System Prices">
+      <SettingsCard title="Base System Prices" subtitle="Starting price per system type and household count. Underground installation adds a 1.2x multiplier automatically. If left empty, tool uses the default prices shown.">
         <div style={{ overflowX: 'auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '100px repeat(5, 80px)', gap: '8px', alignItems: 'center' }}>
             <div />
@@ -285,17 +308,29 @@ function PricingContent({ clientId }) {
                     </div>
                   )}
                 </div>
-                {hh.map((_, ci) => <PriceInput key={ci} value={row.values[ci]} onChange={val => updateGrid(ri, ci, val)} />)}
+                {hh.map((_, ci) => <PriceInput key={ci} value={row.values[ci]} onChange={val => updateGrid(ri, ci, val)} placeholder={BASE_DEFAULTS[row.key]?.[hh[ci]]} />)}
               </>
             ))}
           </div>
         </div>
         <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices are in the currency selected below.</p>
+        <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.5' }}>Underground installation automatically adds a 1.2x multiplier to the base price. This is built into the tool and cannot be changed from the dashboard.</p>
       </SettingsCard>
 
-      <SettingsCard title="Fixed Costs"><PriceRows items={fixedCosts} setter={setFixedCosts} /></SettingsCard>
-      <SettingsCard title="Per Meter Costs"><PriceRows items={perMeter} setter={setPerMeter} /></SettingsCard>
-      <SettingsCard title="Add-on Services"><PriceRows items={addOns} setter={setAddOns} /></SettingsCard>
+      <SettingsCard title="Fixed Costs" subtitle="Flat fees added to every estimate. Planning covers municipality application. Establishment cost depends on the customer's zone. Configure zones in the Municipalities page.">
+        <PriceRows items={fixedCosts} setter={setFixedCosts} />
+      </SettingsCard>
+
+      <SettingsCard title="Per Meter Costs" subtitle="Used when the customer says new pipes are needed or excavation is required. The tool calculates total pipe cost based on these rates multiplied by the meters entered. Labor rate is in kr per hour.">
+        <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#166534', fontFamily: FONT, lineHeight: '1.5' }}>
+          Above ground pipe: base 2,500 kr plus rates per meter. Underground pipe: gravity pipe rate per meter plus 30% of labor rate per meter. Both types add makadam cost based on trench volume.
+        </div>
+        <PriceRows items={perMeter} setter={setPerMeter} />
+      </SettingsCard>
+
+      <SettingsCard title="Add-on Services" subtitle="Added when the customer selects these options during the estimator. Lawn restoration base price has 1,500 kr labor added on top automatically by the tool.">
+        <PriceRows items={addOns} setter={setAddOns} />
+      </SettingsCard>
 
       <SettingsCard title="ROT Deduction">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: rotEnabled ? '14px' : 0 }}>
@@ -324,6 +359,9 @@ function PricingContent({ clientId }) {
         })()}
         <p style={{ margin: '14px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', fontFamily: FONT }}>
           ROT deduction (Rot-avdrag) is a Swedish tax deduction for labor costs on repair, conversion, and extension work. Customers can deduct 30% of labor costs directly from their invoice.
+        </p>
+        <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.5', fontFamily: FONT }}>
+          Note: the 1,500 kr lawn restoration labor charge is always added regardless of ROT deduction settings.
         </p>
       </SettingsCard>
 
@@ -356,9 +394,14 @@ function PricingContent({ clientId }) {
       {showPreview && (() => {
         const baseRow = baseGrid.find(r => r.key === previewSystemType);
         const baseVal = baseRow ? Number(baseRow.values[Number(previewHouseholds) - 1] || 0) : 0;
+        const undergroundAmt = baseVal > 0 ? Math.round(baseVal * 0.2) : 0;
         const estKey = previewZone === 'Zone 1' ? 'establishment_zone1' : 'establishment_zone2';
         const estCost = Number(fixedCosts.find(f => f.key === estKey)?.value || 0);
-        const total = baseVal + estCost;
+        const planningCost = Number(fixedCosts.find(f => f.key === 'planning')?.value || 0);
+        const deEstCost = Number(fixedCosts.find(f => f.key === 'de_establishment')?.value || 0);
+        const adminCost = Number(fixedCosts.find(f => f.key === 'admin')?.value || 0);
+        const rotDeduction = rotEnabled ? Math.round(baseVal * Number(rotPercent) / 100) : 0;
+        const total = baseVal + undergroundAmt + estCost + planningCost + deEstCost + adminCost - rotDeduction;
         return (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={e => { if (e.target === e.currentTarget) setShowPreview(false); }}>
@@ -397,8 +440,12 @@ function PricingContent({ clientId }) {
               <div style={{ backgroundColor: '#0d1f12', borderRadius: '16px', padding: '24px' }}>
                 {[
                   { label: 'Base System Price', amount: baseVal },
+                  ...(baseVal > 0 ? [{ label: 'Underground multiplier (1.2x)', amount: undergroundAmt }] : []),
+                  { label: 'Planning', amount: planningCost },
                   { label: `Establishment (${previewZone})`, amount: estCost },
-                  ...(rotEnabled ? [{ label: `ROT Deduction (${rotPercent}%)`, amount: -Math.round(baseVal * Number(rotPercent) / 100), negative: true }] : []),
+                  { label: 'De-establishment', amount: deEstCost },
+                  { label: 'Admin Fee', amount: adminCost },
+                  ...(rotEnabled ? [{ label: `ROT Deduction (${rotPercent}%)`, amount: rotDeduction, negative: true }] : []),
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: '13px' }}>
                     <span style={{ color: 'rgba(255,255,255,0.6)' }}>{item.label}</span>
@@ -469,7 +516,7 @@ export default function Pricing() {
   }, [clientId]);
 
   async function sendPlanEmail(planName) {
-    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
     setPlanEmailSent(true);
   }
 
