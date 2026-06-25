@@ -341,15 +341,18 @@ function PricingContent({ clientId }) {
                     </td>
                     {hh.map((h, ci) => (
                       <td key={h} style={{ padding: '8px 4px', verticalAlign: 'middle' }}>
-                        <input type="number"
-                          value={row.values[ci] === '0' || row.values[ci] === 0 ? '' : row.values[ci]}
-                          placeholder={String(BASE_DEFAULTS[row.key]?.[h] ?? '')}
-                          className="price-input"
-                          onChange={e => {
-                            const raw = parseFloat(e.target.value);
-                            updateGrid(ri, ci, isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
-                          }}
-                          style={{ width: '80px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '6px 8px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: tint, color: '#0d1117' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <input type="number"
+                            value={row.values[ci]}
+                            placeholder={String(BASE_DEFAULTS[row.key]?.[h] ?? '')}
+                            className="price-input"
+                            onChange={e => {
+                              const raw = parseFloat(e.target.value);
+                              updateGrid(ri, ci, isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
+                            }}
+                            style={{ width: '80px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '6px 8px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: tint, color: '#0d1117' }} />
+                          <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{getCurrencySymbol(currency)}</span>
+                        </div>
                       </td>
                     ))}
                     <td style={{ padding: '8px 0 8px 4px', verticalAlign: 'middle' }}>
@@ -365,7 +368,7 @@ function PricingContent({ clientId }) {
             </tbody>
           </table>
         </div>
-        <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices are in {getCurrencySymbol(currency)} ({currency}), as selected below.</p>
+        <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices shown in {getCurrencySymbol(currency)} ({currency}). Use the Currency section below to convert all prices.</p>
         <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.5' }}>Underground installation automatically adds a 1.2x multiplier to the base price. This is built into the tool and cannot be changed from the dashboard.</p>
       </SettingsCard>
 
