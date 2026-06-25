@@ -308,7 +308,7 @@ function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
 
     setBtnMsg('Translating…');
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const singleApiResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -316,22 +316,22 @@ function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `Translate this wastewater estimator question to Swedish (sv), German (de), and French (fr). Return ONLY valid JSON, no other text, no markdown.\n\nlabel: "${localLabel}"\nhelper: "${localHelper}"\n\nReturn format: {"label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}`,
+            content: `Translate this wastewater estimator question label and helper text to Swedish (sv), German (de), and French (fr). Return ONLY valid JSON, no markdown.\n\nlabel_en: "${localLabel}"\nhelper_en: "${localHelper}"\n\nReturn: {"label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}`,
           }],
         }),
       });
-      const data = await response.json();
-      const text = data.content?.[0]?.text || '{}';
-      const translations = JSON.parse(text.replace(/```json|```/g, '').trim());
+      const singleData = await singleApiResponse.json();
+      const singleRaw = singleData.content?.[0]?.text || '{}';
+      const singleTranslations = JSON.parse(singleRaw.replace(/```json|```/g, '').trim());
       await supabase.from('client_questions').upsert({
         client_id:    clientId,
         question_key: nodeKey,
-        label_sv:     translations.label_sv  || localLabel,
-        label_de:     translations.label_de  || localLabel,
-        label_fr:     translations.label_fr  || localLabel,
-        helper_sv:    translations.helper_sv || localHelper,
-        helper_de:    translations.helper_de || localHelper,
-        helper_fr:    translations.helper_fr || localHelper,
+        label_sv:  singleTranslations.label_sv  || localLabel,
+        label_de:  singleTranslations.label_de  || localLabel,
+        label_fr:  singleTranslations.label_fr  || localLabel,
+        helper_sv: singleTranslations.helper_sv || localHelper,
+        helper_de: singleTranslations.helper_de || localHelper,
+        helper_fr: singleTranslations.helper_fr || localHelper,
       }, { onConflict: 'client_id,question_key' });
     } catch (err) {
       console.error('Translation failed:', err);
@@ -483,47 +483,53 @@ export default function QuestionEditor() {
       return;
     }
 
-    setSaveMsg('Translating…');
-    try {
-      const toTranslate = rows.map(r => ({ key: r.question_key, label: r.label_en, helper: r.helper_en }));
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 8000,
-          messages: [{
-            role: 'user',
-            content: `Translate these wastewater estimator questions to Swedish (sv), German (de), and French (fr). Return ONLY a valid JSON array, no other text, no markdown.\n\n${JSON.stringify(toTranslate)}\n\nReturn format: [{"key":"...","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]`,
-          }],
-        }),
-      });
-      const data = await response.json();
-      const text = data.content?.[0]?.text || '[]';
-      const translations = JSON.parse(text.replace(/```json|```/g, '').trim());
-      const transMap = Object.fromEntries(translations.map(t => [t.key, t]));
-      const translatedRows = rows.map(r => {
-        const t = transMap[r.question_key] || {};
-        return {
-          client_id:    clientId,
-          question_key: r.question_key,
-          label_sv:     t.label_sv  || r.label_en,
-          label_de:     t.label_de  || r.label_en,
-          label_fr:     t.label_fr  || r.label_en,
-          helper_sv:    t.helper_sv || r.helper_en,
-          helper_de:    t.helper_de || r.helper_en,
-          helper_fr:    t.helper_fr || r.helper_en,
-        };
-      });
-      await supabase.from('client_questions').upsert(translatedRows, { onConflict: 'client_id,question_key' });
-    } catch (err) {
-      console.error('Bulk translation failed:', err);
-    }
-
     setSaving(false);
-    setSaveMsg('Saved! Questions translated to all languages.');
     setHasChanges(false);
-    setTimeout(() => setSaveMsg(''), 3000);
+
+    const questionsToTranslate = rows.filter(r => r.label_en && r.label_en.trim());
+
+    if (questionsToTranslate.length > 0) {
+      try {
+        setSaveMsg('Translating to all languages...');
+        const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 4000,
+            messages: [{
+              role: 'user',
+              content: `You are a professional translator for a wastewater installation estimator tool used in Sweden. Translate the following question labels and helper texts to Swedish (sv), German (de), and French (fr). Keep translations natural and professional. Return ONLY a valid JSON array, no markdown, no explanation.\n\nQuestions to translate:\n${JSON.stringify(questionsToTranslate.map(q => ({ key: q.question_key, label_en: q.label_en, helper_en: q.helper_en || '' })))}\n\nReturn format (JSON array):\n[{"key":"question_key","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]`,
+            }],
+          }),
+        });
+        const apiData = await apiResponse.json();
+        const rawText = apiData.content?.[0]?.text || '[]';
+        const cleanText = rawText.replace(/```json|```/g, '').trim();
+        const translations = JSON.parse(cleanText);
+        if (translations.length > 0) {
+          await supabase.from('client_questions').upsert(
+            translations.map(t => ({
+              client_id:    clientId,
+              question_key: t.key,
+              label_sv:  t.label_sv  || '',
+              label_de:  t.label_de  || '',
+              label_fr:  t.label_fr  || '',
+              helper_sv: t.helper_sv || '',
+              helper_de: t.helper_de || '',
+              helper_fr: t.helper_fr || '',
+            })),
+            { onConflict: 'client_id,question_key' }
+          );
+          setSaveMsg('Saved in all languages ✓');
+          setTimeout(() => setSaveMsg(''), 3000);
+        }
+      } catch (translationErr) {
+        console.error('Translation failed:', translationErr);
+        setSaveMsg('Saved (translation failed — try again)');
+        setTimeout(() => setSaveMsg(''), 3000);
+      }
+    }
   }
 
   if (planLoading) return (
