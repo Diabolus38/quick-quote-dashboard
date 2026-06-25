@@ -482,15 +482,11 @@ export default function QuestionEditor() {
       setError('Failed to save. Please try again.');
       return;
     }
-
-    setSaving(false);
+    setSaveMsg('Saved! Translating to all languages...');
     setHasChanges(false);
-
-    const questionsToTranslate = rows.filter(r => r.label_en && r.label_en.trim());
-
-    if (questionsToTranslate.length > 0) {
-      try {
-        setSaveMsg('Translating to all languages...');
+    try {
+      const questionsToTranslate = rows.filter(r => r.label_en && r.label_en.trim());
+      if (questionsToTranslate.length > 0) {
         const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -499,37 +495,37 @@ export default function QuestionEditor() {
             max_tokens: 4000,
             messages: [{
               role: 'user',
-              content: `You are a professional translator for a wastewater installation estimator tool used in Sweden. Translate the following question labels and helper texts to Swedish (sv), German (de), and French (fr). Keep translations natural and professional. Return ONLY a valid JSON array, no markdown, no explanation.\n\nQuestions to translate:\n${JSON.stringify(questionsToTranslate.map(q => ({ key: q.question_key, label_en: q.label_en, helper_en: q.helper_en || '' })))}\n\nReturn format (JSON array):\n[{"key":"question_key","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]`,
-            }],
-          }),
+              content: 'Translate these wastewater estimator questions to Swedish (sv), German (de), and French (fr). Return ONLY a JSON array, no markdown, no explanation.\n\nInput: ' + JSON.stringify(questionsToTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en }))) + '\n\nReturn: [{"key":"...","label_sv":"...","label_de":"...","label_fr":"...","helper_sv":"...","helper_de":"...","helper_fr":"..."}]'
+            }]
+          })
         });
         const apiData = await apiResponse.json();
         const rawText = apiData.content?.[0]?.text || '[]';
         const cleanText = rawText.replace(/```json|```/g, '').trim();
         const translations = JSON.parse(cleanText);
-        if (translations.length > 0) {
+        if (Array.isArray(translations) && translations.length > 0) {
           await supabase.from('client_questions').upsert(
             translations.map(t => ({
-              client_id:    clientId,
+              client_id: clientId,
               question_key: t.key,
-              label_sv:  t.label_sv  || '',
-              label_de:  t.label_de  || '',
-              label_fr:  t.label_fr  || '',
+              label_sv: t.label_sv || '',
+              label_de: t.label_de || '',
+              label_fr: t.label_fr || '',
               helper_sv: t.helper_sv || '',
               helper_de: t.helper_de || '',
               helper_fr: t.helper_fr || '',
             })),
             { onConflict: 'client_id,question_key' }
           );
-          setSaveMsg('Saved in all languages ✓');
-          setTimeout(() => setSaveMsg(''), 3000);
+          setSaveMsg('Saved in all 4 languages ✓');
         }
-      } catch (translationErr) {
-        console.error('Translation failed:', translationErr);
-        setSaveMsg('Saved (translation failed — try again)');
-        setTimeout(() => setSaveMsg(''), 3000);
       }
+    } catch (translationErr) {
+      console.error('Translation error:', translationErr);
+      setSaveMsg('Saved in English. Translation failed — try again.');
     }
+    setSaving(false);
+    setTimeout(() => setSaveMsg(''), 4000);
   }
 
   if (planLoading) return (
