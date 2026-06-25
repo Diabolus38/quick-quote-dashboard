@@ -37,8 +37,8 @@ function SaveButton({ onClick, saveMsg }) {
     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
       {saveMsg && <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>{saveMsg}</span>}
       <button type="button" onClick={onClick}
-        style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-        Save
+        style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 24px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+        Save pricing
       </button>
     </div>
   );
@@ -97,6 +97,28 @@ const BASE_DEFAULTS = {
   wc_bdt: { '1': 99900, '2': 119900, '3': 149900, '4': 179900, '5': 219900 },
 };
 
+function PriceRow({ item, onChange, onReset }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
+      <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <input type="number"
+          value={item.value === '0' || item.value === 0 ? '' : item.value}
+          placeholder={String(PRICE_DEFAULTS[item.key] ?? '')}
+          className="price-input"
+          onChange={e => {
+            const raw = parseFloat(e.target.value);
+            onChange(isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
+          }}
+          style={{ width: '110px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '13px', textAlign: 'right', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
+        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, minWidth: '18px' }}>kr</span>
+        <button type="button" title="Reset to default" onClick={onReset}
+          style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '2px 4px', lineHeight: 1 }}>↺</button>
+      </div>
+    </div>
+  );
+}
+
 function PricingContent({ clientId }) {
   const { profile } = useAuth();
   const hh = ['1','2','3','4','5'];
@@ -105,54 +127,54 @@ function PricingContent({ clientId }) {
     return entries.map(([key, label]) => ({ key, label, value: obj[key] === 0 ? '' : String(obj[key] ?? '') }));
   }
 
-  const [hoveredRowLabel, setHoveredRowLabel] = useState(null);
-  const ROW_TOOLTIPS = {
-    bdt:    'Biological Drain Field Treatment',
-    wc:     'Water Closet waste only, no grey water',
-    wc_bdt: 'Full system: WC + grey water treatment',
-  };
-
-  const [loading,    setLoading]    = useState(true);
-  const [baseGrid,   setBaseGrid]   = useState([
-    { key: 'bdt',    label: 'BDT',     values: hh.map(() => '') },
-    { key: 'wc',     label: 'WC only', values: hh.map(() => '') },
-    { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(() => '') },
-  ]);
-  const [fixedCosts, setFixedCosts] = useState(makeList({}, [
+  const FIXED_ENTRIES = [
     ['planning',           'Planning/Municipality Application'],
     ['establishment_zone1','Establishment Zone 1'],
     ['establishment_zone2','Establishment Zone 2'],
     ['de_establishment',   'De-establishment'],
     ['admin',              'Admin Fee'],
     ['inspection',         'Inspection of Existing Well'],
-  ]));
-  const [perMeter, setPerMeter] = useState(makeList({}, [
+  ];
+  const PER_METER_ENTRIES = [
     ['gravity_pipe',   'Gravity Pipe per meter'],
     ['pressure_pipe',  'Pressure Pipe per meter'],
     ['protection_pipe','Protection Pipe per meter'],
     ['cable',          'Electric Cable per meter'],
     ['makadam',        'Makadam per ton'],
     ['labor',          'Labor Rate per hour'],
-  ]));
-  const [addOns, setAddOns] = useState(makeList({}, [
+  ];
+  const ADDON_ENTRIES = [
     ['pump_well',             'Pump Well'],
     ['double_pump',           'Double Pump'],
     ['telescope_cover',       'Telescope + Well Cover'],
     ['lawn_restoration_base', 'Lawn Restoration Base'],
     ['mass_removal',          'Mass Removal'],
     ['transport',             'Transport'],
-  ]));
-  const [rotEnabled, setRotEnabled] = useState(false);
-  const [rotPercent,  setRotPercent] = useState('30');
-  const [currency,    setCurrency]   = useState('SEK');
-  const [saveMsg, flash] = useSaveMsg();
-  const [resetMsg, setResetMsg] = useState('');
+  ];
+
+  const [loading,    setLoading]    = useState(true);
+  const [baseGrid,   setBaseGrid]   = useState([
+    { key: 'bdt',    label: 'BDT',     sub: 'Biological drain field',      values: hh.map(() => '') },
+    { key: 'wc',     label: 'WC only', sub: 'Water closet, no grey water', values: hh.map(() => '') },
+    { key: 'wc_bdt', label: 'WC+BDT',  sub: 'Full system',                 values: hh.map(() => '') },
+  ]);
+  const [fixedCosts,  setFixedCosts]  = useState(makeList({}, FIXED_ENTRIES));
+  const [perMeter,    setPerMeter]    = useState(makeList({}, PER_METER_ENTRIES));
+  const [addOns,      setAddOns]      = useState(makeList({}, ADDON_ENTRIES));
+  const [rotEnabled,  setRotEnabled]  = useState(false);
+  const [rotPercent,  setRotPercent]  = useState('30');
+  const [rotMode,     setRotMode]     = useState('percentage');
+  const [rotFixedAmount, setRotFixedAmount] = useState('');
+  const [currency,    setCurrency]    = useState('SEK');
+  const [prevCurrency, setPrevCurrency] = useState('SEK');
+  const [convertMsg,  setConvertMsg]  = useState('');
+  const [saveMsg,     flash]          = useSaveMsg();
+  const [resetMsg,    setResetMsg]    = useState('');
   const [lastSavedPricing, setLastSavedPricing] = useState(() => localStorage.getItem(`qq360_last_saved_pricing_${profile?.id || 'anon'}`) || '');
-  const [showPreview,        setShowPreview]        = useState(false);
-  const [previewSystemType,  setPreviewSystemType]  = useState('bdt');
-  const [previewHouseholds,  setPreviewHouseholds]  = useState('1');
-  const [previewZone,        setPreviewZone]        = useState('Zone 1');
-  const [hoveredHH, setHoveredHH] = useState(null);
+  const [showPreview,       setShowPreview]       = useState(false);
+  const [previewSystemType, setPreviewSystemType] = useState('bdt');
+  const [previewHouseholds, setPreviewHouseholds] = useState('1');
+  const [previewZone,       setPreviewZone]       = useState('Zone 1');
 
   useEffect(() => {
     if (!clientId) return;
@@ -164,37 +186,19 @@ function PricingContent({ clientId }) {
         const pm = p.per_meter_costs || {};
         const ao = p.addons          || {};
         setBaseGrid([
-          { key: 'bdt',    label: 'BDT',     values: hh.map(h => { const v = bp.bdt?.[h];    return v === 0 ? '' : String(v ?? ''); }) },
-          { key: 'wc',     label: 'WC only', values: hh.map(h => { const v = bp.wc?.[h];     return v === 0 ? '' : String(v ?? ''); }) },
-          { key: 'wc_bdt', label: 'WC+BDT',  values: hh.map(h => { const v = bp.wc_bdt?.[h]; return v === 0 ? '' : String(v ?? ''); }) },
+          { key: 'bdt',    label: 'BDT',     sub: 'Biological drain field',      values: hh.map(h => { const v = bp.bdt?.[h];    return v === 0 ? '' : String(v ?? ''); }) },
+          { key: 'wc',     label: 'WC only', sub: 'Water closet, no grey water', values: hh.map(h => { const v = bp.wc?.[h];     return v === 0 ? '' : String(v ?? ''); }) },
+          { key: 'wc_bdt', label: 'WC+BDT',  sub: 'Full system',                 values: hh.map(h => { const v = bp.wc_bdt?.[h]; return v === 0 ? '' : String(v ?? ''); }) },
         ]);
-        setFixedCosts(makeList(fc, [
-          ['planning',           'Planning/Municipality Application'],
-          ['establishment_zone1','Establishment Zone 1'],
-          ['establishment_zone2','Establishment Zone 2'],
-          ['de_establishment',   'De-establishment'],
-          ['admin',              'Admin Fee'],
-          ['inspection',         'Inspection of Existing Well'],
-        ]));
-        setPerMeter(makeList(pm, [
-          ['gravity_pipe',   'Gravity Pipe per meter'],
-          ['pressure_pipe',  'Pressure Pipe per meter'],
-          ['protection_pipe','Protection Pipe per meter'],
-          ['cable',          'Electric Cable per meter'],
-          ['makadam',        'Makadam per ton'],
-          ['labor',          'Labor Rate per hour'],
-        ]));
-        setAddOns(makeList(ao, [
-          ['pump_well',             'Pump Well'],
-          ['double_pump',           'Double Pump'],
-          ['telescope_cover',       'Telescope + Well Cover'],
-          ['lawn_restoration_base', 'Lawn Restoration Base'],
-          ['mass_removal',          'Mass Removal'],
-          ['transport',             'Transport'],
-        ]));
+        setFixedCosts(makeList(fc, FIXED_ENTRIES));
+        setPerMeter(makeList(pm, PER_METER_ENTRIES));
+        setAddOns(makeList(ao, ADDON_ENTRIES));
         setRotEnabled(p.rot_enabled    ?? false);
         setRotPercent(String(p.rot_percentage ?? 30));
+        setRotMode(p.rot_mode || 'percentage');
+        setRotFixedAmount(p.rot_fixed_amount ? String(p.rot_fixed_amount) : '');
         setCurrency(p.currency || 'SEK');
+        setPrevCurrency(p.currency || 'SEK');
         setLoading(false);
       });
   }, [clientId]);
@@ -222,10 +226,10 @@ function PricingContent({ clientId }) {
   async function handleReset() {
     if (!window.confirm('Reset all pricing to zero? This will clear all your pricing data.')) return;
     const zero5 = Object.fromEntries(hh.map(h => [h, 0]));
-    setBaseGrid(prev => prev.map(row => ({ ...row, values: hh.map(() => '0') })));
-    setFixedCosts(prev => prev.map(item => ({ ...item, value: '0' })));
-    setPerMeter(prev => prev.map(item => ({ ...item, value: '0' })));
-    setAddOns(prev => prev.map(item => ({ ...item, value: '0' })));
+    setBaseGrid(prev => prev.map(row => ({ ...row, values: hh.map(() => '') })));
+    setFixedCosts(prev => prev.map(item => ({ ...item, value: '' })));
+    setPerMeter(prev => prev.map(item => ({ ...item, value: '' })));
+    setAddOns(prev => prev.map(item => ({ ...item, value: '' })));
     setRotEnabled(false);
     setRotPercent('30');
     setCurrency('SEK');
@@ -249,11 +253,13 @@ function PricingContent({ clientId }) {
     const toObj = arr => Object.fromEntries(arr.map(item => [item.key, Number(item.value || 0)]));
     await supabase.from('client_pricing').update({
       base_prices,
-      fixed_costs:     toObj(fixedCosts),
-      per_meter_costs: toObj(perMeter),
-      addons:          toObj(addOns),
-      rot_enabled:     rotEnabled,
-      rot_percentage:  Number(rotPercent || 30),
+      fixed_costs:      toObj(fixedCosts),
+      per_meter_costs:  toObj(perMeter),
+      addons:           toObj(addOns),
+      rot_enabled:      rotEnabled,
+      rot_percentage:   Number(rotPercent || 30),
+      rot_mode:         rotMode,
+      rot_fixed_amount: Number(rotFixedAmount || 0),
       currency,
     }).eq('client_id', clientId);
     flash();
@@ -262,145 +268,249 @@ function PricingContent({ clientId }) {
     setLastSavedPricing(ts);
   }
 
-  function PriceRows({ items, setter }) {
-    return items.map((item, i) => (
-      <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
-        <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
-        <PriceInput value={item.value} onChange={val => updateList(setter, i, val)} placeholder={PRICE_DEFAULTS[item.key]} />
-      </div>
-    ));
+  async function handleConvertPrices() {
+    if (prevCurrency === currency) {
+      setConvertMsg('Already in ' + currency);
+      setTimeout(() => setConvertMsg(''), 2000);
+      return;
+    }
+    try {
+      const res = await fetch(`https://api.frankfurter.app/latest?from=${prevCurrency}&to=${currency}`);
+      const data = await res.json();
+      const rate = data.rates?.[currency];
+      if (!rate) throw new Error('No rate');
+      const conv = v => v === '' ? '' : String(Math.round(Number(v) * rate));
+      setBaseGrid(prev => prev.map(row => ({ ...row, values: row.values.map(conv) })));
+      setFixedCosts(prev => prev.map(item => ({ ...item, value: conv(item.value) })));
+      setPerMeter(prev => prev.map(item => ({ ...item, value: conv(item.value) })));
+      setAddOns(prev => prev.map(item => ({ ...item, value: conv(item.value) })));
+      setPrevCurrency(currency);
+      setConvertMsg('Converted!');
+      setTimeout(() => setConvertMsg(''), 2500);
+    } catch {
+      setConvertMsg('Conversion failed — please update prices manually');
+      setTimeout(() => setConvertMsg(''), 4000);
+    }
   }
 
+  const ROW_TINTS = { bdt: '#fafff9', wc: '#f8faff', wc_bdt: '#fdf8ff' };
+  const resetBtnStyle = { background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '2px 4px', lineHeight: 1 };
   const selStyle = { width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' };
 
   return (
     <>
       <style>{`.price-input::placeholder{color:#9ca3af}.price-input::-webkit-inner-spin-button,.price-input::-webkit-outer-spin-button{display:none}.price-input{-moz-appearance:textfield}`}</style>
       <SectionHeader title="Pricing" subtitle="Set your pricing for the estimator tool." />
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: '600', marginBottom: '16px', fontFamily: FONT }}>
+
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: '600', marginBottom: '20px', fontFamily: FONT }}>
         <div style={{ width: '6px', height: '6px', backgroundColor: '#16a34a', borderRadius: '50%', flexShrink: 0 }} />
         Prices update live in your estimator tool after saving
       </div>
 
+      {/* Base System Prices */}
       <SettingsCard title="Base System Prices" subtitle="Starting price per system type and household count. Underground installation adds a 1.2x multiplier automatically. If left empty, tool uses the default prices shown.">
         <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '100px repeat(5, 80px)', gap: '8px', alignItems: 'center' }}>
-            <div />
-            {hh.map((h, ci) => (
-              <div key={h} style={{ position: 'relative', fontSize: '11px', color: '#9ca3af', fontWeight: '600', textAlign: 'center', fontFamily: FONT }}
-                onMouseEnter={() => setHoveredHH(ci)} onMouseLeave={() => setHoveredHH(null)}>
-                {h} hh
-                {hoveredHH === ci && (
-                  <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, marginBottom: '4px', pointerEvents: 'none' }}>
-                    Number of households
-                  </div>
-                )}
-              </div>
-            ))}
-            {baseGrid.map((row, ri) => (
-              <>
-                <div key={row.key} style={{ position: 'relative', fontSize: '13px', color: '#374151', fontWeight: '500', fontFamily: FONT, cursor: 'default' }}
-                  onMouseEnter={() => setHoveredRowLabel(row.key)} onMouseLeave={() => setHoveredRowLabel(null)}>
-                  {row.label}
-                  {hoveredRowLabel === row.key && (
-                    <div style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '8px', backgroundColor: '#0d1117', color: '#fff', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }}>
-                      {ROW_TOOLTIPS[row.key]}
-                    </div>
-                  )}
-                </div>
-                {hh.map((_, ci) => <PriceInput key={ci} value={row.values[ci]} onChange={val => updateGrid(ri, ci, val)} placeholder={BASE_DEFAULTS[row.key]?.[hh[ci]]} />)}
-              </>
-            ))}
-          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '160px', textAlign: 'left', paddingBottom: '10px' }} />
+                {hh.map(h => (
+                  <th key={h} style={{ paddingBottom: '10px', width: '94px' }}>
+                    <div style={{ backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '8px', padding: '4px 0', fontSize: '11px', fontWeight: '700', textAlign: 'center', fontFamily: FONT }}>{h} hh</div>
+                  </th>
+                ))}
+                <th style={{ width: '36px' }} />
+              </tr>
+            </thead>
+            <tbody>
+              {baseGrid.map((row, ri) => {
+                const tint = ROW_TINTS[row.key];
+                return (
+                  <tr key={row.key} style={{ backgroundColor: tint }}>
+                    <td style={{ padding: '12px 8px 12px 0', verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: '13px', color: '#0d1117', fontWeight: '600', fontFamily: FONT }}>{row.label}</div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT, marginTop: '2px' }}>{row.sub}</div>
+                    </td>
+                    {hh.map((h, ci) => (
+                      <td key={h} style={{ padding: '8px 4px', verticalAlign: 'middle' }}>
+                        <input type="number"
+                          value={row.values[ci] === '0' || row.values[ci] === 0 ? '' : row.values[ci]}
+                          placeholder={String(BASE_DEFAULTS[row.key]?.[h] ?? '')}
+                          className="price-input"
+                          onChange={e => {
+                            const raw = parseFloat(e.target.value);
+                            updateGrid(ri, ci, isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
+                          }}
+                          style={{ width: '80px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '6px 8px', fontSize: '13px', textAlign: 'center', outline: 'none', fontFamily: FONT, backgroundColor: tint, color: '#0d1117' }} />
+                      </td>
+                    ))}
+                    <td style={{ padding: '8px 0 8px 4px', verticalAlign: 'middle' }}>
+                      <button type="button" title="Reset row to defaults"
+                        onClick={() => setBaseGrid(prev => prev.map((r, i) => i === ri
+                          ? { ...r, values: hh.map(hk => String(BASE_DEFAULTS[r.key]?.[hk] ?? '')) }
+                          : r))}
+                        style={resetBtnStyle}>↺</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
         <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Prices are in the currency selected below.</p>
         <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT, lineHeight: '1.5' }}>Underground installation automatically adds a 1.2x multiplier to the base price. This is built into the tool and cannot be changed from the dashboard.</p>
       </SettingsCard>
 
-      <SettingsCard title="Fixed Costs" subtitle="Flat fees added to every estimate. Planning covers municipality application. Establishment cost depends on the customer's zone. Configure zones in the Municipalities page.">
-        <PriceRows items={fixedCosts} setter={setFixedCosts} />
-      </SettingsCard>
+      {/* Fixed Costs + Add-on Services side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <SettingsCard title="Fixed Costs" subtitle="Flat fees added to every estimate. Planning covers municipality application. Establishment cost depends on the customer's zone. Configure zones in the Municipalities page.">
+          {fixedCosts.map((item, i) => (
+            <PriceRow key={item.key} item={item}
+              onChange={val => updateList(setFixedCosts, i, val)}
+              onReset={() => updateList(setFixedCosts, i, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+          ))}
+        </SettingsCard>
+        <SettingsCard title="Add-on Services" subtitle="Added when the customer selects these options during the estimator. Lawn restoration base price has 1,500 kr labor added on top automatically by the tool.">
+          {addOns.map((item, i) => (
+            <PriceRow key={item.key} item={item}
+              onChange={val => updateList(setAddOns, i, val)}
+              onReset={() => updateList(setAddOns, i, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+          ))}
+        </SettingsCard>
+      </div>
 
+      {/* Per Meter Costs */}
       <SettingsCard title="Per Meter Costs" subtitle="Used when the customer says new pipes are needed or excavation is required. The tool calculates total pipe cost based on these rates multiplied by the meters entered. Labor rate is in kr per hour.">
-        <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#166534', fontFamily: FONT, lineHeight: '1.5' }}>
-          Above ground pipe: base 2,500 kr plus rates per meter. Underground pipe: gravity pipe rate per meter plus 30% of labor rate per meter. Both types add makadam cost based on trench volume.
+        <div style={{ backgroundColor: '#f0fdf4', borderRadius: '10px', padding: '12px 16px', fontSize: '12px', color: '#166534', lineHeight: '1.6', marginBottom: '16px', fontFamily: FONT }}>
+          Underground pipe: gravity pipe rate per meter plus 30% of labor rate per meter. Above ground pipe: base 2,500 kr plus pressure pipe, protection pipe and cable rates per meter.
         </div>
-        <PriceRows items={perMeter} setter={setPerMeter} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
+          <div>
+            {perMeter.slice(0, 3).map((item, i) => (
+              <PriceRow key={item.key} item={item}
+                onChange={val => updateList(setPerMeter, i, val)}
+                onReset={() => updateList(setPerMeter, i, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+            ))}
+          </div>
+          <div>
+            {perMeter.slice(3).map((item, i) => (
+              <PriceRow key={item.key} item={item}
+                onChange={val => updateList(setPerMeter, i + 3, val)}
+                onReset={() => updateList(setPerMeter, i + 3, String(PRICE_DEFAULTS[item.key] ?? ''))} />
+            ))}
+          </div>
+        </div>
       </SettingsCard>
 
-      <SettingsCard title="Add-on Services" subtitle="Added when the customer selects these options during the estimator. Lawn restoration base price has 1,500 kr labor added on top automatically by the tool.">
-        <PriceRows items={addOns} setter={setAddOns} />
-      </SettingsCard>
+      {/* ROT Deduction + Currency side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <SettingsCard title="ROT Deduction">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: rotEnabled ? '16px' : 0 }}>
+            <Toggle value={rotEnabled} onChange={setRotEnabled} />
+            <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>ROT Deduction {rotEnabled ? 'enabled' : 'disabled'}</span>
+          </div>
+          {rotEnabled && (
+            <>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+                {[['percentage', 'Percentage %'], ['fixed', 'Fixed amount kr']].map(([mode, label]) => (
+                  <button key={mode} type="button" onClick={() => setRotMode(mode)}
+                    style={{ flex: 1, padding: '7px 0', borderRadius: '20px', border: `1px solid ${rotMode === mode ? PRIMARY : '#e8ede8'}`, backgroundColor: rotMode === mode ? PRIMARY : '#fff', color: rotMode === mode ? '#fff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {rotMode === 'percentage' ? (
+                <FieldRow label="Deduction Percentage">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <PriceInput value={rotPercent} onChange={setRotPercent} placeholder="30" />
+                    <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>%</span>
+                  </div>
+                </FieldRow>
+              ) : (
+                <FieldRow label="Fixed Deduction Amount">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <PriceInput value={rotFixedAmount} onChange={setRotFixedAmount} placeholder="0" />
+                    <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>kr</span>
+                  </div>
+                </FieldRow>
+              )}
+              {(() => {
+                const base = 100000;
+                const deduction = rotMode === 'percentage'
+                  ? Math.round(base * (Number(rotPercent) || 0) / 100)
+                  : Number(rotFixedAmount) || 0;
+                return (
+                  <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#166534', lineHeight: '1.6', marginTop: '12px', fontFamily: FONT }}>
+                    <strong>Example:</strong> A job priced at 100,000 kr{rotMode === 'percentage' ? ` with ${Number(rotPercent) || 0}% ROT deduction` : ` with ${deduction.toLocaleString()} kr fixed ROT deduction`}.<br />
+                    Customer pays: <strong>{(base - deduction).toLocaleString()} kr</strong><br />
+                    Tax deduction: <strong>{deduction.toLocaleString()} kr</strong>
+                  </div>
+                );
+              })()}
+            </>
+          )}
+          <p style={{ margin: '14px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', fontFamily: FONT }}>
+            ROT deduction (Rot-avdrag) is a Swedish tax deduction for labor costs on repair, conversion, and extension work. Customers can deduct 30% of labor costs directly from their invoice.
+          </p>
+          <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.5', fontFamily: FONT }}>
+            Note: the 1,500 kr lawn restoration labor charge is always added regardless of ROT deduction settings.
+          </p>
+        </SettingsCard>
 
-      <SettingsCard title="ROT Deduction">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: rotEnabled ? '14px' : 0 }}>
-          <Toggle value={rotEnabled} onChange={setRotEnabled} />
-          <span style={{ fontSize: '13.5px', color: '#374151', fontFamily: FONT }}>ROT Deduction {rotEnabled ? 'enabled' : 'disabled'}</span>
-        </div>
-        {rotEnabled && (
-          <FieldRow label="Deduction Percentage">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <PriceInput value={rotPercent} onChange={setRotPercent} />
-              <span style={{ fontSize: '13px', color: '#6b7280', fontFamily: FONT }}>%</span>
-            </div>
+        <SettingsCard title="Currency">
+          <FieldRow label="Currency">
+            <select value={currency} onChange={e => setCurrency(e.target.value)} style={selStyle}>
+              {['SEK','EUR','GBP','NOK','DKK'].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </FieldRow>
-        )}
-        {rotEnabled && (() => {
-          const pct = Number(rotPercent) || 0;
-          const deduction = Math.round(100000 * pct / 100);
-          const customerPays = 100000 - deduction;
-          return (
-            <div style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#166534', lineHeight: '1.6', marginTop: '12px', fontFamily: FONT }}>
-              <strong>Example:</strong> A job priced at 100,000 kr with {pct}% ROT deduction.<br />
-              Customer pays: <strong>{customerPays.toLocaleString()} kr</strong><br />
-              Tax deduction: <strong>{deduction.toLocaleString()} kr</strong>
-            </div>
-          );
-        })()}
-        <p style={{ margin: '14px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.6', fontFamily: FONT }}>
-          ROT deduction (Rot-avdrag) is a Swedish tax deduction for labor costs on repair, conversion, and extension work. Customers can deduct 30% of labor costs directly from their invoice.
-        </p>
-        <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.5', fontFamily: FONT }}>
-          Note: the 1,500 kr lawn restoration labor charge is always added regardless of ROT deduction settings.
-        </p>
-      </SettingsCard>
+          <button type="button" onClick={handleConvertPrices}
+            style={{ backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, marginTop: '4px' }}>
+            Convert all prices
+          </button>
+          {convertMsg && (
+            <p style={{ margin: '8px 0 0', fontSize: '12px', fontWeight: '600', color: convertMsg.startsWith('Conversion') ? '#dc2626' : '#16a34a', fontFamily: FONT }}>
+              {convertMsg}
+            </p>
+          )}
+        </SettingsCard>
+      </div>
 
-      <SettingsCard title="Currency">
-        <FieldRow label="Currency">
-          <select value={currency} onChange={e => setCurrency(e.target.value)} style={selStyle}>
-            {['SEK','EUR','GBP','NOK','DKK'].map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </FieldRow>
-      </SettingsCard>
-
+      {/* Save bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {resetMsg && <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{resetMsg}</span>}
           <button type="button" onClick={handleReset}
-            style={{ backgroundColor: '#fff', border: '1px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            Reset to Defaults
+            style={{ backgroundColor: '#fff', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+            Reset to defaults
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button type="button" onClick={() => setShowPreview(true)}
             style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#374151', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            Preview Estimate
+            Preview estimate
           </button>
           <SaveButton onClick={handleSave} saveMsg={saveMsg} />
         </div>
-        {lastSavedPricing && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>Last saved: {(() => { const d = new Date(lastSavedPricing); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
       </div>
+      {lastSavedPricing && (
+        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT, textAlign: 'right' }}>
+          Last saved: {(() => { const d = new Date(lastSavedPricing); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}
+        </p>
+      )}
 
+      {/* Preview modal */}
       {showPreview && (() => {
         const baseRow = baseGrid.find(r => r.key === previewSystemType);
         const baseVal = baseRow ? Number(baseRow.values[Number(previewHouseholds) - 1] || 0) : 0;
         const undergroundAmt = baseVal > 0 ? Math.round(baseVal * 0.2) : 0;
         const estKey = previewZone === 'Zone 1' ? 'establishment_zone1' : 'establishment_zone2';
-        const estCost = Number(fixedCosts.find(f => f.key === estKey)?.value || 0);
+        const estCost     = Number(fixedCosts.find(f => f.key === estKey)?.value || 0);
         const planningCost = Number(fixedCosts.find(f => f.key === 'planning')?.value || 0);
-        const deEstCost = Number(fixedCosts.find(f => f.key === 'de_establishment')?.value || 0);
-        const adminCost = Number(fixedCosts.find(f => f.key === 'admin')?.value || 0);
-        const rotDeduction = rotEnabled ? Math.round(baseVal * Number(rotPercent) / 100) : 0;
+        const deEstCost   = Number(fixedCosts.find(f => f.key === 'de_establishment')?.value || 0);
+        const adminCost   = Number(fixedCosts.find(f => f.key === 'admin')?.value || 0);
+        const rotDeduction = rotEnabled
+          ? (rotMode === 'fixed' ? Number(rotFixedAmount || 0) : Math.round(baseVal * Number(rotPercent) / 100))
+          : 0;
         const total = baseVal + undergroundAmt + estCost + planningCost + deEstCost + adminCost - rotDeduction;
         return (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -445,7 +555,7 @@ function PricingContent({ clientId }) {
                   { label: `Establishment (${previewZone})`, amount: estCost },
                   { label: 'De-establishment', amount: deEstCost },
                   { label: 'Admin Fee', amount: adminCost },
-                  ...(rotEnabled ? [{ label: `ROT Deduction (${rotPercent}%)`, amount: rotDeduction, negative: true }] : []),
+                  ...(rotEnabled ? [{ label: rotMode === 'fixed' ? 'ROT Deduction (fixed)' : `ROT Deduction (${rotPercent}%)`, amount: rotDeduction, negative: true }] : []),
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: '13px' }}>
                     <span style={{ color: 'rgba(255,255,255,0.6)' }}>{item.label}</span>
