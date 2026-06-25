@@ -161,7 +161,7 @@ function MunicipalitiesContent({ clientId }) {
       .insert({ client_id: clientId, municipality: name, zone: firstZone, custom_price: zonePrice });
     if (insErr) { console.error('addMunicipality insert error:', insErr); return; }
     const { data: newRow, error: fetchErr } = await supabase.from('client_municipalities')
-      .select('*').eq('client_id', clientId).eq('municipality', name).maybeSingle();
+      .select('*').eq('client_id', clientId).eq('municipality', name).neq('municipality', '__zone_placeholder__').maybeSingle();
     if (fetchErr) { console.error('addMunicipality fetch error:', fetchErr); }
     setRows(prev => [...prev, newRow || { id: Date.now().toString(), client_id: clientId, municipality: name, zone: firstZone, custom_price: zonePrice }]);
     setSearch('');
@@ -302,7 +302,9 @@ function MunicipalitiesContent({ clientId }) {
             + Add Municipality
           </button>
           {showSearch && zones.length === 0 && (
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#d97706', fontFamily: FONT }}>Please create at least one zone first.</p>
+            <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginTop: '12px', fontFamily: FONT }}>
+              Please create at least one zone first before adding municipalities.
+            </div>
           )}
           {showSearch && zones.length > 0 && (
             <div style={{ position: 'relative', marginTop: '12px' }}>

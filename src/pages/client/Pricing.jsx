@@ -284,8 +284,8 @@ function PricingContent({ clientId }) {
       const data = await res.json();
       const rate = data.rates?.[currency];
       if (!rate) throw new Error('No rate');
-      const conv = v => v === '' ? '' : String(Math.round(Number(v) * rate));
-      setBaseGrid(prev => prev.map(row => ({ ...row, values: row.values.map(conv) })));
+      const conv = v => (!v || v === '' || v === '0') ? v : String(Math.round(Number(v) * rate));
+      setBaseGrid(prev => prev.map(row => ({ ...row, values: row.values.map(v => (!v || v === '' || v === '0') ? v : String(Math.round(Number(v) * rate))) })));
       setFixedCosts(prev => prev.map(item => ({ ...item, value: conv(item.value) })));
       setPerMeter(prev => prev.map(item => ({ ...item, value: conv(item.value) })));
       setAddOns(prev => prev.map(item => ({ ...item, value: conv(item.value) })));
