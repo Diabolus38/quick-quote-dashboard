@@ -483,48 +483,27 @@ export default function QuestionEditor() {
       return;
     }
     setHasChanges(false);
-    setSaveMsg('Saved! Translating to all languages...');
-    try {
-      const toTranslate = rows.filter(r => r.label_en && r.label_en.trim());
-      if (toTranslate.length > 0) {
-        console.log('Translation request:', JSON.stringify({ questions: toTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en || '' })) }));
-        const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions: toTranslate.map(q => ({ key: q.question_key, label: q.label_en, helper: q.helper_en || '' })) })
-        });
-        const transData = await transRes.json();
-        console.log('Translation response:', JSON.stringify(transData));
-        const translations = transData.translations || [];
-        console.log('Parsed translations:', JSON.stringify(translations));
-        if (translations.length > 0) {
-          await supabase.from('client_questions').upsert(
-            translations.map(t => ({
-              client_id: clientId,
-              question_key: t.key,
-              label_en: t.label_en || '',
-              label_sv: t.label_sv || '',
-              label_de: t.label_de || '',
-              label_fr: t.label_fr || '',
-              helper_en: t.helper_en || '',
-              helper_sv: t.helper_sv || '',
-              helper_de: t.helper_de || '',
-              helper_fr: t.helper_fr || '',
-            })),
-            { onConflict: 'client_id,question_key' }
-          );
-          console.log('Translation upsert complete');
-          setSaveMsg('Saved in all 4 languages ✓');
-        }
+    setSaveMsg('Translating to all languages...');
+    fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions: rows.map(r => ({ key: r.question_key, label: r.label_en, helper: r.helper_en || '' })).filter(r => r.label) })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const translations = data.translations || [];
+      if (translations.length > 0) {
+        supabase.from('client_questions').upsert(
+          translations.map(t => ({ client_id: clientId, question_key: t.key, label_en: t.label_en || '', label_sv: t.label_sv || '', label_de: t.label_de || '', label_fr: t.label_fr || '', helper_en: t.helper_en || '', helper_sv: t.helper_sv || '', helper_de: t.helper_de || '', helper_fr: t.helper_fr || '' })),
+          { onConflict: 'client_id,question_key' }
+        ).then(() => { setSaveMsg('Saved in all 4 languages ✓'); setTimeout(() => setSaveMsg(''), 4000); });
       } else {
-        setSaveMsg('Saved! Changes will reflect in your tool.');
+        setSaveMsg('Saved!');
+        setTimeout(() => setSaveMsg(''), 3000);
       }
-    } catch (err) {
-      console.error('TRANSLATION FAILED:', err.message, err.stack);
-      setSaveMsg('Saved in English. Translation failed: ' + err.message);
-    }
+    })
+    .catch(err => { console.error('Translation failed:', err); setSaveMsg('Saved in English only.'); setTimeout(() => setSaveMsg(''), 3000); });
     setSaving(false);
-    setTimeout(() => setSaveMsg(''), 4000);
   }
 
   if (planLoading) return (
