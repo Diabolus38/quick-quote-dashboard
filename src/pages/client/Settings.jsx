@@ -124,6 +124,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [logoUrl,             setLogoUrl]             = useState('');
   const [companyPhone,        setCompanyPhone]        = useState('');
   const [companyAddress,      setCompanyAddress]      = useState('');
+  const [companyLocation,     setCompanyLocation]     = useState('');
   const [widgetHeadline,      setWidgetHeadline]      = useState('');
   const [widgetSubtext,       setWidgetSubtext]       = useState('');
   const [bubbleText,          setBubbleText]          = useState('');
@@ -172,11 +173,13 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
       });
+    supabase.from('clients').select('company_location').eq('id', clientId).single()
+      .then(({ data }) => { if (data) setCompanyLocation(data.company_location || ''); });
   }, [clientId]);
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [companyName, widgetCompanyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
+  }, [companyName, widgetCompanyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, companyLocation, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -194,6 +197,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       { client_id: clientId, branding: currentBranding() },
       { onConflict: 'client_id' }
     );
+    /* Requires Supabase column: ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_location TEXT DEFAULT NULL; */
+    await supabase.from('clients').update({ company_location: companyLocation }).eq('id', clientId);
     flash();
     setHasUnsaved?.(false);
     const ts = new Date().toISOString();
@@ -338,6 +343,11 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
         <FieldRow label="Company Address" onReset={() => { setCompanyAddress(''); resetField({ company_address: '' }); }}>
           <TextInput value={companyAddress} onChange={setCompanyAddress} placeholder="123 Main St, Stockholm" />
+        </FieldRow>
+
+        <FieldRow label="Company location / Depot address" onReset={() => setCompanyLocation('')}>
+          <TextInput value={companyLocation} onChange={setCompanyLocation} placeholder="e.g. Malmövägen 12, Lund" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Used to calculate travel distance to customer locations.</p>
         </FieldRow>
 
         <FieldRow label="Widget Headline" onReset={() => { setWidgetHeadline('Get an instant project estimate'); resetField({ widget_headline: 'Get an instant project estimate' }); }}>
@@ -922,9 +932,8 @@ function EmbedCodeSection({ clientId }) {
 
 function AccountSection({ setHasUnsaved, setSaveRef }) {
   const { profile } = useAuth();
-  const [fullName,        setFullName]        = useState('');
-  const [avatarUrl,       setAvatarUrl]       = useState('');
-  const [companyLocation, setCompanyLocation] = useState('');
+  const [fullName,    setFullName]    = useState('');
+  const [avatarUrl,   setAvatarUrl]   = useState('');
   const [saveMsg,     flash]          = useSaveMsg();
   const [pwMsg,       setPwMsg]       = useState('');
   const [uploading,   setUploading]   = useState(false);
@@ -943,21 +952,11 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
   }, [profile?.id]);
 
   useEffect(() => {
-    if (!profile?.client_id) return;
-    supabase.from('clients').select('company_location').eq('id', profile.client_id).single()
-      .then(({ data }) => { if (data) setCompanyLocation(data.company_location || ''); });
-  }, [profile?.client_id]);
-
-  useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [fullName, companyLocation]);
+  }, [fullName]);
 
   async function handleSave() {
     await supabase.from('profiles').update({ full_name: fullName }).eq('id', profile.id);
-    if (profile?.client_id) {
-      /* Requires Supabase column: ALTER TABLE clients ADD COLUMN IF NOT EXISTS company_location TEXT DEFAULT NULL; */
-      await supabase.from('clients').update({ company_location: companyLocation }).eq('id', profile.client_id);
-    }
     flash();
     setHasUnsaved?.(false);
   }
@@ -1051,10 +1050,6 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
           <input type="email" value={profile?.email || ''} readOnly
             style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#6b7280', outline: 'none', fontFamily: FONT, backgroundColor: '#f9fafb', cursor: 'not-allowed' }} />
           <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Contact support to change your email.</p>
-        </FieldRow>
-        <FieldRow label="Company location / Office address">
-          <TextInput value={companyLocation} onChange={setCompanyLocation} placeholder="e.g. Storgatan 12, Stockholm" />
-          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Used to calculate travel distance to customer municipalities.</p>
         </FieldRow>
       </div>
       <SaveRow onClick={handleSave} msg={saveMsg} />
@@ -1198,15 +1193,12 @@ function SubscriptionSection() {
   const [selectedInterval, setSelectedInterval] = useState('month');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [stripeCustomerId, setStripeCustomerId] = useState(null);
+  const [portalMsg, setPortalMsg] = useState('');
 
   useEffect(() => {
     if (!profile?.client_id) return;
-    supabase.from('clients').select('plan, created_at, stripe_customer_id').eq('id', profile.client_id).single()
-      .then(({ data }) => {
-        if (data?.created_at) setCreatedAt(data.created_at);
-        setStripeCustomerId(data?.stripe_customer_id || null);
-      });
+    supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).single()
+      .then(({ data }) => { if (data?.created_at) setCreatedAt(data.created_at); });
   }, [profile?.client_id]);
 
   if (planLoading) return <SettingsSkeleton />;
@@ -1228,10 +1220,12 @@ function SubscriptionSection() {
         body: JSON.stringify({ clientId: profile.client_id }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else console.error('No portal URL:', data);
-    } catch (err) {
-      console.error('Portal error:', err);
+      if (data.url) { window.location.href = data.url; return; }
+      setPortalMsg('Billing portal not available yet');
+      setTimeout(() => setPortalMsg(''), 3000);
+    } catch {
+      setPortalMsg('Billing portal not available yet');
+      setTimeout(() => setPortalMsg(''), 3000);
     }
     setPortalLoading(false);
   }
@@ -1334,8 +1328,8 @@ function SubscriptionSection() {
             Upgrade Plan →
           </button>
         )}
-        <button type="button" onClick={handleManageBilling} disabled={portalLoading || !stripeCustomerId}
-          style={{ backgroundColor: '#fff', border: '1px solid #d1d5db', color: '#374151', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', cursor: (portalLoading || !stripeCustomerId) ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: (portalLoading || !stripeCustomerId) ? 0.7 : 1 }}>
+        <button type="button" onClick={handleManageBilling} disabled={portalLoading}
+          style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', color: '#374151', borderRadius: '10px', padding: '9px 20px', fontSize: '13.5px', fontWeight: '600', cursor: portalLoading ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: portalLoading ? 0.7 : 1 }}>
           {portalLoading ? 'Redirecting...' : 'Manage Billing'}
         </button>
         <button type="button" onClick={handleCancel} disabled={cancelling}
@@ -1343,7 +1337,7 @@ function SubscriptionSection() {
           Cancel Subscription
         </button>
       </div>
-      {!stripeCustomerId && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Manage Billing will be available once your first payment is processed.</p>}
+      {portalMsg && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>{portalMsg}</p>}
       {showUpgradeCards && (
         <div style={{ marginTop: '16px', border: '1px solid #e8ede8', borderRadius: '16px', padding: '24px' }}>
           <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
