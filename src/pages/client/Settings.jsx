@@ -743,7 +743,7 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
           <select value={defaultLanguage} onChange={e => setDefaultLanguage(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 14px', fontSize: '13.5px', color: '#0d1117', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', cursor: 'pointer' }}>
             {enabledCodes.map(({ code, label }) => (
-              <option key={code} value={code}>{code} — {label}</option>
+              <option key={code} value={code}>{code}, {label}</option>
             ))}
           </select>
         </div>

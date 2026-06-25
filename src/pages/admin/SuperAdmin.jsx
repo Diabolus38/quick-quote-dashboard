@@ -156,9 +156,9 @@ function AddClientModal({ onClose, onSaved }) {
         <div style={{ marginBottom: '28px' }}>
           <label style={lbl}>Plan</label>
           <select value={plan} onChange={e => setPlan(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-            <option value="starter">Starter — {PLAN_FEES.starter.toLocaleString()} kr/mo</option>
-            <option value="growth">Growth — {PLAN_FEES.growth.toLocaleString()} kr/mo</option>
-            <option value="scale">Scale — {PLAN_FEES.scale.toLocaleString()} kr/mo</option>
+            <option value="starter">Starter, {PLAN_FEES.starter.toLocaleString()} kr/mo</option>
+            <option value="growth">Growth, {PLAN_FEES.growth.toLocaleString()} kr/mo</option>
+            <option value="scale">Scale, {PLAN_FEES.scale.toLocaleString()} kr/mo</option>
           </select>
         </div>
 
@@ -289,7 +289,7 @@ export default function SuperAdmin() {
       systemAlerts.push({ key: `${c.id}_info`, msg: `● ${c.name} account is inactive`, borderColor: '#1d4ed8' });
     }
     if ((leadCountPerClient[c.id] || 0) === 0) {
-      systemAlerts.push({ key: `${c.id}_suggestion`, msg: `→ ${c.name} has no leads yet — they may need help with setup`, borderColor: '#9ca3af' });
+      systemAlerts.push({ key: `${c.id}_suggestion`, msg: `→ ${c.name} has no leads yet. They may need help with setup.`, borderColor: '#9ca3af' });
     }
     if (lastActivePerClient[c.id]) {
       const daysSinceActive = Math.floor((Date.now() - new Date(lastActivePerClient[c.id]).getTime()) / (1000 * 60 * 60 * 24));
@@ -386,7 +386,7 @@ export default function SuperAdmin() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
           <div>
             <h1 style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '700', color: '#0d1117' }}>Super Admin</h1>
-            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Full system control — QuickQuote360</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Full system control, QuickQuote360</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button type="button" onClick={exportAllData}
@@ -418,7 +418,7 @@ export default function SuperAdmin() {
                 <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{mrr.toLocaleString()} kr</p>
                 {mrrDiff > 0 && <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ +{mrrDiff.toLocaleString()} kr vs last month</p>}
                 {mrrDiff < 0 && <p style={{ margin: 0, fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>↓ −{Math.abs(mrrDiff).toLocaleString()} kr vs last month</p>}
-                {mrrDiff === 0 && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>— Same as last month</p>}
+                {mrrDiff === 0 && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>Same as last month.</p>}
               </div>
 
               {/* Total Clients */}
@@ -718,7 +718,7 @@ export default function SuperAdmin() {
                 )}
               </div>
               {systemAlerts.filter(a => !dismissedAlerts.has(a.key)).length === 0 ? (
-                <p style={{ margin: 0, fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>✓ No alerts — all systems normal</p>
+                <p style={{ margin: 0, fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>✓ No alerts. All systems normal.</p>
               ) : systemAlerts.filter(a => !dismissedAlerts.has(a.key)).map(alert => (
                 <div key={alert.key} style={{ borderLeft: `4px solid ${alert.borderColor}`, backgroundColor: '#fff', borderRadius: '8px', padding: '12px 16px', marginBottom: '8px', fontSize: '13px', color: '#0d1117', fontFamily: FONT, boxShadow: '0 1px 4px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                   <span>{alert.msg}</span>

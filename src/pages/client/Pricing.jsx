@@ -90,7 +90,7 @@ function PricingContent({ clientId }) {
   const [hoveredRowLabel, setHoveredRowLabel] = useState(null);
   const ROW_TOOLTIPS = {
     bdt:    'Biological Drain Field Treatment',
-    wc:     'Water Closet waste only — no grey water',
+    wc:     'Water Closet waste only, no grey water',
     wc_bdt: 'Full system: WC + grey water treatment',
   };
 

@@ -28,7 +28,7 @@ export default class ErrorBoundary extends React.Component {
             </div>
             <h2 style={{ color: '#0d1117', fontSize: '18px', fontWeight: '700', margin: '0 0 8px' }}>Something went wrong</h2>
             <p style={{ color: '#6b7280', fontSize: '13.5px', lineHeight: '1.6', margin: '0 0 20px' }}>
-              This page encountered an error. Try refreshing — if the problem persists contact support@quickquote360.com.
+              This page encountered an error. Try refreshing. If the problem persists contact support@quickquote360.com.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <button type="button" onClick={() => window.location.reload()}

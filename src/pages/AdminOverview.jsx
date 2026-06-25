@@ -212,7 +212,7 @@ export default function AdminOverview() {
             <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>{greeting}</h1>
             <p style={{ margin: 0, fontSize: '13.5px', color: '#9ca3af' }}>Here's your QuickQuote360 overview for today.</p>
             <span style={{ display: 'inline-flex', backgroundColor: '#ecfccb', color: '#3f6212', borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: '600', marginTop: '8px' }}>
-              {leadsToday > 0 ? `You have received ${leadsToday} lead${leadsToday === 1 ? '' : 's'} today` : 'No leads yet today — check back soon'}
+              {leadsToday > 0 ? `You have received ${leadsToday} lead${leadsToday === 1 ? '' : 's'} today` : 'No leads yet today. Check back soon.'}
             </span>
           </div>
           <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500', marginTop: '4px' }}>{formatDateStr()}</div>

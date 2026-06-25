@@ -243,7 +243,7 @@ export default function ClientOverview() {
                         <span style={{ position: 'absolute', top: '12px', right: '14px', color: PRIMARY, fontWeight: '700', fontSize: '14px' }}>✓</span>
                       )}
                       <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>
-                        {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>— {ic.price}</span>
+                        {ic.name} <span style={{ color: '#6b7280', fontWeight: '500' }}>, {ic.price}</span>
                       </p>
                       <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.4' }}>{ic.subtext}</p>
                     </div>

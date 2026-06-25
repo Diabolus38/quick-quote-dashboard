@@ -14,7 +14,7 @@ const SECTIONS = [
   },
   {
     title: '3. Legal Basis for Processing',
-    body: 'We process personal data under the following legal bases as defined by GDPR:\n\n• Article 6(1)(b) — Processing necessary for the performance of a contract.\n• Article 6(1)(f) — Processing necessary for our legitimate interests in providing and improving the platform.',
+    body: 'We process personal data under the following legal bases as defined by GDPR:\n\n• Article 6(1)(b), processing necessary for the performance of a contract.\n• Article 6(1)(f), processing necessary for our legitimate interests in providing and improving the platform.',
   },
   {
     title: '4. Data Storage',
@@ -30,7 +30,7 @@ const SECTIONS = [
   },
   {
     title: '7. Third Party Processors',
-    body: 'We use the following third-party processors to deliver our service:\n\n• Supabase — database and authentication\n• Railway — backend hosting\n• Resend — email delivery\n• Vercel — frontend hosting\n\nAll processors are contractually bound to handle data in accordance with GDPR.',
+    body: 'We use the following third-party processors to deliver our service:\n\n• Supabase, database and authentication\n• Railway, backend hosting\n• Resend, email delivery\n• Vercel, frontend hosting\n\nAll processors are contractually bound to handle data in accordance with GDPR.',
   },
   {
     title: '8. Cookies',

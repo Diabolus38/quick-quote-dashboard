@@ -138,7 +138,7 @@ export function AuthLeft() {
 
       {/* Tagline */}
       <p style={{ fontSize: '18px', fontWeight: '300', color: '#ffffff', lineHeight: '1.65', maxWidth: '320px', margin: '0 0 36px' }}>
-        Turn visitors into qualified leads — automatically.
+        Turn visitors into qualified leads, automatically.
       </p>
 
       {/* Bullets */}
