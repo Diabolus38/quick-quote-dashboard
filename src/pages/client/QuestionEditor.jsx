@@ -277,21 +277,25 @@ function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
   const [localHelper,  setLocalHelper]  = useState('');
   const [localVisible, setLocalVisible] = useState(true);
   const [btnMsg,       setBtnMsg]       = useState('');
+  const saveInProgress = useRef(false);
 
   useEffect(() => {
     setLocalLabel(q.label_en   || node.label  || '');
     setLocalHelper(q.helper_en || node.helper || '');
     setLocalVisible(q.visible  ?? true);
     setBtnMsg('');
+    saveInProgress.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeKey]);
 
   async function handleApply() {
-    if (btnMsg) return;
+    if (saveInProgress.current) return;
+    saveInProgress.current = true;
     setBtnMsg('Saving…');
     await onSave(nodeKey, localLabel, localHelper, localVisible);
     setBtnMsg('Saved ✓');
     await new Promise(r => setTimeout(r, 3000));
+    saveInProgress.current = false;
     onClose();
   }
 
