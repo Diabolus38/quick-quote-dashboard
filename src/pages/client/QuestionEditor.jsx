@@ -400,34 +400,50 @@ export default function QuestionEditor() {
   }
 
   async function handleApplyAndSave(key, labelEn, helperEn, visible) {
-    const updatedQ = { ...(questions[key] || makeDefault(key)), label_en: labelEn, helper_en: helperEn, visible };
-    setQuestions(prev => ({ ...prev, [key]: updatedQ }));
-    await handleSave(key, updatedQ);
+    const updatedQuestions = {
+      ...questions,
+      [key]: { ...(questions[key] || makeDefault(key)), label_en: labelEn, helper_en: helperEn, visible },
+    };
+    setQuestions(updatedQuestions);
+    await handleSave(updatedQuestions);
   }
 
-  /* ── Save via upsert, then translate sv/de/fr via Anthropic ── */
-  async function handleSave(changedKey = null, changedQ = null) {
+  /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
+  async function handleSave(questionsOverride = null) {
     if (!clientId) return;
     setSaving(true);
     setError('');
     setSaveMsg('Translating to all languages...');
 
-    if (changedKey) {
-      const q = changedQ || questions[changedKey] || makeDefault(changedKey);
-      try {
-        const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions: [{ key: changedKey, label: q.label_en, helper: q.helper_en || '' }] })
-        });
-        const transData = await transRes.json();
-        const translations = transData.translations || [];
-        const t = translations.find(x => x.key === changedKey) || {};
+    const src = questionsOverride || questions;
+    const questionsToSave = QUESTION_FLOW.map(({ key }) => {
+      const q = src[key] || makeDefault(key);
+      return {
+        key,
+        label_en: q.label_en || '',
+        helper_en: q.helper_en || '',
+        visible: q.visible ?? true,
+      };
+    }).filter(q => q.label_en.trim());
 
-        const row = {
+    try {
+      const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: questionsToSave.map(q => ({ key: q.key, label: q.label_en, helper: q.helper_en })) })
+      });
+      const transData = await transRes.json();
+      const translations = transData.translations || [];
+
+      const translationMap = {};
+      translations.forEach(t => { translationMap[t.key] = t; });
+
+      const rows = questionsToSave.map(q => {
+        const t = translationMap[q.key] || {};
+        return {
           client_id: clientId,
-          question_key: changedKey,
-          visible: q.visible ?? true,
+          question_key: q.key,
+          visible: q.visible,
           label_en: q.label_en,
           helper_en: q.helper_en,
           label_sv: t.label_sv || q.label_en,
@@ -437,94 +453,31 @@ export default function QuestionEditor() {
           helper_de: t.helper_de || q.helper_en,
           helper_fr: t.helper_fr || q.helper_en,
         };
+      });
 
-        const { error: upsertErr } = await supabase
-          .from('client_questions')
-          .upsert([row], { onConflict: 'client_id,question_key' });
+      const { error: upsertErr } = await supabase
+        .from('client_questions')
+        .upsert(rows, { onConflict: 'client_id,question_key' });
 
-        if (upsertErr) {
-          setError('Failed to save. Please try again.');
-          setSaveMsg('');
-        } else {
-          setSaveMsg('Saved in all 4 languages ✓');
-          setTimeout(() => setSaveMsg(''), 4000);
-        }
-      } catch (err) {
-        console.error('Save error:', err);
-        await supabase.from('client_questions').upsert([{
-          client_id: clientId,
-          question_key: changedKey,
-          visible: q.visible ?? true,
-          label_en: q.label_en,
-          helper_en: q.helper_en,
-        }], { onConflict: 'client_id,question_key' });
-        setSaveMsg('Saved in English. Translation failed.');
+      if (upsertErr) {
+        setError('Failed to save. Please try again.');
+        setSaveMsg('');
+      } else {
+        setSaveMsg('Saved in all 4 languages ✓');
         setTimeout(() => setSaveMsg(''), 4000);
       }
-    } else {
-      const questionsToSave = QUESTION_FLOW.map(({ key }) => {
-        const q = questions[key] || makeDefault(key);
-        return {
-          key,
-          label_en: q.label_en || '',
-          helper_en: q.helper_en || '',
-          visible: q.visible ?? true,
-        };
-      }).filter(q => q.label_en.trim());
-
-      try {
-        const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions: questionsToSave.map(q => ({ key: q.key, label: q.label_en, helper: q.helper_en })) })
-        });
-        const transData = await transRes.json();
-        const translations = transData.translations || [];
-
-        const translationMap = {};
-        translations.forEach(t => { translationMap[t.key] = t; });
-
-        const rows = questionsToSave.map(q => {
-          const t = translationMap[q.key] || {};
-          return {
-            client_id: clientId,
-            question_key: q.key,
-            visible: q.visible,
-            label_en: q.label_en,
-            helper_en: q.helper_en,
-            label_sv: t.label_sv || q.label_en,
-            label_de: t.label_de || q.label_en,
-            label_fr: t.label_fr || q.label_en,
-            helper_sv: t.helper_sv || q.helper_en,
-            helper_de: t.helper_de || q.helper_en,
-            helper_fr: t.helper_fr || q.helper_en,
-          };
-        });
-
-        const { error: upsertErr } = await supabase
-          .from('client_questions')
-          .upsert(rows, { onConflict: 'client_id,question_key' });
-
-        if (upsertErr) {
-          setError('Failed to save. Please try again.');
-          setSaveMsg('');
-        } else {
-          setSaveMsg('Saved in all 4 languages ✓');
-          setTimeout(() => setSaveMsg(''), 4000);
-        }
-      } catch (err) {
-        console.error('Save error:', err);
-        const rows = questionsToSave.map(q => ({
-          client_id: clientId,
-          question_key: q.key,
-          visible: q.visible,
-          label_en: q.label_en,
-          helper_en: q.helper_en,
-        }));
-        await supabase.from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
-        setSaveMsg('Saved in English. Translation failed.');
-        setTimeout(() => setSaveMsg(''), 4000);
-      }
+    } catch (err) {
+      console.error('Save error:', err);
+      const rows = questionsToSave.map(q => ({
+        client_id: clientId,
+        question_key: q.key,
+        visible: q.visible,
+        label_en: q.label_en,
+        helper_en: q.helper_en,
+      }));
+      await supabase.from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
+      setSaveMsg('Saved in English. Translation failed.');
+      setTimeout(() => setSaveMsg(''), 4000);
     }
 
     setSaving(false);
@@ -570,13 +523,14 @@ export default function QuestionEditor() {
                 {modeLabel}
               </button>
             ))}
-            <button type="button" onClick={() => {
+            <button type="button" onClick={async () => {
               if (!window.confirm('Reset all questions to default labels? This will overwrite your custom text.')) return;
               const reset = {};
               QUESTION_FLOW.forEach(({ key }) => { reset[key] = makeDefault(key); });
               setQuestions(reset);
               setResetBanner(true);
               setTimeout(() => setResetBanner(false), 4000);
+              await handleSave(reset);
             }}
               style={{ padding: '9px 18px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: '#fff', color: '#374151', border: '1px solid #e8ede8', cursor: 'pointer', fontFamily: FONT }}>
               Reset All
@@ -586,7 +540,7 @@ export default function QuestionEditor() {
 
         {resetBanner && (
           <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '12px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '20px', fontFamily: FONT }}>
-            Questions reset to defaults. Use Save All in Edit List to save.
+            Questions reset to defaults and saved.
           </div>
         )}
 
