@@ -413,22 +413,18 @@ export default function QuestionEditor() {
   }
 
   /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
-  async function handleSave(questionsOverride = null) {
+  async function handleSave(changedKey = null) {
     if (!clientId) return;
     setSaving(true);
     setError('');
     setSaveMsg('Translating to all languages...');
 
-    const src = questionsOverride || questions;
-    const questionsToSave = QUESTION_FLOW.map(({ key }) => {
-      const q = src[key] || makeDefault(key);
-      return {
-        key,
-        label_en: q.label_en || '',
-        helper_en: q.helper_en || '',
-        visible: q.visible ?? true,
-      };
-    }).filter(q => q.label_en.trim());
+    const questionsToSave = changedKey
+      ? [{ key: changedKey, label_en: questions[changedKey]?.label_en || '', helper_en: questions[changedKey]?.helper_en || '', visible: questions[changedKey]?.visible ?? true }]
+      : QUESTION_FLOW.map(({ key }) => {
+          const q = questions[key] || makeDefault(key);
+          return { key, label_en: q.label_en || '', helper_en: q.helper_en || '', visible: q.visible ?? true };
+        }).filter(q => q.label_en.trim());
 
     try {
       const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
