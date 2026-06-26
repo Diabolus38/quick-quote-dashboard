@@ -451,64 +451,75 @@ export default function QuestionEditor() {
     if (!clientId) return;
     setSaving(true);
     setError('');
-    const rows = QUESTION_FLOW.map(({ key }) => {
+    setSaveMsg('Translating to all languages...');
+
+    const questionsToSave = QUESTION_FLOW.map(({ key }) => {
       const q = questions[key] || makeDefault(key);
       return {
-        client_id:    clientId,
-        question_key: key,
-        visible:   q.visible   ?? true,
-        label_en:  q.label_en  || '',
+        key,
+        label_en: q.label_en || '',
         helper_en: q.helper_en || '',
+        visible: q.visible ?? true,
       };
-    });
-    const { error: upsertErr } = await supabase
-      .from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
-    if (upsertErr) {
-      setSaving(false);
-      setError('Failed to save. Please try again.');
-      return;
-    }
-    setHasChanges(false);
-    setSaveMsg('Saved! Translating to all languages...');
-    fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questions: rows.map(r => ({ key: r.question_key, label: r.label_en, helper: r.helper_en || '' })).filter(r => r.label && r.label.trim()) })
-    })
-    .then(r => r.json())
-    .then(data => {
-      console.log('TRANSLATE RESPONSE:', JSON.stringify(data));
-      const translations = data.translations || [];
-      console.log('TRANSLATIONS COUNT:', translations.length, JSON.stringify(translations));
-      if (translations.length > 0) {
-        supabase.from('client_questions').upsert(
-          translations.map(t => ({
-            client_id: clientId,
-            question_key: t.key,
-            label_en: t.label_en || '',
-            label_sv: t.label_sv || '',
-            label_de: t.label_de || '',
-            label_fr: t.label_fr || '',
-            helper_en: t.helper_en || '',
-            helper_sv: t.helper_sv || '',
-            helper_de: t.helper_de || '',
-            helper_fr: t.helper_fr || '',
-          })),
-          { onConflict: 'client_id,question_key' }
-        ).then(() => { console.log('UPSERT COMPLETE'); setSaveMsg('Saved in all 4 languages ✓'); setSaving(false); setTimeout(() => setSaveMsg(''), 4000); });
+    }).filter(q => q.label_en.trim());
+
+    try {
+      const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: questionsToSave.map(q => ({ key: q.key, label: q.label_en, helper: q.helper_en })) })
+      });
+      const transData = await transRes.json();
+      const translations = transData.translations || [];
+
+      const translationMap = {};
+      translations.forEach(t => { translationMap[t.key] = t; });
+
+      const rows = questionsToSave.map(q => {
+        const t = translationMap[q.key] || {};
+        return {
+          client_id: clientId,
+          question_key: q.key,
+          visible: q.visible,
+          label_en: q.label_en,
+          helper_en: q.helper_en,
+          label_sv: t.label_sv || q.label_en,
+          label_de: t.label_de || q.label_en,
+          label_fr: t.label_fr || q.label_en,
+          helper_sv: t.helper_sv || q.helper_en,
+          helper_de: t.helper_de || q.helper_en,
+          helper_fr: t.helper_fr || q.helper_en,
+        };
+      });
+
+      const { error: upsertErr } = await supabase
+        .from('client_questions')
+        .upsert(rows, { onConflict: 'client_id,question_key' });
+
+      if (upsertErr) {
+        setError('Failed to save. Please try again.');
+        setSaveMsg('');
       } else {
-        setSaveMsg('Saved!');
-        setSaving(false);
-        setTimeout(() => setSaveMsg(''), 3000);
+        setHasChanges(false);
+        setSaveMsg('Saved in all 4 languages ✓');
+        setTimeout(() => setSaveMsg(''), 4000);
       }
-    })
-    .catch(err => {
-      console.error('FETCH ERROR:', err);
-      console.error('Translation failed:', err);
+    } catch (err) {
+      console.error('Save error:', err);
+      const rows = questionsToSave.map(q => ({
+        client_id: clientId,
+        question_key: q.key,
+        visible: q.visible,
+        label_en: q.label_en,
+        helper_en: q.helper_en,
+      }));
+      await supabase.from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
+      setHasChanges(false);
       setSaveMsg('Saved in English. Translation failed.');
-      setSaving(false);
-      setTimeout(() => setSaveMsg(''), 3000);
-    });
+      setTimeout(() => setSaveMsg(''), 4000);
+    }
+
+    setSaving(false);
   }
 
   if (planLoading) return (
