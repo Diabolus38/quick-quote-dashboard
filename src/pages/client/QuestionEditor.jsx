@@ -404,12 +404,59 @@ export default function QuestionEditor() {
   }
 
   async function handleApplyAndSave(key, labelEn, helperEn, visible) {
-    const updatedQuestions = {
-      ...questions,
-      [key]: { ...(questions[key] || makeDefault(key)), label_en: labelEn, helper_en: helperEn, visible },
-    };
-    setQuestions(updatedQuestions);
-    await handleSave(key);
+    setQuestions(prev => ({ ...prev, [key]: { ...prev[key], label_en: labelEn, helper_en: helperEn, visible } }));
+    await handleSaveWithValues(key, labelEn, helperEn, visible);
+  }
+
+  async function handleSaveWithValues(key, labelEn, helperEn, visible) {
+    if (!clientId) return;
+    setSaving(true);
+    setError('');
+    setSaveMsg('Translating & saving...');
+
+    try {
+      const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: [{ key, label: labelEn, helper: helperEn || '' }] })
+      });
+      const transData = await transRes.json();
+      const t = (transData.translations || [])[0] || {};
+
+      const { error: upsertErr } = await supabase.from('client_questions').upsert({
+        client_id: clientId,
+        question_key: key,
+        visible: visible ?? true,
+        label_en: labelEn,
+        helper_en: helperEn || '',
+        label_sv: t.label_sv || labelEn,
+        label_de: t.label_de || labelEn,
+        label_fr: t.label_fr || labelEn,
+        helper_sv: t.helper_sv || helperEn || '',
+        helper_de: t.helper_de || helperEn || '',
+        helper_fr: t.helper_fr || helperEn || '',
+      }, { onConflict: 'client_id,question_key' });
+
+      if (upsertErr) {
+        setError('Failed to save.');
+      } else {
+        setSaveMsg('Saved in all 4 languages ✓');
+        setTimeout(() => setSaveMsg(''), 3000);
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      await supabase.from('client_questions').upsert({
+        client_id: clientId,
+        question_key: key,
+        visible: visible ?? true,
+        label_en: labelEn,
+        helper_en: helperEn || '',
+      }, { onConflict: 'client_id,question_key' });
+      setSaveMsg('Saved in English. Translation failed.');
+      setTimeout(() => setSaveMsg(''), 3000);
+    }
+
+    setSaving(false);
   }
 
   /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
