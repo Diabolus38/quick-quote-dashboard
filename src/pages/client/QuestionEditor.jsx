@@ -290,6 +290,8 @@ function EditPanel({ nodeKey, questions, onSave, onClose }) {
     if (btnMsg) return;
     setBtnMsg('Saving…');
     await onSave(nodeKey, localLabel, localHelper, localVisible);
+    setBtnMsg('Saved ✓');
+    await new Promise(r => setTimeout(r, 2000));
     onClose();
   }
 
