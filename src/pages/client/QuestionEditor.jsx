@@ -291,7 +291,7 @@ function EditPanel({ nodeKey, questions, onSave, onClose }) {
     setBtnMsg('Saving…');
     await onSave(nodeKey, localLabel, localHelper, localVisible);
     setBtnMsg('Saved ✓');
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 3000));
     onClose();
   }
 
@@ -333,10 +333,12 @@ function EditPanel({ nodeKey, questions, onSave, onClose }) {
           <div style={{ fontSize: '11px', color: 'transparent', fontFamily: FONT }}>.</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button type="button" onClick={handleApply}
-              style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: btnMsg ? '#16a34a' : PRIMARY, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT, transition: 'background-color 0.2s', minWidth: '80px' }}>
+              style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: btnMsg === 'Saved ✓' ? '#16a34a' : PRIMARY, color: '#fff', border: 'none', cursor: btnMsg === 'Saving…' ? 'not-allowed' : 'pointer', fontFamily: FONT, transition: 'background-color 0.2s', minWidth: '80px', opacity: btnMsg === 'Saving…' ? 0.7 : 1 }}>
               {btnMsg || 'Apply'}
             </button>
-            <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Changes save to tool automatically</span>
+            {btnMsg === 'Saving…' && <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Translating & saving to all languages...</span>}
+            {btnMsg === 'Saved ✓' && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', fontFamily: FONT }}>Saved in 4 languages ✓</span>}
+            {!btnMsg && <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Changes save to tool automatically</span>}
           </div>
         </div>
       </div>
