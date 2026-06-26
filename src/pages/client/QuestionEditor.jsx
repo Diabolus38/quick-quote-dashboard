@@ -269,7 +269,7 @@ function FlowMap({ questions, editNodeKey, onSelectNode }) {
   );
 }
 
-function EditPanel({ nodeKey, questions, onSave, onClose }) {
+function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
   const node = QUESTION_FLOW_MAP[nodeKey] || {};
   const q    = questions[nodeKey] || makeDefault(nodeKey);
 
@@ -409,7 +409,8 @@ export default function QuestionEditor() {
   }
 
   async function handleSaveWithValues(key, labelEn, helperEn, visible) {
-    if (!clientId) return;
+    console.log('handleSaveWithValues called with key:', key, 'clientId:', clientId, 'label:', labelEn);
+    if (!clientId) { console.error('handleSaveWithValues: clientId is null, cannot save'); return; }
     setSaving(true);
     setError('');
     setSaveMsg('Translating & saving...');
