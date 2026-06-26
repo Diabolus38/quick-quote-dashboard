@@ -409,7 +409,7 @@ export default function QuestionEditor() {
       [key]: { ...(questions[key] || makeDefault(key)), label_en: labelEn, helper_en: helperEn, visible },
     };
     setQuestions(updatedQuestions);
-    await handleSave(updatedQuestions);
+    await handleSave(key);
   }
 
   /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
