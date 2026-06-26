@@ -124,6 +124,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [logoUrl,             setLogoUrl]             = useState('');
   const [companyPhone,        setCompanyPhone]        = useState('');
   const [companyAddress,      setCompanyAddress]      = useState('');
+  const [privacyUrl,          setPrivacyUrl]          = useState('');
   const [companyLocation,     setCompanyLocation]     = useState('');
   const [companyLat,          setCompanyLat]          = useState(null);
   const [companyLng,          setCompanyLng]          = useState(null);
@@ -162,6 +163,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setLogoUrl(b.logo_url               || '');
         setCompanyPhone(b.company_phone     || '');
         setCompanyAddress(b.company_address || '');
+        setPrivacyUrl(b.privacy_url         || '');
         setWidgetHeadline(b.widget_headline || '');
         setWidgetSubtext(b.widget_subtext   || '');
         setBubbleText(b.bubble_text         || '');
@@ -224,7 +226,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (_ll.current) setHasUnsaved?.(true);
-  }, [companyName, widgetCompanyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, companyLocation, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
+  }, [companyName, widgetCompanyName, widgetSubtitle, primaryColor, colorHex, logoUrl, companyPhone, companyAddress, privacyUrl, companyLocation, widgetHeadline, widgetSubtext, answerSelectedColor, bubbleText, bubbleBgColor, bubbleTextColor, bubbleIconUrl, showPoweredBy]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setSaveRef?.(handleSave); });
@@ -234,7 +236,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="growth" />;
 
   function currentBranding() {
-    return { company_name: companyName, widget_company_name: widgetCompanyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, answer_selected_color: answerSelectedColor, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
+    return { company_name: companyName, widget_company_name: widgetCompanyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, privacy_url: privacyUrl, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, answer_selected_color: answerSelectedColor, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
   }
 
   async function handleSave() {
@@ -388,6 +390,11 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
         <FieldRow label="Company Address" onReset={() => { setCompanyAddress(''); resetField({ company_address: '' }); }}>
           <TextInput value={companyAddress} onChange={setCompanyAddress} placeholder="123 Main St, Stockholm" />
+        </FieldRow>
+
+        <FieldRow label="Your Privacy Policy URL" onReset={() => { setPrivacyUrl(''); resetField({ privacy_url: '' }); }}>
+          <TextInput type="url" value={privacyUrl} onChange={setPrivacyUrl} placeholder="https://yourwebsite.com/privacy" />
+          <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Shown to customers in the estimator tool before they submit their details.</p>
         </FieldRow>
 
         <FieldRow label="Company location / Depot address" onReset={() => { setCompanyLocation(''); setCompanyLat(null); setCompanyLng(null); if (locationInputRef.current) locationInputRef.current.value = ''; }}>

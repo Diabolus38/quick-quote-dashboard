@@ -181,6 +181,13 @@ export default function SignupPage() {
                 {loading ? 'Creating account…' : 'Create account'}
               </button>
 
+              <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', textAlign: 'center', fontFamily: FONT }}>
+                By signing up you agree to our{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: PRIMARY, textDecoration: 'none', fontWeight: '600' }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: PRIMARY, textDecoration: 'none', fontWeight: '600' }}>Privacy Policy</a>.
+              </p>
+
               {error && <p style={{ marginTop: '12px', fontSize: '13px', color: '#dc2626', textAlign: 'center' }}>{error}</p>}
 
               <p style={{ marginTop: '24px', fontSize: '13.5px', color: '#4b5563', textAlign: 'center', margin: '24px 0 0' }}>

@@ -335,10 +335,22 @@ export default function ClientLayout({ title, subtitle, children }) {
         {/* Content */}
         <main style={{ padding: '32px', flex: 1 }}>
           {children}
-          <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid #e8ede8', display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#9ca3af', textDecoration: 'none', fontFamily: FONT }}>Terms of Service</a>
-            <span style={{ fontSize: '12px', color: '#d1d5db' }}>·</span>
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#9ca3af', textDecoration: 'none', fontFamily: FONT }}>Privacy Policy</a>
+          <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid #e8ede8', textAlign: 'center', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
+            {'© 2026 QuickQuote360 · '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer"
+              style={{ color: '#9ca3af', textDecoration: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }}
+              onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
+              Terms of Service
+            </a>
+            {' · '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer"
+              style={{ color: '#9ca3af', textDecoration: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }}
+              onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
+              Privacy Policy
+            </a>
+            {' · team@aiworldpartners.com'}
           </div>
         </main>
       </div>
