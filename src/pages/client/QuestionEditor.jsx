@@ -269,7 +269,7 @@ function FlowMap({ questions, editNodeKey, onSelectNode }) {
   );
 }
 
-function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
+function EditPanel({ nodeKey, questions, onSave, onClose }) {
   const node = QUESTION_FLOW_MAP[nodeKey] || {};
   const q    = questions[nodeKey] || makeDefault(nodeKey);
 
@@ -286,51 +286,11 @@ function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeKey]);
 
-  async function handleSave() {
+  async function handleApply() {
     if (btnMsg) return;
-    onSave(nodeKey, localLabel, localHelper, localVisible);
     setBtnMsg('Saving…');
-
-    const { error } = await supabase.from('client_questions').upsert({
-      client_id:    clientId,
-      question_key: nodeKey,
-      label_en:     localLabel,
-      helper_en:    localHelper,
-      helper_sv:    localHelper,
-      helper_de:    localHelper,
-      helper_fr:    localHelper,
-      visible:      localVisible,
-    }, { onConflict: 'client_id,question_key' });
-    if (error) { console.error('Failed to save question:', error); setBtnMsg(''); return; }
-
-    setBtnMsg('Translating…');
-    fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questions: [{ key: nodeKey, label: localLabel, helper: localHelper || '' }] })
-    })
-    .then(r => r.json())
-    .then(data => {
-      const t = (data.translations || [])[0];
-      if (t) {
-        supabase.from('client_questions').upsert({
-          client_id: clientId,
-          question_key: t.key,
-          label_en: t.label_en || localLabel,
-          label_sv: t.label_sv || localLabel,
-          label_de: t.label_de || localLabel,
-          label_fr: t.label_fr || localLabel,
-          helper_en: t.helper_en || localHelper,
-          helper_sv: t.helper_sv || localHelper,
-          helper_de: t.helper_de || localHelper,
-          helper_fr: t.helper_fr || localHelper,
-        }, { onConflict: 'client_id,question_key' });
-      }
-    })
-    .catch(err => console.error('Translation error:', err));
-
-    setBtnMsg('Saved in 4 languages ✓');
-    setTimeout(() => { setBtnMsg(''); onClose(); }, 2000);
+    await onSave(nodeKey, localLabel, localHelper, localVisible);
+    onClose();
   }
 
   return (
@@ -370,9 +330,9 @@ function EditPanel({ nodeKey, questions, onSave, onClose, clientId }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flexShrink: 0 }}>
           <div style={{ fontSize: '11px', color: 'transparent', fontFamily: FONT }}>.</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button type="button" onClick={handleSave}
+            <button type="button" onClick={handleApply}
               style={{ padding: '8px 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: btnMsg ? '#16a34a' : PRIMARY, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT, transition: 'background-color 0.2s', minWidth: '80px' }}>
-              {btnMsg || 'Save'}
+              {btnMsg || 'Apply'}
             </button>
             <span style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Changes save to tool automatically</span>
           </div>
@@ -392,7 +352,6 @@ export default function QuestionEditor() {
   const [saving,            setSaving]            = useState(false);
   const [saveMsg,           setSaveMsg]           = useState('');
   const [error,             setError]             = useState('');
-  const [hasChanges,        setHasChanges]        = useState(false);
   const [viewMode,          setViewMode]          = useState('flowmap');
   const [retryKey,          setRetryKey]          = useState(0);
   const [resetBanner,       setResetBanner]       = useState(false);
@@ -438,49 +397,37 @@ export default function QuestionEditor() {
 
   function update(key, field, value) {
     setQuestions(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
-    setHasChanges(true);
   }
 
-  function handleEditSave(key, labelEn, helperEn, visible) {
-    setQuestions(prev => ({ ...prev, [key]: { ...prev[key], label_en: labelEn, helper_en: helperEn, visible } }));
-    setHasChanges(true);
+  async function handleApplyAndSave(key, labelEn, helperEn, visible) {
+    const updatedQ = { ...(questions[key] || makeDefault(key)), label_en: labelEn, helper_en: helperEn, visible };
+    setQuestions(prev => ({ ...prev, [key]: updatedQ }));
+    await handleSave(key, updatedQ);
   }
 
-  /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
-  async function handleSave() {
+  /* ── Save via upsert, then translate sv/de/fr via Anthropic ── */
+  async function handleSave(changedKey = null, changedQ = null) {
     if (!clientId) return;
     setSaving(true);
     setError('');
     setSaveMsg('Translating to all languages...');
 
-    const questionsToSave = QUESTION_FLOW.map(({ key }) => {
-      const q = questions[key] || makeDefault(key);
-      return {
-        key,
-        label_en: q.label_en || '',
-        helper_en: q.helper_en || '',
-        visible: q.visible ?? true,
-      };
-    }).filter(q => q.label_en.trim());
+    if (changedKey) {
+      const q = changedQ || questions[changedKey] || makeDefault(changedKey);
+      try {
+        const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questions: [{ key: changedKey, label: q.label_en, helper: q.helper_en || '' }] })
+        });
+        const transData = await transRes.json();
+        const translations = transData.translations || [];
+        const t = translations.find(x => x.key === changedKey) || {};
 
-    try {
-      const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: questionsToSave.map(q => ({ key: q.key, label: q.label_en, helper: q.helper_en })) })
-      });
-      const transData = await transRes.json();
-      const translations = transData.translations || [];
-
-      const translationMap = {};
-      translations.forEach(t => { translationMap[t.key] = t; });
-
-      const rows = questionsToSave.map(q => {
-        const t = translationMap[q.key] || {};
-        return {
+        const row = {
           client_id: clientId,
-          question_key: q.key,
-          visible: q.visible,
+          question_key: changedKey,
+          visible: q.visible ?? true,
           label_en: q.label_en,
           helper_en: q.helper_en,
           label_sv: t.label_sv || q.label_en,
@@ -490,33 +437,94 @@ export default function QuestionEditor() {
           helper_de: t.helper_de || q.helper_en,
           helper_fr: t.helper_fr || q.helper_en,
         };
-      });
 
-      const { error: upsertErr } = await supabase
-        .from('client_questions')
-        .upsert(rows, { onConflict: 'client_id,question_key' });
+        const { error: upsertErr } = await supabase
+          .from('client_questions')
+          .upsert([row], { onConflict: 'client_id,question_key' });
 
-      if (upsertErr) {
-        setError('Failed to save. Please try again.');
-        setSaveMsg('');
-      } else {
-        setHasChanges(false);
-        setSaveMsg('Saved in all 4 languages ✓');
+        if (upsertErr) {
+          setError('Failed to save. Please try again.');
+          setSaveMsg('');
+        } else {
+          setSaveMsg('Saved in all 4 languages ✓');
+          setTimeout(() => setSaveMsg(''), 4000);
+        }
+      } catch (err) {
+        console.error('Save error:', err);
+        await supabase.from('client_questions').upsert([{
+          client_id: clientId,
+          question_key: changedKey,
+          visible: q.visible ?? true,
+          label_en: q.label_en,
+          helper_en: q.helper_en,
+        }], { onConflict: 'client_id,question_key' });
+        setSaveMsg('Saved in English. Translation failed.');
         setTimeout(() => setSaveMsg(''), 4000);
       }
-    } catch (err) {
-      console.error('Save error:', err);
-      const rows = questionsToSave.map(q => ({
-        client_id: clientId,
-        question_key: q.key,
-        visible: q.visible,
-        label_en: q.label_en,
-        helper_en: q.helper_en,
-      }));
-      await supabase.from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
-      setHasChanges(false);
-      setSaveMsg('Saved in English. Translation failed.');
-      setTimeout(() => setSaveMsg(''), 4000);
+    } else {
+      const questionsToSave = QUESTION_FLOW.map(({ key }) => {
+        const q = questions[key] || makeDefault(key);
+        return {
+          key,
+          label_en: q.label_en || '',
+          helper_en: q.helper_en || '',
+          visible: q.visible ?? true,
+        };
+      }).filter(q => q.label_en.trim());
+
+      try {
+        const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questions: questionsToSave.map(q => ({ key: q.key, label: q.label_en, helper: q.helper_en })) })
+        });
+        const transData = await transRes.json();
+        const translations = transData.translations || [];
+
+        const translationMap = {};
+        translations.forEach(t => { translationMap[t.key] = t; });
+
+        const rows = questionsToSave.map(q => {
+          const t = translationMap[q.key] || {};
+          return {
+            client_id: clientId,
+            question_key: q.key,
+            visible: q.visible,
+            label_en: q.label_en,
+            helper_en: q.helper_en,
+            label_sv: t.label_sv || q.label_en,
+            label_de: t.label_de || q.label_en,
+            label_fr: t.label_fr || q.label_en,
+            helper_sv: t.helper_sv || q.helper_en,
+            helper_de: t.helper_de || q.helper_en,
+            helper_fr: t.helper_fr || q.helper_en,
+          };
+        });
+
+        const { error: upsertErr } = await supabase
+          .from('client_questions')
+          .upsert(rows, { onConflict: 'client_id,question_key' });
+
+        if (upsertErr) {
+          setError('Failed to save. Please try again.');
+          setSaveMsg('');
+        } else {
+          setSaveMsg('Saved in all 4 languages ✓');
+          setTimeout(() => setSaveMsg(''), 4000);
+        }
+      } catch (err) {
+        console.error('Save error:', err);
+        const rows = questionsToSave.map(q => ({
+          client_id: clientId,
+          question_key: q.key,
+          visible: q.visible,
+          label_en: q.label_en,
+          helper_en: q.helper_en,
+        }));
+        await supabase.from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
+        setSaveMsg('Saved in English. Translation failed.');
+        setTimeout(() => setSaveMsg(''), 4000);
+      }
     }
 
     setSaving(false);
@@ -567,7 +575,6 @@ export default function QuestionEditor() {
               const reset = {};
               QUESTION_FLOW.forEach(({ key }) => { reset[key] = makeDefault(key); });
               setQuestions(reset);
-              setHasChanges(true);
               setResetBanner(true);
               setTimeout(() => setResetBanner(false), 4000);
             }}
@@ -579,7 +586,7 @@ export default function QuestionEditor() {
 
         {resetBanner && (
           <div style={{ backgroundColor: '#fef9c3', color: '#854d0e', borderRadius: '10px', padding: '12px 20px', fontSize: '13px', fontWeight: '600', marginBottom: '20px', fontFamily: FONT }}>
-            Questions reset to defaults. Click Save All to apply.
+            Questions reset to defaults. Use Save All in Edit List to save.
           </div>
         )}
 
@@ -607,7 +614,7 @@ export default function QuestionEditor() {
                   <EditPanel
                     nodeKey={editNodeKey}
                     questions={questions}
-                    onSave={handleEditSave}
+                    onSave={handleApplyAndSave}
                     onClose={() => setEditNodeKey(null)}
                     clientId={clientId}
                   />
@@ -679,21 +686,6 @@ export default function QuestionEditor() {
               </>
             )}
 
-            {/* Sticky save bar */}
-            {hasChanges && !editNodeKey && (
-              <div style={{ position: 'fixed', bottom: 0, left: '240px', right: 0, backgroundColor: '#ffffff', borderTop: '1px solid #e8ede8', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, boxShadow: '0 -2px 12px rgba(0,0,0,0.06)', fontFamily: FONT }}>
-                <span style={{ fontSize: '13px', color: '#9ca3af' }}>You have unsaved changes</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button type="button" onClick={handleSave} disabled={saving}
-                    style={{ padding: '10px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
-                    {saving ? 'Saving…' : 'Save All'}
-                  </button>
-                  <span style={{ backgroundColor: '#f3f4f6', color: '#9ca3af', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: '600', fontFamily: FONT }}>
-                    {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘S' : 'Ctrl+S'}
-                  </span>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
