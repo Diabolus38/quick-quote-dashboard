@@ -115,7 +115,7 @@ export default function SignupPage() {
               {[
                 { value: 'self',     label: 'Self-install',     price: '2 490 kr one-time', desc: 'I will install it myself. You will receive step-by-step instructions.' },
                 { value: 'assisted', label: 'Assisted install', price: '9 990 kr one-time', desc: 'Our team installs it for you. We contact you within 24 hours to schedule.' },
-                { value: 'none',     label: 'Skip for now',     price: 'Free',              desc: 'I will decide later. You can always install from your dashboard.' },
+                { value: 'none',     label: 'Skip for now',     price: '',                  desc: 'I will decide later. You can always install from your dashboard.' },
               ].map(opt => (
                 <div key={opt.value} onClick={() => setInstallChoice(opt.value)}
                   style={{ border: `2px solid ${installChoice === opt.value ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', marginBottom: '12px', cursor: 'pointer', backgroundColor: '#fff' }}>
