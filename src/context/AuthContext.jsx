@@ -270,6 +270,16 @@ export default function AuthProvider({ children }) {
         if (event === 'SIGNED_IN') {
           if (session?.user) {
             setUser(session.user); // safe — synchronous only
+            // If a paid-plan signup is pending and email was just confirmed,
+            // redirect to /signup/confirm to initiate Stripe Checkout.
+            const pendingPlan = localStorage.getItem('qq360_pending_plan');
+            const createdAt   = new Date(session.user.created_at).getTime();
+            const isNewUser   = Date.now() - createdAt < 5 * 60 * 1000;
+            const isConfirmed = !!session.user.email_confirmed_at;
+            if (pendingPlan && pendingPlan !== 'free_trial' && isNewUser && isConfirmed) {
+              window.location.href = '/signup/confirm';
+              return;
+            }
             // Defer all DB work; handleSession's guard prevents double-execution
             // if Path A (getSession) already claimed the work.
             setTimeout(() => { handleSession(session); }, 0);

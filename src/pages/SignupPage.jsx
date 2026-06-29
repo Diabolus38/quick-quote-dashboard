@@ -75,38 +75,11 @@ export default function SignupPage() {
       return;
     }
 
-    if (selectedPlan === 'free_trial') {
-      setEmailSent(true);
-      setLoading(false);
-      return;
-    }
-
-    setRedirecting(true);
-    try {
-      const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientId: user.id,
-          email: email.trim(),
-          planKey: selectedPlan,
-          billingInterval,
-          installType: 'none',
-        }),
-      });
-      const checkoutData = await res.json();
-      if (checkoutData.url) {
-        window.location.href = checkoutData.url;
-      } else {
-        setError('Failed to redirect to payment. Please try again.');
-        setLoading(false);
-        setRedirecting(false);
-      }
-    } catch {
-      setError('Failed to redirect to payment. Please try again.');
-      setLoading(false);
-      setRedirecting(false);
-    }
+    localStorage.setItem('qq360_pending_plan',    selectedPlan);
+    localStorage.setItem('qq360_pending_billing', billingInterval);
+    localStorage.setItem('qq360_pending_email',   email.trim());
+    setEmailSent(true);
+    setLoading(false);
   }
 
   return (

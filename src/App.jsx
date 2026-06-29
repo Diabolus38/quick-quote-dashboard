@@ -10,6 +10,7 @@ import LoginPage from './LoginPage';
 
 // Public
 const SignupPage     = lazy(() => import('./pages/SignupPage'));
+const SignupConfirm  = lazy(() => import('./pages/SignupConfirm'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const PrivacyPolicy  = lazy(() => import('./pages/PrivacyPolicy'));
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="/"                element={<ErrorBoundary><Navigate to="/login" replace /></ErrorBoundary>} />
             <Route path="/login"           element={<ErrorBoundary><LoginPage /></ErrorBoundary>} />
             <Route path="/signup"          element={<ErrorBoundary><SignupPage /></ErrorBoundary>} />
+            <Route path="/signup/confirm"  element={<ErrorBoundary><SignupConfirm /></ErrorBoundary>} />
             <Route path="/forgot-password" element={<ErrorBoundary><ForgotPassword /></ErrorBoundary>} />
             <Route path="/terms"           element={<ErrorBoundary><TermsOfService /></ErrorBoundary>} />
             <Route path="/privacy"         element={<ErrorBoundary><PrivacyPolicy /></ErrorBoundary>} />
