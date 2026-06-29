@@ -35,6 +35,7 @@ export default function SignupConfirm() {
     const pendingPlan    = localStorage.getItem('qq360_pending_plan');
     const pendingBilling = localStorage.getItem('qq360_pending_billing');
     const pendingEmail   = localStorage.getItem('qq360_pending_email');
+    const pendingInstall = localStorage.getItem('qq360_pending_install') || 'none';
 
     // Free trial — go straight to dashboard
     if (!pendingPlan || pendingPlan === 'free_trial') {
@@ -76,7 +77,7 @@ export default function SignupConfirm() {
         email:           pendingEmail || profile?.email,
         planKey:         pendingPlan,
         billingInterval: pendingBilling || 'monthly',
-        installType:     'none',
+        installType:     pendingInstall,
       }),
     })
     .then(r => r.json())
@@ -97,6 +98,7 @@ export default function SignupConfirm() {
     const pendingPlan    = localStorage.getItem('qq360_pending_plan');
     const pendingBilling = localStorage.getItem('qq360_pending_billing');
     const pendingEmail   = localStorage.getItem('qq360_pending_email');
+    const pendingInstall = localStorage.getItem('qq360_pending_install') || 'none';
     function retryPayment() {
       const clientId = profile?.client_id;
       if (!clientId || !pendingPlan) { setError('Session expired. Please sign up again.'); setCancelled(false); return; }
@@ -105,7 +107,7 @@ export default function SignupConfirm() {
       fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId, email: pendingEmail || profile?.email, planKey: pendingPlan, billingInterval: pendingBilling || 'monthly', installType: 'none' }),
+        body: JSON.stringify({ clientId, email: pendingEmail || profile?.email, planKey: pendingPlan, billingInterval: pendingBilling || 'monthly', installType: pendingInstall }),
       })
       .then(r => r.json())
       .then(data => { if (data.url) { window.location.href = data.url; } else { setError('Payment page could not be loaded. Please contact team@aiworldpartners.com'); } })
