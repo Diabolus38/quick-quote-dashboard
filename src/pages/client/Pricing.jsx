@@ -102,7 +102,7 @@ function getCurrencySymbol(c) {
   return { SEK: 'kr', EUR: '€', GBP: '£', NOK: 'kr', DKK: 'kr' }[c] || c;
 }
 
-function PriceRow({ item, onChange, onReset, currencySymbol }) {
+function PriceRow({ item, onChange, onReset, currencySymbol, unit }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f4f6f4' }}>
       <span style={{ fontSize: '13px', color: '#374151', fontFamily: FONT }}>{item.label}</span>
@@ -116,7 +116,7 @@ function PriceRow({ item, onChange, onReset, currencySymbol }) {
             onChange(isNaN(raw) ? '' : String(Math.min(Math.max(raw, 0), 999999)));
           }}
           style={{ width: '110px', border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '13px', textAlign: 'right', outline: 'none', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117' }} />
-        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, minWidth: '18px' }}>{currencySymbol || 'kr'}</span>
+        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, minWidth: '18px' }}>{unit || currencySymbol || 'kr'}</span>
         <button type="button" title="Reset to default" onClick={onReset}
           style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '2px 4px', lineHeight: 1 }}>↺</button>
       </div>
@@ -388,7 +388,8 @@ function PricingContent({ clientId }) {
             <PriceRow key={item.key} item={item}
               onChange={val => updateList(setAddOns, i, val)}
               onReset={() => updateList(setAddOns, i, String(PRICE_DEFAULTS[item.key] ?? ''))}
-              currencySymbol={getCurrencySymbol(currency)} />
+              currencySymbol={getCurrencySymbol(currency)}
+              unit={item.key === 'travel_cost_per_km' ? 'kr/km' : undefined} />
           ))}
           <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Added to the estimate based on driving distance from your depot to the customer. Set to 0 to disable travel cost.</p>
         </SettingsCard>

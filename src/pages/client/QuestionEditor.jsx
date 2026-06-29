@@ -413,7 +413,6 @@ export default function QuestionEditor() {
   }
 
   async function handleSaveWithValues(key, labelEn, helperEn, visible) {
-    console.log('handleSaveWithValues called with key:', key, 'clientId:', clientId, 'label:', labelEn);
     if (!clientId) { console.error('handleSaveWithValues: clientId is null, cannot save'); return; }
     setSaving(true);
     setError('');
@@ -464,12 +463,11 @@ export default function QuestionEditor() {
     setSaving(false);
   }
 
-  /* ── Save all rows via upsert, then translate sv/de/fr via Anthropic ── */
   async function handleSave(changedKey = null) {
     if (!clientId) return;
     setSaving(true);
     setError('');
-    setSaveMsg('Translating to all languages...');
+    setSaveMsg('Saving...');
 
     const questionsToSave = changedKey
       ? [{ key: changedKey, label_en: questions[changedKey]?.label_en || '', helper_en: questions[changedKey]?.helper_en || '', visible: questions[changedKey]?.visible ?? true }]
@@ -478,35 +476,15 @@ export default function QuestionEditor() {
           return { key, label_en: q.label_en || '', helper_en: q.helper_en || '', visible: q.visible ?? true };
         }).filter(q => q.label_en.trim());
 
+    const rows = questionsToSave.map(q => ({
+      client_id: clientId,
+      question_key: q.key,
+      visible: q.visible,
+      label_en: q.label_en,
+      helper_en: q.helper_en,
+    }));
+
     try {
-      const transRes = await fetch('https://estimator-widget-production.up.railway.app/translate-questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: questionsToSave.map(q => ({ key: q.key, label: q.label_en, helper: q.helper_en })) })
-      });
-      const transData = await transRes.json();
-      const translations = transData.translations || [];
-
-      const translationMap = {};
-      translations.forEach(t => { translationMap[t.key] = t; });
-
-      const rows = questionsToSave.map(q => {
-        const t = translationMap[q.key] || {};
-        return {
-          client_id: clientId,
-          question_key: q.key,
-          visible: q.visible,
-          label_en: q.label_en,
-          helper_en: q.helper_en,
-          label_sv: t.label_sv || q.label_en,
-          label_de: t.label_de || q.label_en,
-          label_fr: t.label_fr || q.label_en,
-          helper_sv: t.helper_sv || q.helper_en,
-          helper_de: t.helper_de || q.helper_en,
-          helper_fr: t.helper_fr || q.helper_en,
-        };
-      });
-
       const { error: upsertErr } = await supabase
         .from('client_questions')
         .upsert(rows, { onConflict: 'client_id,question_key' });
@@ -515,21 +493,13 @@ export default function QuestionEditor() {
         setError('Failed to save. Please try again.');
         setSaveMsg('');
       } else {
-        setSaveMsg('Saved in all 4 languages ✓');
+        setSaveMsg('Saved ✓');
         setTimeout(() => setSaveMsg(''), 4000);
       }
     } catch (err) {
       console.error('Save error:', err);
-      const rows = questionsToSave.map(q => ({
-        client_id: clientId,
-        question_key: q.key,
-        visible: q.visible,
-        label_en: q.label_en,
-        helper_en: q.helper_en,
-      }));
-      await supabase.from('client_questions').upsert(rows, { onConflict: 'client_id,question_key' });
-      setSaveMsg('Saved in English. Translation failed.');
-      setTimeout(() => setSaveMsg(''), 4000);
+      setError('Failed to save. Please try again.');
+      setSaveMsg('');
     }
 
     setSaving(false);
