@@ -27,6 +27,8 @@ export default function SignupPage() {
   const [selectedPlan,    setSelectedPlan]    = useState('growth');
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [redirecting,     setRedirecting]     = useState(false);
+  const [installStep,     setInstallStep]     = useState(false);
+  const [installChoice,   setInstallChoice]   = useState('none');
 
   useEffect(() => {
     const params    = new URLSearchParams(window.location.search);
@@ -75,11 +77,25 @@ export default function SignupPage() {
       return;
     }
 
+    if (selectedPlan === 'free_trial') {
+      localStorage.setItem('qq360_pending_plan',    selectedPlan);
+      localStorage.setItem('qq360_pending_billing', billingInterval);
+      localStorage.setItem('qq360_pending_email',   email.trim());
+      setEmailSent(true);
+      setLoading(false);
+    } else {
+      setInstallStep(true);
+      setLoading(false);
+    }
+  }
+
+  function handleInstallContinue() {
     localStorage.setItem('qq360_pending_plan',    selectedPlan);
     localStorage.setItem('qq360_pending_billing', billingInterval);
     localStorage.setItem('qq360_pending_email',   email.trim());
+    localStorage.setItem('qq360_pending_install', installChoice);
     setEmailSent(true);
-    setLoading(false);
+    setInstallStep(false);
   }
 
   return (
@@ -90,7 +106,37 @@ export default function SignupPage() {
       <div style={{ flex: 1, backgroundColor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', overflowY: 'auto' }}>
         <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', padding: '40px', width: '100%', maxWidth: '480px', boxSizing: 'border-box', boxShadow: '0 4px 32px rgba(0,0,0,0.10)', border: 'none' }}>
 
-          {emailSent ? (
+          {installStep ? (
+            /* ── Installation choice screen ── */
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: '700', color: '#0d1117' }}>Choose your installation</h2>
+              <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#9ca3af' }}>How would you like your estimator widget installed on your website?</p>
+
+              {[
+                { value: 'self',     label: 'Self-install',     price: '2 490 kr one-time', desc: 'I will install it myself. You will receive step-by-step instructions.' },
+                { value: 'assisted', label: 'Assisted install', price: '9 990 kr one-time', desc: 'Our team installs it for you. We contact you within 24 hours to schedule.' },
+                { value: 'none',     label: 'Skip for now',     price: 'Free',              desc: 'I will decide later. You can always install from your dashboard.' },
+              ].map(opt => (
+                <div key={opt.value} onClick={() => setInstallChoice(opt.value)}
+                  style={{ border: `2px solid ${installChoice === opt.value ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', marginBottom: '12px', cursor: 'pointer', backgroundColor: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <p style={{ margin: 0, fontWeight: '700', color: '#0d1117', fontSize: '14px' }}>{opt.label}</p>
+                    <p style={{ margin: 0, fontWeight: '700', color: installChoice === opt.value ? PRIMARY : '#374151', fontSize: '13px' }}>{opt.price}</p>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: '1.5' }}>{opt.desc}</p>
+                </div>
+              ))}
+
+              <button type="button" onClick={handleInstallContinue}
+                style={{ width: '100%', padding: '13px', fontSize: '15px', fontWeight: '600', color: '#ffffff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: FONT, marginTop: '8px' }}>
+                Continue
+              </button>
+              <p style={{ margin: '12px 0 0', fontSize: '12px', color: '#9ca3af', textAlign: 'center' }}>
+                Installation fees are charged once at checkout alongside your subscription.
+              </p>
+            </div>
+
+          ) : emailSent ? (
             /* ── Check-your-email screen ── */
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '48px', margin: '0 0 20px' }}>✉</p>
