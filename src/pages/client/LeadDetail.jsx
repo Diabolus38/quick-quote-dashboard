@@ -338,6 +338,11 @@ export default function LeadDetail() {
                 </span>
               </div>
               <DetailRow label="Company" value={lead.company} />
+              {lead.customer_address && <DetailRow label="Address" value={lead.customer_address} />}
+              {lead.org_number && <DetailRow label="Organisation Number" value={lead.org_number} />}
+              {lead.marketing_consent != null && (
+                <DetailRow label="Marketing Consent" value={lead.marketing_consent ? 'Yes — consented' : 'No'} />
+              )}
             </div>
 
             {/* Answers */}

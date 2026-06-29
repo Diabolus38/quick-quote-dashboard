@@ -131,7 +131,7 @@ export default function Leads() {
   async function fetchLeads() {
     setLoading(true);
     const { data, error } = await supabase
-      .from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes').eq('client_id', profile.client_id).order('created_at', { ascending: false });
+      .from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes, customer_address, org_number').eq('client_id', profile.client_id).order('created_at', { ascending: false });
     if (!error && data) setLeads(data);
     setLoading(false);
   }
@@ -377,17 +377,16 @@ export default function Leads() {
         </div>
 
         {/* Summary Bar */}
-        <div style={{ ...CARD, padding: '16px 24px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center' }}>
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center', fontFamily: FONT }}>
           {[
-            { label: 'Total Value',       value: `${totalValue.toLocaleString()} kr` },
-            { label: 'Won Leads',         value: String(wonLeads) },
-            { label: 'Leads This Week',   value: String(leadsThisWeek) },
-            { label: 'Avg Response Time', value: avgResponseTime != null ? `${avgResponseTime} days` : '—' },
+            { label: 'Total Estimated Value', value: loading ? '—' : `${totalValue.toLocaleString()} kr` },
+            { label: 'Number of Leads',       value: loading ? '—' : String(leads.length) },
+            { label: 'Average Estimate',      value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString()} kr` : '—' },
           ].map((stat, i, arr) => (
             <div key={stat.label} style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
               <div>
-                <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>{stat.label}</p>
-                <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{stat.value}</p>
+                <p style={{ margin: '0 0 3px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>{stat.label}</p>
+                <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{stat.value}</p>
               </div>
               {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />}
             </div>
@@ -433,7 +432,10 @@ export default function Leads() {
                       {visibleCols.has('Phone') && <span>{lead.phone||'—'}</span>}
                       {visibleCols.has('Municipality') && <span>{lead.municipality||'—'}</span>}
                       {visibleCols.has('System Type') && <span>{lead.answers?.wastewaterType||'—'}</span>}
-                      {visibleCols.has('Estimated Price') && <span style={{ fontWeight: '600', color: '#0d1117' }}>{lead.estimated_price!=null&&!isNaN(Number(lead.estimated_price))?`${Number(lead.estimated_price).toLocaleString()} kr`:'—'}</span>}
+                      {visibleCols.has('Estimated Price') && (Number(lead.estimated_price) > 0
+                        ? <span style={{ backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: '700', display: 'inline-block', whiteSpace: 'nowrap' }}>{Number(lead.estimated_price).toLocaleString()} kr</span>
+                        : <span style={{ color: '#9ca3af', fontSize: '12px' }}>No estimate</span>
+                      )}
                       {visibleCols.has('Status') && <span><select value={lead.status||'New'} onChange={e=>updateStatus(lead.id,e.target.value)} style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: '600', color: STATUS_COLORS[lead.status]||'#374151', backgroundColor: '#fff', cursor: 'pointer', outline: 'none', fontFamily: FONT }}>{['New','Contacted','In Progress','Closed Won','Closed Lost'].map(s=><option key={s} value={s}>{s}</option>)}</select></span>}
                       {visibleCols.has('Lead Quality') && (() => { const sc = getLeadScore(lead); const q = sc >= 7 ? { label: 'Hot', bg: '#fee2e2', color: '#dc2626' } : sc >= 4 ? { label: 'Warm', bg: '#fef9c3', color: '#d97706' } : { label: 'Cold', bg: '#f3f4f6', color: '#6b7280' }; return <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: q.bg, color: q.color }}>{q.label}</span>; })()}
                       {visibleCols.has('Actions') && <span style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={()=>navigate(`/client/leads/${lead.id}`)} style={{ fontSize: '12px', color: PRIMARY, backgroundColor: '#ecfccb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>View</button><button type="button" onClick={()=>handleDeleteLead(lead.id)} style={{ fontSize: '12px', color: '#dc2626', backgroundColor: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>Delete</button></span>}
