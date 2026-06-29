@@ -40,7 +40,12 @@ export default function LoginPage() {
       if (profileData?.role === 'super_admin') {
         navigate('/admin');
       } else {
-        navigate('/client');
+        const pendingPlan = localStorage.getItem('qq360_pending_plan');
+        if (pendingPlan && pendingPlan !== 'free_trial') {
+          window.location.href = '/signup/confirm';
+        } else {
+          navigate('/client');
+        }
       }
     }
     setLoading(false);

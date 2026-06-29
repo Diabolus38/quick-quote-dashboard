@@ -93,16 +93,29 @@ export default function SignupPage() {
           {emailSent ? (
             /* ── Check-your-email screen ── */
             <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: '48px', margin: '0 0 20px', color: '#0d1f12' }}>✉</p>
+              <p style={{ fontSize: '48px', margin: '0 0 20px' }}>✉</p>
               <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#0d1117', margin: '0 0 14px' }}>Check your email</h2>
-              <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', margin: '0 0 10px' }}>
-                We sent a confirmation link to <strong>{email}</strong>. Please click the link to activate your account.
+              <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', margin: '0 0 16px' }}>
+                We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
               </p>
-              <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>Once confirmed, click below to sign in.</p>
-              <button type="button" onClick={() => navigate('/login')}
-                style={{ width: '100%', padding: '13px', fontSize: '15px', fontWeight: '600', color: '#ffffff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: FONT }}>
-                Go to login
-              </button>
+              {selectedPlan === 'free_trial' ? (
+                <>
+                  <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>
+                    After confirming your email you will be taken straight to your dashboard.
+                  </p>
+                  <button type="button" onClick={() => navigate('/login')}
+                    style={{ width: '100%', padding: '13px', fontSize: '15px', fontWeight: '600', color: '#fff', backgroundColor: PRIMARY, border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: FONT }}>
+                    Go to login
+                  </button>
+                </>
+              ) : (
+                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px', textAlign: 'left' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: '700', color: '#166534' }}>📧 Next: confirm your email</p>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#374151', lineHeight: '1.6' }}>
+                    After clicking the confirmation link, you will be automatically redirected to complete payment for the <strong>{PLAN_CARDS.find(p => p.key === selectedPlan)?.name}</strong> plan. Do not go to login — the redirect to payment happens automatically.
+                  </p>
+                </div>
+              )}
             </div>
 
           ) : (

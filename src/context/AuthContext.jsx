@@ -206,7 +206,18 @@ export default function AuthProvider({ children }) {
   // ever runs to completion regardless of which path fires first.
 
   async function handleSession(session) {
-    if (initializing.current || initialized.current) return;
+    if (initializing.current) return;
+    if (initialized.current) {
+      try {
+        const existingProfile = await fetchProfile(session.user.id);
+        if (existingProfile?.client_id) return;
+        console.warn('handleSession: re-running — client_id is null on already-initialized session');
+        initialized.current  = false;
+        initializing.current = false;
+      } catch (e) {
+        return;
+      }
+    }
     initializing.current = true;
 
     try {
@@ -277,6 +288,8 @@ export default function AuthProvider({ children }) {
             const isNewUser   = Date.now() - createdAt < 5 * 60 * 1000;
             const isConfirmed = !!session.user.email_confirmed_at;
             if (pendingPlan && pendingPlan !== 'free_trial' && isNewUser && isConfirmed) {
+              initialized.current  = false;
+              initializing.current = false;
               window.location.href = '/signup/confirm';
               return;
             }
