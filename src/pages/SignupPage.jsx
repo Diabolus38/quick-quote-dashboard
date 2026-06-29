@@ -7,10 +7,10 @@ const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
 
 const PLAN_CARDS = [
-  { key: 'starter',    name: 'Starter',    price: '1,400 kr/mo', subtext: 'No dashboard access, unlimited estimates' },
-  { key: 'growth',     name: 'Growth',     price: '3,000 kr/mo', subtext: 'Full dashboard, 30 estimates/mo' },
-  { key: 'scale',      name: 'Scale',      price: '6,000 kr/mo', subtext: 'Everything, 75 estimates/mo' },
-  { key: 'free_trial', name: 'Free Trial', price: 'Free',    subtext: 'Full Scale features, no credit card required' },
+  { key: 'free_trial', name: 'Free Trial', monthlyPrice: 'Free',         yearlyPrice: 'Free',         subtext: 'Full Scale features, no credit card required' },
+  { key: 'starter',    name: 'Starter',    monthlyPrice: '1,400 kr/mo',  yearlyPrice: '14,000 kr/yr', subtext: 'No dashboard access, unlimited estimates'     },
+  { key: 'growth',     name: 'Growth',     monthlyPrice: '3,000 kr/mo',  yearlyPrice: '30,000 kr/yr', subtext: 'Full dashboard, 30 estimates/mo'              },
+  { key: 'scale',      name: 'Scale',      monthlyPrice: '6,000 kr/mo',  yearlyPrice: '60,000 kr/yr', subtext: 'Everything, 75 estimates/mo'                  },
 ];
 
 export default function SignupPage() {
@@ -25,6 +25,8 @@ export default function SignupPage() {
   const [loading,         setLoading]         = useState(false);
   const [emailSent,       setEmailSent]       = useState(false);
   const [selectedPlan,    setSelectedPlan]    = useState('growth');
+  const [billingInterval, setBillingInterval] = useState('monthly');
+  const [redirecting,     setRedirecting]     = useState(false);
 
   useEffect(() => {
     const params    = new URLSearchParams(window.location.search);
@@ -73,8 +75,38 @@ export default function SignupPage() {
       return;
     }
 
-    setEmailSent(true);
-    setLoading(false);
+    if (selectedPlan === 'free_trial') {
+      setEmailSent(true);
+      setLoading(false);
+      return;
+    }
+
+    setRedirecting(true);
+    try {
+      const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: user.id,
+          email: email.trim(),
+          planKey: selectedPlan,
+          billingInterval,
+          installType: 'none',
+        }),
+      });
+      const checkoutData = await res.json();
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url;
+      } else {
+        setError('Failed to redirect to payment. Please try again.');
+        setLoading(false);
+        setRedirecting(false);
+      }
+    } catch {
+      setError('Failed to redirect to payment. Please try again.');
+      setLoading(false);
+      setRedirecting(false);
+    }
   }
 
   return (
@@ -108,30 +140,44 @@ export default function SignupPage() {
 
               {/* Plan selection */}
               <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Choose Your Plan</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
-                {PLAN_CARDS.map(p => (
-                  <div key={p.key} onClick={() => setSelectedPlan(p.key)}
-                    style={{
-                      border:          `2px solid ${selectedPlan === p.key ? (p.key === 'free_trial' ? '#a3e635' : PRIMARY) : (p.key === 'free_trial' ? '#a3e635' : '#e8ede8')}`,
-                      borderRadius:    '12px',
-                      padding:         '16px',
-                      cursor:          'pointer',
-                      position:        'relative',
-                      backgroundColor: '#fff',
-                    }}>
-                    {p.key === 'free_trial' && (
-                      <span style={{ position: 'absolute', top: '-8px', right: '12px', backgroundColor: '#a3e635', color: '#0d1f12', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px' }}>
-                        14 DAYS FREE
-                      </span>
-                    )}
-                    {selectedPlan === p.key && (
-                      <span style={{ position: 'absolute', top: '8px', right: '10px', color: p.key === 'free_trial' ? '#3f6212' : PRIMARY, fontWeight: '700', fontSize: '13px' }}>✓</span>
-                    )}
-                    <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>{p.name}</p>
-                    <p style={{ margin: '0 0 4px', fontWeight: '800', color: '#0d1117', fontSize: '15px' }}>{p.price}</p>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: '1.4' }}>{p.subtext}</p>
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {PLAN_CARDS.map(p => (
+                    <div key={p.key} onClick={() => setSelectedPlan(p.key)}
+                      style={{
+                        border:          `2px solid ${selectedPlan === p.key ? (p.key === 'free_trial' ? '#a3e635' : PRIMARY) : (p.key === 'free_trial' ? '#a3e635' : '#e8ede8')}`,
+                        borderRadius:    '12px',
+                        padding:         '16px',
+                        cursor:          'pointer',
+                        position:        'relative',
+                        backgroundColor: '#fff',
+                      }}>
+                      {p.key === 'free_trial' && (
+                        <span style={{ position: 'absolute', top: '-8px', right: '12px', backgroundColor: '#a3e635', color: '#0d1f12', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px' }}>
+                          NO CREDIT CARD
+                        </span>
+                      )}
+                      {selectedPlan === p.key && (
+                        <span style={{ position: 'absolute', top: '8px', right: '10px', color: p.key === 'free_trial' ? '#3f6212' : PRIMARY, fontWeight: '700', fontSize: '13px' }}>✓</span>
+                      )}
+                      <p style={{ margin: '0 0 2px', fontWeight: '700', color: '#0d1117', fontSize: '13px' }}>{p.name}</p>
+                      <p style={{ margin: '0 0 4px', fontWeight: '800', color: '#0d1117', fontSize: '15px' }}>
+                        {p.key === 'free_trial' ? p.monthlyPrice : (billingInterval === 'yearly' ? p.yearlyPrice : p.monthlyPrice)}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280', lineHeight: '1.4' }}>{p.subtext}</p>
+                    </div>
+                  ))}
+                </div>
+                {selectedPlan !== 'free_trial' && (
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px' }}>
+                    {[['monthly', 'Monthly'], ['yearly', 'Yearly (save ~17%)']].map(([val, label]) => (
+                      <button key={val} type="button" onClick={() => setBillingInterval(val)}
+                        style={{ backgroundColor: billingInterval === val ? PRIMARY : '#fff', color: billingInterval === val ? '#fff' : '#374151', border: billingInterval === val ? 'none' : '1px solid #e8ede8', borderRadius: '20px', padding: '6px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
 
               <div style={{ marginBottom: '16px' }}>
@@ -178,7 +224,7 @@ export default function SignupPage() {
 
               <button type="button" disabled={loading} onClick={handleSubmit}
                 style={{ width: '100%', padding: '13px', fontSize: '15px', fontWeight: '600', color: '#ffffff', backgroundColor: loading ? '#4b5563' : PRIMARY, border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: loading ? 0.8 : 1 }}>
-                {loading ? 'Creating account…' : 'Create account'}
+                {loading ? (redirecting ? 'Redirecting to payment...' : 'Creating account…') : 'Create account'}
               </button>
 
               <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#9ca3af', textAlign: 'center', fontFamily: FONT }}>
