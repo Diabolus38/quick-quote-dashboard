@@ -345,12 +345,18 @@ export default function LeadDetail() {
                 </div>
               )}
               {lead.org_number && <DetailRow label="Organisation number" value={lead.org_number} />}
+              {lead.notes && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Notes</span>
+                  <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500', maxWidth: '60%', textAlign: 'right', wordBreak: 'break-word' }}>{lead.notes}</span>
+                </div>
+              )}
               {lead.marketing_consent != null && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
                   <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Marketing consent</span>
                   {lead.marketing_consent
-                    ? <span style={{ fontSize: '13.5px', color: '#16a34a', fontWeight: '600' }}>Agreed to be contacted ✓</span>
-                    : <span style={{ fontSize: '13.5px', color: '#9ca3af', fontWeight: '500' }}>No marketing consent</span>
+                    ? <span style={{ fontSize: '13.5px', color: '#16a34a', fontWeight: '600' }}>✓ Agreed to be contacted</span>
+                    : <span style={{ fontSize: '13.5px', color: '#9ca3af', fontWeight: '500' }}>No consent recorded</span>
                   }
                 </div>
               )}
@@ -361,7 +367,7 @@ export default function LeadDetail() {
                 </span>
               </div>
               {lead.customer_type !== 'business' && (
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#166534', fontFamily: FONT }}>ROT deduction may apply</p>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#166534', fontFamily: FONT }}>ROT deduction may apply for this customer</p>
               )}
             </div>
 

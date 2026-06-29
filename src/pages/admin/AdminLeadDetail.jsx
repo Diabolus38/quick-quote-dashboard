@@ -290,6 +290,25 @@ export default function AdminLeadDetail() {
               <DetailRow label="Municipality" value={lead.municipality} />
               <DetailRow label="Language"     value={lead.language}     />
               <DetailRow label="Customer type" value={lead.customer_type === 'business' ? 'Business' : 'Private individual'} />
+              {lead.customer_type !== 'business' && (
+                <p style={{ margin: '2px 0 6px', fontSize: '12px', color: '#166534', fontFamily: FONT }}>ROT deduction may apply for this customer</p>
+              )}
+              {lead.customer_address && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>📍 Property address</span>
+                  <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{lead.customer_address}</span>
+                </div>
+              )}
+              {lead.org_number && <DetailRow label="Organisation number" value={lead.org_number} />}
+              {lead.marketing_consent != null && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Marketing consent</span>
+                  {lead.marketing_consent
+                    ? <span style={{ fontSize: '13.5px', color: '#16a34a', fontWeight: '600' }}>✓ Agreed to be contacted</span>
+                    : <span style={{ fontSize: '13.5px', color: '#9ca3af', fontWeight: '500' }}>No consent recorded</span>
+                  }
+                </div>
+              )}
               <DetailRow label="Submitted"    value={formatDate(lead.created_at)} />
             </div>
 

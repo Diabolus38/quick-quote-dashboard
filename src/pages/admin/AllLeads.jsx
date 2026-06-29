@@ -680,8 +680,8 @@ export default function AllLeads() {
                           <td style={{ padding: '12px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{lead.name || '—'}</span>
-                              <span style={{ backgroundColor: lead.customer_type==='business' ? '#f3f4f6' : '#f0fdf4', color: lead.customer_type==='business' ? '#374151' : '#166534', borderRadius: '20px', padding: '2px 8px', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                {lead.customer_type==='business' ? 'Business' : 'Private'}
+                              <span style={{ backgroundColor: lead.customer_type==='business' ? '#f3f4f6' : '#f0fdf4', color: lead.customer_type==='business' ? '#374151' : '#166534', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                {lead.customer_type==='business' ? '🏢 Business' : '🏠 Private'}
                               </span>
                             </div>
                           </td>
