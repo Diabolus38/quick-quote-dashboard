@@ -289,6 +289,7 @@ export default function AdminLeadDetail() {
               <DetailRow label="Company"      value={lead.company}      />
               <DetailRow label="Municipality" value={lead.municipality} />
               <DetailRow label="Language"     value={lead.language}     />
+              <DetailRow label="Customer type" value={lead.customer_type === 'business' ? 'Business' : 'Private individual'} />
               <DetailRow label="Submitted"    value={formatDate(lead.created_at)} />
             </div>
 

@@ -56,6 +56,7 @@ export default function Leads() {
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [custTypeFilter, setCustTypeFilter] = useState('All');
   const [hoveredRow,   setHoveredRow]   = useState(null);
   const [currentPage,  setCurrentPage]  = useState(1);
   const [showToast,    setShowToast]    = useState(false);
@@ -126,12 +127,12 @@ export default function Leads() {
     return () => { supabase.removeChannel(channel); };
   }, [profile]);
 
-  useEffect(() => { setCurrentPage(1); }, [search, activeFilter, sortBy]);
+  useEffect(() => { setCurrentPage(1); }, [search, activeFilter, sortBy, custTypeFilter]);
 
   async function fetchLeads() {
     setLoading(true);
     const { data, error } = await supabase
-      .from('leads').select('id, client_id, created_at, name, email, phone, company, municipality, answers, estimated_price, status, pdf_url, language, notes, org_number, marketing_consent, customer_address').eq('client_id', profile.client_id).order('created_at', { ascending: false });
+      .from('leads').select('id, client_id, created_at, name, email, phone, company, municipality, answers, estimated_price, status, pdf_url, language, notes, org_number, marketing_consent, customer_address, customer_type').eq('client_id', profile.client_id).order('created_at', { ascending: false });
     if (!error && data) setLeads(data);
     setLoading(false);
   }
@@ -165,7 +166,8 @@ export default function Leads() {
     const q = search.toLowerCase();
     const matchSearch = !q||(l.name||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.phone||'').toLowerCase().includes(q)||(l.municipality||'').toLowerCase().includes(q)||(l.company||'').toLowerCase().includes(q)||(l.answers?.wastewaterType||'').toLowerCase().includes(q);
     const matchFilter = activeFilter==='All'||l.status===activeFilter;
-    return matchSearch && matchFilter;
+    const matchCustType = custTypeFilter==='All' || (custTypeFilter==='Business' ? l.customer_type==='business' : (l.customer_type==='private'||!l.customer_type));
+    return matchSearch && matchFilter && matchCustType;
   });
 
   const sortedLeads = sortBy === 'highest_price'
@@ -366,6 +368,14 @@ export default function Leads() {
               </button>
             ))}
           </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {['All', 'Private', 'Business'].map(opt => (
+              <button key={opt} type="button" onClick={() => setCustTypeFilter(opt)}
+                style={{ padding: '7px 14px', fontSize: '12px', borderRadius: '20px', border: custTypeFilter===opt ? 'none' : '1px solid #e8ede8', backgroundColor: custTypeFilter===opt ? PRIMARY : '#fff', color: custTypeFilter===opt ? '#fff' : '#4b5563', cursor: 'pointer', fontFamily: FONT, fontWeight: custTypeFilter===opt ? '600' : '400' }}>
+                {opt}
+              </button>
+            ))}
+          </div>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)}
             style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 12px', fontSize: '12.5px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, outline: 'none', height: '36px' }}>
             <option value="newest">Newest First</option>
@@ -427,7 +437,14 @@ export default function Leads() {
                       onMouseEnter={() => setHoveredRow(lead.id)} onMouseLeave={() => setHoveredRow(null)}
                       style={{ display: 'grid', gridTemplateColumns: gridTpl, padding: '12px 20px', fontSize: '13.5px', color: '#4b5563', borderBottom: '1px solid #f4f6f4', backgroundColor: hoveredRow===lead.id ? '#f9fbf9' : '#fff', alignItems: 'center', outline: focusedLeadId === lead.id ? '2px solid #166534' : 'none', outlineOffset: '-2px' }}>
                       {visibleCols.has('Date') && <span style={{ color: '#9ca3af', fontSize: '12px' }}>{formatDate(lead.created_at)}</span>}
-                      {visibleCols.has('Name') && <span style={{ fontWeight: '600', color: '#0d1117', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name||'—'}</span>}
+                      {visibleCols.has('Name') && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontWeight: '600', color: '#0d1117', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name||'—'}</span>
+                          <span style={{ backgroundColor: lead.customer_type==='business' ? '#f3f4f6' : '#f0fdf4', color: lead.customer_type==='business' ? '#374151' : '#166534', borderRadius: '20px', padding: '2px 8px', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            {lead.customer_type==='business' ? 'Business' : 'Private'}
+                          </span>
+                        </div>
+                      )}
                       {visibleCols.has('Email') && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#4b5563' }}>{lead.email||'—'}</span>}
                       {visibleCols.has('Phone') && <span>{lead.phone||'—'}</span>}
                       {visibleCols.has('Municipality') && <span>{lead.municipality||'—'}</span>}

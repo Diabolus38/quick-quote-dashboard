@@ -354,6 +354,15 @@ export default function LeadDetail() {
                   }
                 </div>
               )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Customer type</span>
+                <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>
+                  {lead.customer_type === 'business' ? 'Business' : 'Private individual'}
+                </span>
+              </div>
+              {lead.customer_type !== 'business' && (
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#166534', fontFamily: FONT }}>ROT deduction may apply</p>
+              )}
             </div>
 
             {/* Answers */}

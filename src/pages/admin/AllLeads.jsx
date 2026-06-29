@@ -128,6 +128,7 @@ export default function AllLeads() {
     return params.get('client') || 'all';
   });
   const [statusFilter,  setStatusFilter]  = useState('All');
+  const [custTypeFilter, setCustTypeFilter] = useState('All');
   const [dateFilter,    setDateFilter]    = useState('All Time');
   const [currentPage,   setCurrentPage]   = useState(1);
   const [selectedLeads, setSelectedLeads] = useState(new Set());
@@ -190,7 +191,7 @@ export default function AllLeads() {
   useEffect(() => {
     async function fetchData() {
       const [leadsRes, clientsRes] = await Promise.all([
-        supabase.from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes').order('created_at', { ascending: false }).limit(500),
+        supabase.from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes, customer_type').order('created_at', { ascending: false }).limit(500),
         supabase.from('clients').select('id, name, plan').order('name'),
       ]);
       if (leadsRes.error)   console.error('Failed to fetch leads:', leadsRes.error);
@@ -264,7 +265,7 @@ export default function AllLeads() {
     exportCSV(leads.filter(l => selectedLeads.has(l.id)), clientMap);
   }
 
-  useEffect(() => { setCurrentPage(1); setSelectedLeads(new Set()); }, [search, clientFilter, statusFilter, dateFilter]);
+  useEffect(() => { setCurrentPage(1); setSelectedLeads(new Set()); }, [search, clientFilter, statusFilter, dateFilter, custTypeFilter]);
 
   /* ── Client map ── */
   const clientMap = {};
@@ -283,7 +284,8 @@ export default function AllLeads() {
     const created      = new Date(l.created_at);
     const matchDate    = dateFilter === 'All Time' || (dateFilter === 'This Week' && created >= weekStart) || (dateFilter === 'This Month' && created >= monthStart);
     const matchFlagged = !flaggedFilter || flaggedLeads.includes(l.id);
-    return matchSearch && matchClient && matchStatus && matchDate && matchFlagged;
+    const matchCustType = custTypeFilter==='All' || (custTypeFilter==='Business' ? l.customer_type==='business' : (l.customer_type==='private'||!l.customer_type));
+    return matchSearch && matchClient && matchStatus && matchDate && matchFlagged && matchCustType;
   });
 
   /* ── Sort ── */
@@ -545,6 +547,16 @@ export default function AllLeads() {
             🚩 Flagged Only
           </button>
 
+          {/* Customer type filter */}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {['All', 'Private', 'Business'].map(opt => (
+              <button key={opt} type="button" onClick={() => setCustTypeFilter(opt)}
+                style={{ border: custTypeFilter===opt ? 'none' : '1px solid #e8ede8', backgroundColor: custTypeFilter===opt ? PRIMARY : '#fff', color: custTypeFilter===opt ? '#fff' : '#4b5563', borderRadius: '20px', padding: '8px 12px', fontSize: '12.5px', fontWeight: custTypeFilter===opt ? '600' : '500', cursor: 'pointer', fontFamily: FONT }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+
           {/* Sort dropdown */}
           <select value={sortBy} onChange={e => setSortBy(e.target.value)}
             style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '9px 14px', fontSize: '13px', backgroundColor: '#fff', color: '#4b5563', cursor: 'pointer', fontFamily: FONT, height: '42px', outline: 'none' }}>
@@ -664,7 +676,16 @@ export default function AllLeads() {
                           </td>
                         )}
 
-                        {visibleColumns.has('Customer Name') && <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{lead.name || '—'}</td>}
+                        {visibleColumns.has('Customer Name') && (
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontWeight: '600', color: '#0d1117', whiteSpace: 'nowrap' }}>{lead.name || '—'}</span>
+                              <span style={{ backgroundColor: lead.customer_type==='business' ? '#f3f4f6' : '#f0fdf4', color: lead.customer_type==='business' ? '#374151' : '#166534', borderRadius: '20px', padding: '2px 8px', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                {lead.customer_type==='business' ? 'Business' : 'Private'}
+                              </span>
+                            </div>
+                          </td>
+                        )}
                         {visibleColumns.has('Email') && <td style={{ padding: '12px 16px', color: '#4b5563' }}>{lead.email || '—'}</td>}
                         {visibleColumns.has('Phone') && <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</td>}
                         {visibleColumns.has('Municipality') && <td style={{ padding: '12px 16px', color: '#4b5563', whiteSpace: 'nowrap' }}>{lead.municipality || '—'}</td>}
