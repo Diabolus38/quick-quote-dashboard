@@ -131,7 +131,7 @@ export default function Leads() {
   async function fetchLeads() {
     setLoading(true);
     const { data, error } = await supabase
-      .from('leads').select('id, client_id, created_at, name, email, phone, municipality, answers, estimated_price, status, language, notes, customer_address, org_number').eq('client_id', profile.client_id).order('created_at', { ascending: false });
+      .from('leads').select('id, client_id, created_at, name, email, phone, company, municipality, answers, estimated_price, status, pdf_url, language, notes, org_number, marketing_consent, customer_address').eq('client_id', profile.client_id).order('created_at', { ascending: false });
     if (!error && data) setLeads(data);
     setLoading(false);
   }
@@ -197,7 +197,7 @@ export default function Leads() {
     { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '▤' },
     { label: 'This Month',         value: loading ? '—' : String(thisMonthCount),  color: '#dbeafe', textColor: '#1d4ed8', icon: '◎' },
     { label: 'Conversion Rate',    value: `${conversionRate}%`,                     color: '#dcfce7', textColor: '#166534', icon: '▤' },
-    { label: 'Avg Estimate Value', value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '⊞' },
+    { label: 'Avg Estimate Value', value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString('sv-SE')} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '⊞' },
   ];
 
   return (
@@ -377,16 +377,16 @@ export default function Leads() {
         </div>
 
         {/* Summary Bar */}
-        <div style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center', fontFamily: FONT }}>
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e8ede8', borderRadius: '12px', padding: '16px', marginBottom: '16px', display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap', fontFamily: FONT }}>
           {[
-            { label: 'Total Estimated Value', value: loading ? '—' : `${totalValue.toLocaleString()} kr` },
+            { label: 'Total Estimated Value', value: loading ? '—' : `${totalValue.toLocaleString('sv-SE')} kr` },
             { label: 'Number of Leads',       value: loading ? '—' : String(leads.length) },
-            { label: 'Average Estimate',      value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString()} kr` : '—' },
+            { label: 'Average Estimate',      value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString('sv-SE')} kr` : '—' },
           ].map((stat, i, arr) => (
             <div key={stat.label} style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
               <div>
                 <p style={{ margin: '0 0 3px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>{stat.label}</p>
-                <p style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{stat.value}</p>
+                <p style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>{stat.value}</p>
               </div>
               {i < arr.length - 1 && <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />}
             </div>
@@ -433,7 +433,7 @@ export default function Leads() {
                       {visibleCols.has('Municipality') && <span>{lead.municipality||'—'}</span>}
                       {visibleCols.has('System Type') && <span>{lead.answers?.wastewaterType||'—'}</span>}
                       {visibleCols.has('Estimated Price') && (Number(lead.estimated_price) > 0
-                        ? <span style={{ backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: '700', display: 'inline-block', whiteSpace: 'nowrap' }}>{Number(lead.estimated_price).toLocaleString()} kr</span>
+                        ? <span style={{ backgroundColor: '#f0fdf4', color: '#166534', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: '700', display: 'inline-block', whiteSpace: 'nowrap' }}>{Number(lead.estimated_price).toLocaleString('sv-SE')} kr</span>
                         : <span style={{ color: '#9ca3af', fontSize: '12px' }}>No estimate</span>
                       )}
                       {visibleCols.has('Status') && <span><select value={lead.status||'New'} onChange={e=>updateStatus(lead.id,e.target.value)} style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: '600', color: STATUS_COLORS[lead.status]||'#374151', backgroundColor: '#fff', cursor: 'pointer', outline: 'none', fontFamily: FONT }}>{['New','Contacted','In Progress','Closed Won','Closed Lost'].map(s=><option key={s} value={s}>{s}</option>)}</select></span>}

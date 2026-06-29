@@ -300,7 +300,7 @@ export default function LeadDetail() {
                   <div>
                     <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Estimated Price</p>
                     <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: PRIMARY, fontFamily: FONT, lineHeight: 1 }}>
-                      {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                      {lead.estimated_price != null ? `${Number(lead.estimated_price).toLocaleString('sv-SE')} kr` : '—'}
                     </p>
                   </div>
                   <div style={{ width: '1px', height: '32px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
@@ -338,10 +338,21 @@ export default function LeadDetail() {
                 </span>
               </div>
               <DetailRow label="Company" value={lead.company} />
-              {lead.customer_address && <DetailRow label="Address" value={lead.customer_address} />}
-              {lead.org_number && <DetailRow label="Organisation Number" value={lead.org_number} />}
+              {lead.customer_address && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>📍 Property address</span>
+                  <span style={{ fontSize: '13.5px', color: '#0d1117', fontWeight: '500' }}>{lead.customer_address}</span>
+                </div>
+              )}
+              {lead.org_number && <DetailRow label="Organisation number" value={lead.org_number} />}
               {lead.marketing_consent != null && (
-                <DetailRow label="Marketing Consent" value={lead.marketing_consent ? 'Yes — consented' : 'No'} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f6f4' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500' }}>Marketing consent</span>
+                  {lead.marketing_consent
+                    ? <span style={{ fontSize: '13.5px', color: '#16a34a', fontWeight: '600' }}>Agreed to be contacted ✓</span>
+                    : <span style={{ fontSize: '13.5px', color: '#9ca3af', fontWeight: '500' }}>No marketing consent</span>
+                  }
+                </div>
               )}
             </div>
 
@@ -390,7 +401,7 @@ export default function LeadDetail() {
             <div style={{ ...CARD, backgroundColor: '#0d1f12', border: 'none' }}>
               <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Estimated Price</p>
               <p style={{ margin: '0 0 8px', fontSize: '34px', fontWeight: '800', color: LIME, lineHeight: 1, letterSpacing: '-0.5px' }}>
-                {lead.estimated_price != null && !isNaN(Number(lead.estimated_price)) ? `${Number(lead.estimated_price).toLocaleString()} kr` : '—'}
+                {lead.estimated_price != null && !isNaN(Number(lead.estimated_price)) ? `${Number(lead.estimated_price).toLocaleString('sv-SE')} kr` : '—'}
               </p>
               <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
                 Submitted on {formatDate(lead.created_at)}
