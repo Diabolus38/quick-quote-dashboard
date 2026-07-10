@@ -132,8 +132,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [widgetHeadline,      setWidgetHeadline]      = useState('');
   const [widgetSubtext,       setWidgetSubtext]       = useState('');
   const [bubbleText,          setBubbleText]          = useState('');
-  const [bubbleBgColor,       setBubbleBgColor]       = useState('#166534');
-  const [bubbleBgHex,         setBubbleBgHex]         = useState('#166534');
+  const [bubbleBgColor,       setBubbleBgColor]       = useState('#ffffff');
+  const [bubbleBgHex,         setBubbleBgHex]         = useState('#ffffff');
   const [bubbleTextColor,     setBubbleTextColor]     = useState('#ffffff');
   const [bubbleTextHex,       setBubbleTextHex]       = useState('#ffffff');
   const [bubbleIconUrl,       setBubbleIconUrl]       = useState('');
@@ -167,8 +167,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setWidgetHeadline(b.widget_headline || '');
         setWidgetSubtext(b.widget_subtext   || '');
         setBubbleText(b.bubble_text         || '');
-        setBubbleBgColor(b.bubble_bg_color     || '#166534');
-        setBubbleBgHex(b.bubble_bg_color       || '#166534');
+        setBubbleBgColor(b.bubble_bg_color     || '#ffffff');
+        setBubbleBgHex(b.bubble_bg_color       || '#ffffff');
         setBubbleTextColor(b.bubble_text_color || '#ffffff');
         setBubbleTextHex(b.bubble_text_color   || '#ffffff');
         setBubbleIconUrl(b.bubble_icon_url              || '');
@@ -445,7 +445,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
             <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>The text shown in the floating chat bubble on your website.</p>
           </FieldRow>
 
-          <FieldRow label="Bubble Background Color" onReset={() => { setBubbleBgColor('#166534'); setBubbleBgHex('#166534'); resetField({ bubble_bg_color: '#166534' }); }}>
+          <FieldRow label="Bubble Background Color" onReset={() => { setBubbleBgColor('#ffffff'); setBubbleBgHex('#ffffff'); resetField({ bubble_bg_color: '#ffffff' }); }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input type="color" value={bubbleBgColor}
                 onChange={e => { setBubbleBgColor(e.target.value); setBubbleBgHex(e.target.value); }}
