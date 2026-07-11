@@ -70,14 +70,13 @@ export default function SignupConfirm() {
     (async () => {
       const { data: clientRow } = await supabase
         .from('clients')
-        .select('plan')
+        .select('stripe_subscription_id')
         .eq('id', clientId)
         .maybeSingle();
 
-      // If the plan in DB is different from what they signed up for,
-      // the Stripe webhook already updated it — they paid. Send to dashboard.
-      // If it matches pendingPlan exactly, they haven't paid yet — send to Stripe.
-      if (clientRow?.plan && clientRow.plan !== pendingPlan) {
+      // stripe_subscription_id is set by the Stripe webhook after payment.
+      // If it exists, the client already paid — never send them to Stripe again.
+      if (clientRow?.stripe_subscription_id) {
         localStorage.removeItem('qq360_pending_plan');
         localStorage.removeItem('qq360_pending_billing');
         localStorage.removeItem('qq360_pending_email');
