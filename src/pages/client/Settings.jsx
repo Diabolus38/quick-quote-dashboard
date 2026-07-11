@@ -855,11 +855,13 @@ function LanguagesSection({ clientId, setHasUnsaved, setSaveRef }) {
 function EmbedCodeSection({ clientId }) {
   const { plan, planLoading } = useClientPlan();
   const [copied,        setCopied]        = useState(false);
+  const [copiedAlt,     setCopiedAlt]     = useState(false);
   const [copiedIframe,  setCopiedIframe]  = useState(false);
   const [copiedWP,      setCopiedWP]      = useState(false);
   const [copiedLink,    setCopiedLink]    = useState(false);
   const [qrSize,        setQrSize]        = useState(200);
-  const scriptTag    = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
+  const scriptTag    = `<script src="https://estimator.quickquote360.com/embed.js?clientId=${clientId || 'CLIENT_ID_HERE'}"></script>`;
+  const scriptTagAlt = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
   const iframeTag    = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
   const shortcodeTag = `[quickquote360 client_id="${clientId || 'CLIENT_ID_HERE'}"]`;
   const directLink   = `https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}`;
@@ -908,8 +910,19 @@ function EmbedCodeSection({ clientId }) {
           </code>
         </div>
         <button type="button" onClick={handleCopy}
-          style={{ backgroundColor: copied ? '#ecfccb' : PRIMARY, color: copied ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '24px' }}>
+          style={{ backgroundColor: copied ? '#ecfccb' : PRIMARY, color: copied ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '16px' }}>
           {copied ? 'Copied!' : 'Copy Code'}
+        </button>
+
+        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Alternative format (data attribute)</p>
+        <div style={{ backgroundColor: '#0d1117', borderRadius: '12px', padding: '20px', marginBottom: '14px', overflowX: 'auto' }}>
+          <code style={{ fontSize: '13px', color: LIME, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: '1.6' }}>
+            {scriptTagAlt}
+          </code>
+        </div>
+        <button type="button" onClick={() => navigator.clipboard.writeText(scriptTagAlt).then(() => { setCopiedAlt(true); setTimeout(() => setCopiedAlt(false), 2000); })}
+          style={{ backgroundColor: copiedAlt ? '#ecfccb' : PRIMARY, color: copiedAlt ? '#3f6212' : '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', marginBottom: '24px' }}>
+          {copiedAlt ? 'Copied!' : 'Copy Code'}
         </button>
 
         <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>iFrame Alternative</p>
