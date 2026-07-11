@@ -75,7 +75,7 @@ export default function SignupConfirm() {
         .eq('id', clientId)
         .maybeSingle();
 
-      if (clientRow && clientRow.plan && clientRow.plan !== 'free_trial' && clientRow.plan !== 'growth') {
+      if (clientRow?.plan) {
         localStorage.removeItem('qq360_pending_plan');
         localStorage.removeItem('qq360_pending_billing');
         localStorage.removeItem('qq360_pending_email');
