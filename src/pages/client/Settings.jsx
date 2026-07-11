@@ -134,8 +134,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [bubbleText,          setBubbleText]          = useState('');
   const [bubbleBgColor,       setBubbleBgColor]       = useState('#ffffff');
   const [bubbleBgHex,         setBubbleBgHex]         = useState('#ffffff');
-  const [bubbleTextColor,     setBubbleTextColor]     = useState('#ffffff');
-  const [bubbleTextHex,       setBubbleTextHex]       = useState('#ffffff');
+  const [bubbleTextColor,     setBubbleTextColor]     = useState('#000000');
+  const [bubbleTextHex,       setBubbleTextHex]       = useState('#000000');
   const [bubbleIconUrl,       setBubbleIconUrl]       = useState('');
   const [bubbleIconUploading, setBubbleIconUploading] = useState(false);
   const [bubbleIconUploadErr, setBubbleIconUploadErr] = useState('');
@@ -169,8 +169,8 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setBubbleText(b.bubble_text         || '');
         setBubbleBgColor(b.bubble_bg_color     || '#ffffff');
         setBubbleBgHex(b.bubble_bg_color       || '#ffffff');
-        setBubbleTextColor(b.bubble_text_color || '#ffffff');
-        setBubbleTextHex(b.bubble_text_color   || '#ffffff');
+        setBubbleTextColor(b.bubble_text_color || '#000000');
+        setBubbleTextHex(b.bubble_text_color   || '#000000');
         setBubbleIconUrl(b.bubble_icon_url              || '');
         setAnswerSelectedColor(b.answer_selected_color || '#dcfce7');
         setAnswerSelectedHex(b.answer_selected_color   || '#dcfce7');
@@ -456,7 +456,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
             </div>
           </FieldRow>
 
-          <FieldRow label="Bubble Text Color" onReset={() => { setBubbleTextColor('#ffffff'); setBubbleTextHex('#ffffff'); resetField({ bubble_text_color: '#ffffff' }); }}>
+          <FieldRow label="Bubble Text Color" onReset={() => { setBubbleTextColor('#000000'); setBubbleTextHex('#000000'); resetField({ bubble_text_color: '#000000' }); }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input type="color" value={bubbleTextColor}
                 onChange={e => { setBubbleTextColor(e.target.value); setBubbleTextHex(e.target.value); }}
