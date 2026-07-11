@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -66,31 +67,49 @@ export default function SignupConfirm() {
       return;
     }
 
-    // We have the correct client_id from AuthContext — send to Stripe
-    setStatus('Redirecting to payment...');
+    (async () => {
+      // Check if already paid — never send an existing paid client to Stripe again
+      const { data: clientRow } = await supabase
+        .from('clients')
+        .select('plan')
+        .eq('id', clientId)
+        .maybeSingle();
 
-    fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clientId:        clientId,
-        email:           pendingEmail || profile?.email,
-        planKey:         pendingPlan,
-        billingInterval: pendingBilling || 'monthly',
-        installType:     pendingInstall,
-      }),
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError('Payment page could not be loaded. Please contact team@aiworldpartners.com');
+      if (clientRow && clientRow.plan && clientRow.plan !== 'free_trial' && clientRow.plan !== 'growth') {
+        localStorage.removeItem('qq360_pending_plan');
+        localStorage.removeItem('qq360_pending_billing');
+        localStorage.removeItem('qq360_pending_email');
+        localStorage.removeItem('qq360_pending_install');
+        window.location.href = '/client';
+        return;
       }
-    })
-    .catch(() => {
-      setError('Payment page could not be loaded. Please contact team@aiworldpartners.com');
-    });
+
+      // We have the correct client_id from AuthContext — send to Stripe
+      setStatus('Redirecting to payment...');
+
+      fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId:        clientId,
+          email:           pendingEmail || profile?.email,
+          planKey:         pendingPlan,
+          billingInterval: pendingBilling || 'monthly',
+          installType:     pendingInstall,
+        }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          setError('Payment page could not be loaded. Please contact team@aiworldpartners.com');
+        }
+      })
+      .catch(() => {
+        setError('Payment page could not be loaded. Please contact team@aiworldpartners.com');
+      });
+    })();
 
   }, [loading, profile]);
 
