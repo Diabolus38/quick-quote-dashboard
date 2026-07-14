@@ -380,8 +380,6 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
               style={{ marginTop: '10px', maxHeight: '60px', maxWidth: '200px', borderRadius: '8px', border: '1px solid #e8ede8', objectFit: 'contain', display: 'block' }}
               onError={e => { e.target.style.display = 'none'; }} />
           )}
-          <p style={{ margin: '10px 0 6px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Or paste a URL directly</p>
-          <TextInput value={logoUrl} onChange={setLogoUrl} placeholder="https://example.com/logo.png" />
         </FieldRow>
 
         <FieldRow label="Company Phone" onReset={() => { setCompanyPhone(''); resetField({ company_phone: '' }); }}>
