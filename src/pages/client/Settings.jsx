@@ -383,7 +383,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
             </div>
             <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} disabled={logoUploading} />
           </label>
-          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Recommended: PNG or SVG, 200x200px minimum, transparent background, max 2MB.</p>
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>For best results, upload a square PNG with transparent background, minimum 400×400px. A transparent background ensures your logo displays correctly on any color.</p>
           {logoUploadErr && <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#dc2626', fontWeight: '600', fontFamily: FONT }}>{logoUploadErr}</p>}
           {logoUrl && isValidUrl(logoUrl) && (
             <img src={logoUrl} alt="Logo preview"
