@@ -287,8 +287,13 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       return;
     }
     const { data: urlData } = supabase.storage.from('client-assets').getPublicUrl(path);
-    setLogoUrl(urlData.publicUrl);
+    const publicUrl = urlData.publicUrl;
+    setLogoUrl(publicUrl);
     setLogoUploading(false);
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, branding: { ...currentBranding(), logo_url: publicUrl } },
+      { onConflict: 'client_id' }
+    );
   }
 
   async function handleBubbleIconUpload(e) {
@@ -320,8 +325,13 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       return;
     }
     const { data: urlData } = supabase.storage.from('client-assets').getPublicUrl(path);
-    setBubbleIconUrl(urlData.publicUrl);
+    const publicUrl = urlData.publicUrl;
+    setBubbleIconUrl(publicUrl);
     setBubbleIconUploading(false);
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, branding: { ...currentBranding(), bubble_icon_url: publicUrl } },
+      { onConflict: 'client_id' }
+    );
   }
 
   return (
@@ -1574,7 +1584,7 @@ export default function ClientSettingsPage() {
 
   useEffect(() => {
     if (!clientId) return;
-    supabase.from('clients').select('plan, created_at, install_preference').eq('id', clientId).single()
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', clientId).maybeSingle()
       .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [clientId]);
 

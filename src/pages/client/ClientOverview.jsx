@@ -61,7 +61,7 @@ export default function ClientOverview() {
 
   useEffect(() => {
     if (!profile?.client_id) return;
-    supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).single()
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).maybeSingle()
       .then(({ data }) => {
         setInstallPreference(data?.install_preference || null);
         setClientPlan(data?.plan || 'free_trial');
