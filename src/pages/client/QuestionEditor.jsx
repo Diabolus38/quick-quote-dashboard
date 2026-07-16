@@ -380,7 +380,7 @@ export default function QuestionEditor() {
   async function sendPlanEmail(planName) {
     await fetch('https://estimator-widget-production.up.railway.app/send-email', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }),
+      body: JSON.stringify({ email: 'team@quickquote360.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }),
     }).catch(() => {});
     setPlanEmailSent(true);
   }

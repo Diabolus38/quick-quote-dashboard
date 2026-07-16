@@ -1332,7 +1332,7 @@ function SubscriptionSection() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'team@aiworldpartners.com',
+          email: 'team@quickquote360.com',
           subject: 'Cancellation Request from ' + profile?.full_name,
           body: 'Client ' + profile?.full_name + ' (' + profile?.email + ') has requested to cancel their subscription. Plan: ' + plan + '. Client ID: ' + profile?.client_id,
         }),
@@ -1505,7 +1505,7 @@ function GetHelpSection() {
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: 'Help Request: ' + subject, body }),
+        body: JSON.stringify({ email: 'team@quickquote360.com', subject: 'Help Request: ' + subject, body }),
       });
       if (res.ok) {
         setSent(true);
@@ -1589,7 +1589,7 @@ export default function ClientSettingsPage() {
   }, [clientId]);
 
   async function sendPlanEmail(planName) {
-    await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
+    await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@quickquote360.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${clientId}.` }) }).catch(() => {});
     setPlanEmailSent(true);
   }
 

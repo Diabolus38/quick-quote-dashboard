@@ -71,7 +71,7 @@ export default function ClientOverview() {
   }, [profile?.client_id]);
 
   async function sendPlanEmail(planName) {
-    await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
+    await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@quickquote360.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
     setPlanEmailSent(true);
   }
 
@@ -82,7 +82,7 @@ export default function ClientOverview() {
 
     if (installChoice === 'assisted') {
       const emailPayload = {
-        email:   'team@aiworldpartners.com',
+        email:   'team@quickquote360.com',
         subject: 'Assisted Install Requested - Free Trial Signup',
         body:    `Free trial client has selected assisted install.\n\nName: ${profile?.full_name || ''}\nEmail: ${profile?.email || ''}\nClient ID: ${profile?.client_id || ''}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
       };

@@ -104,7 +104,7 @@ Name: Christophe Hasley
 Address: Kyrkogatan 7, Strängnäs, Sweden
 Organisation number: 030516-5573
 VAT number: SE030516557301
-Contact: team@aiworldpartners.com
+Contact: team@quickquote360.com
 
 We act as the data controller for personal data of registered dashboard users (contractors). We act as a data processor on behalf of contractors for personal data collected from end customers through the estimator widget.`}</Body>
             </SectionCard>
@@ -205,7 +205,7 @@ Question text sent to Anthropic for AI translation is processed transiently unde
             </SectionCard>
 
             <SectionCard id="gdpr-rights" num="09" title="Your GDPR Rights">
-              <Body>As a data subject under GDPR you have the following rights. Contact us at team@aiworldpartners.com to exercise any of them — we will respond within 30 days.</Body>
+              <Body>As a data subject under GDPR you have the following rights. Contact us at team@quickquote360.com to exercise any of them — we will respond within 30 days.</Body>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 {[
                   { right: 'Access', desc: 'Request a copy of personal data we hold about you' },
@@ -242,7 +242,7 @@ The estimator widget embedded on your website sets no cookies on your visitors.`
             </SectionCard>
 
             <SectionCard id="children" num="11" title="Children's Privacy">
-              <Body>The Service is not directed at individuals under the age of 16. We do not knowingly collect personal data from children. If you believe a child under 16 has submitted data through the Service, please contact us at team@aiworldpartners.com and we will delete it promptly.</Body>
+              <Body>The Service is not directed at individuals under the age of 16. We do not knowingly collect personal data from children. If you believe a child under 16 has submitted data through the Service, please contact us at team@quickquote360.com and we will delete it promptly.</Body>
             </SectionCard>
 
             <SectionCard id="changes" num="12" title="Changes to This Policy">
@@ -254,7 +254,7 @@ The estimator widget embedded on your website sets no cookies on your visitors.`
 
 Christophe Hasley
 Kyrkogatan 7, Strängnäs, Sweden
-Email: team@aiworldpartners.com`}</Body>
+Email: team@quickquote360.com`}</Body>
               <div style={{ backgroundColor: '#f8faf8', borderRadius: '12px', padding: '16px 20px', border: '1px solid #e8ede8' }}>
                 <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Swedish Data Protection Authority (IMY)</p>
                 <p style={{ margin: 0, fontSize: '13px', color: '#4b5563', lineHeight: 1.6, fontFamily: FONT }}>
@@ -271,9 +271,9 @@ Email: team@aiworldpartners.com`}</Body>
               <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7 }}>
                 You can request access, correction, or deletion of your personal data at any time. We'll respond within 30 days.
               </p>
-              <a href="mailto:team@aiworldpartners.com"
+              <a href="mailto:team@quickquote360.com"
                 style={{ display: 'inline-block', backgroundColor: '#a3e635', color: PRIMARY, padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
-                team@aiworldpartners.com
+                team@quickquote360.com
               </a>
             </div>
 

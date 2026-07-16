@@ -53,13 +53,13 @@ export default function SignupConfirm() {
 
     if (!clientId) {
       // AuthContext finished but client_id is still null — something went wrong in ensureNewUserData
-      setError('We could not complete your account setup. Please contact team@aiworldpartners.com with your email address and we will fix this within 24 hours.');
+      setError('We could not complete your account setup. Please contact team@quickquote360.com with your email address and we will fix this within 24 hours.');
       // Send alert
       fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: 'team@aiworldpartners.com',
+          to: 'team@quickquote360.com',
           subject: 'CRITICAL: SignupConfirm - client_id null after AuthContext loaded',
           text: 'A user tried to sign up for plan ' + pendingPlan + ' (email: ' + (pendingEmail || 'unknown') + ') but profile.client_id is null after AuthContext finished loading. ensureNewUserData likely failed. Manual fix required in Supabase.'
         })
@@ -104,11 +104,11 @@ export default function SignupConfirm() {
         if (data.url) {
           window.location.href = data.url;
         } else {
-          setError('Payment page could not be loaded. Please contact team@aiworldpartners.com');
+          setError('Payment page could not be loaded. Please contact team@quickquote360.com');
         }
       })
       .catch(() => {
-        setError('Payment page could not be loaded. Please contact team@aiworldpartners.com');
+        setError('Payment page could not be loaded. Please contact team@quickquote360.com');
       });
     })();
 
@@ -130,8 +130,8 @@ export default function SignupConfirm() {
         body: JSON.stringify({ clientId, email: pendingEmail || profile?.email, planKey: pendingPlan, billingInterval: pendingBilling || 'monthly', installType: pendingInstall }),
       })
       .then(r => r.json())
-      .then(data => { if (data.url) { window.location.href = data.url; } else { setError('Payment page could not be loaded. Please contact team@aiworldpartners.com'); } })
-      .catch(() => { setError('Payment page could not be loaded. Please contact team@aiworldpartners.com'); });
+      .then(data => { if (data.url) { window.location.href = data.url; } else { setError('Payment page could not be loaded. Please contact team@quickquote360.com'); } })
+      .catch(() => { setError('Payment page could not be loaded. Please contact team@quickquote360.com'); });
     }
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}>

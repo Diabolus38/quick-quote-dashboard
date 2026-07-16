@@ -350,7 +350,7 @@ export default function ClientLayout({ title, subtitle, children }) {
               onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
               Privacy Policy
             </a>
-            {' · team@aiworldpartners.com'}
+            {' · team@quickquote360.com'}
           </div>
         </main>
       </div>

@@ -23,7 +23,7 @@ export default function UpgradeLock({ feature, requiredPlan }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'team@aiworldpartners.com',
+          email: 'team@quickquote360.com',
           subject: 'Upgrade Request from ' + profile?.full_name,
           body:
             'Client ' +

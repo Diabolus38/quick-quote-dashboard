@@ -186,7 +186,7 @@ export default function AuthProvider({ children }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: 'team@aiworldpartners.com',
+            to: 'team@quickquote360.com',
             subject: 'CRITICAL: Failed signup - client row not created',
             text: 'User ' + userEmail + ' (auth ID: ' + session.user.id + ') signed up but client row was never created after all retries. Please fix manually in Supabase.'
           })

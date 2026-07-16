@@ -53,7 +53,7 @@ export default function BugReportModal({ isOpen, onClose }) {
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'team@aiworldpartners.com', subject: 'Bug Report: ' + subject, body }),
+        body: JSON.stringify({ email: 'team@quickquote360.com', subject: 'Bug Report: ' + subject, body }),
       });
       if (res.ok) {
         setSent(true);

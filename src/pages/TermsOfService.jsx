@@ -14,7 +14,7 @@ Name: Christophe Hasley
 Address: Kyrkogatan 7, Strängnäs, Sweden
 Organisation number: 030516-5573
 VAT number: SE030516557301
-Contact: team@aiworldpartners.com`,
+Contact: team@quickquote360.com`,
   },
   {
     id: 'acceptance',
@@ -49,7 +49,7 @@ The Service is provided on an "as is" and "as available" basis. We reserve the r
 • Be legally authorised to enter into binding contracts
 • Maintain one account per person (accounts are non-transferable)
 • Keep your login credentials confidential
-• Notify us immediately at team@aiworldpartners.com if you suspect unauthorised access
+• Notify us immediately at team@quickquote360.com if you suspect unauthorised access
 
 You are responsible for all activity that occurs under your account.`,
   },
@@ -82,7 +82,7 @@ Data created during the trial is retained for 30 days after the trial ends. Only
     id: 'cancellation',
     num: '07',
     title: 'Cancellation and Refunds',
-    body: `You may cancel your subscription at any time via the dashboard Settings page or by emailing team@aiworldpartners.com. Cancellation takes effect at the end of the current billing period; you retain access until that date.
+    body: `You may cancel your subscription at any time via the dashboard Settings page or by emailing team@quickquote360.com. Cancellation takes effect at the end of the current billing period; you retain access until that date.
 
 No refunds are issued for partial billing periods, except in the following cases:
 • The Service was unavailable for 72 or more consecutive hours due to a fault on our part
@@ -179,7 +179,7 @@ EU consumers may also use the European Commission Online Dispute Resolution plat
 
 Christophe Hasley
 Kyrkogatan 7, Strängnäs, Sweden
-Email: team@aiworldpartners.com`,
+Email: team@quickquote360.com`,
   },
 ];
 
@@ -251,9 +251,9 @@ export default function TermsOfService() {
               <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7 }}>
                 We're happy to clarify anything. We'll respond within one business day.
               </p>
-              <a href="mailto:team@aiworldpartners.com"
+              <a href="mailto:team@quickquote360.com"
                 style={{ display: 'inline-block', backgroundColor: '#a3e635', color: PRIMARY, padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
-                team@aiworldpartners.com
+                team@quickquote360.com
               </a>
             </div>
 
