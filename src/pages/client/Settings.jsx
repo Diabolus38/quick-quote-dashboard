@@ -200,9 +200,11 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   useEffect(() => {
     let ac = null;
     const init = () => {
-      if (!locationInputRef.current || !window.google) return;
+      if (!window.google?.maps?.places) return;
       if (ac) return; // already initialized
-      ac = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+      const inputEl = locationInputRef.current || document.querySelector('input[placeholder*="address"], input[placeholder*="Address"], input[placeholder*="location"], input[placeholder*="Location"]');
+      if (!inputEl) return;
+      ac = new window.google.maps.places.Autocomplete(inputEl, {
         types: ['geocode'],
         componentRestrictions: { country: 'se' },
       });
@@ -224,7 +226,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
       }
     };
     if (window.google) { init(); }
-    const input = locationInputRef.current;
+    const input = locationInputRef.current || document.querySelector('input[placeholder*="address"], input[placeholder*="Address"]');
     if (input) input.addEventListener('focus', handleFocus);
     return () => {
       if (input) input.removeEventListener('focus', handleFocus);
