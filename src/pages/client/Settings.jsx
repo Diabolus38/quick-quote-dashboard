@@ -192,16 +192,19 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     if (window.google || document.querySelector('#google-maps-script')) return;
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
     script.async = true;
     document.head.appendChild(script);
   }, []);
 
   useEffect(() => {
+    let ac = null;
     const init = () => {
       if (!locationInputRef.current || !window.google) return;
-      const ac = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-        types: ['address'],
+      if (ac) return; // already initialized
+      ac = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'se' },
       });
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
@@ -211,11 +214,21 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setCompanyLng(place.geometry.location.lng());
       });
     };
-    if (window.google) { init(); return; }
-    const interval = setInterval(() => {
-      if (window.google) { clearInterval(interval); init(); }
-    }, 300);
-    return () => clearInterval(interval);
+    const handleFocus = () => {
+      if (window.google) {
+        init();
+      } else {
+        const interval = setInterval(() => {
+          if (window.google) { clearInterval(interval); init(); }
+        }, 200);
+      }
+    };
+    if (window.google) { init(); }
+    const input = locationInputRef.current;
+    if (input) input.addEventListener('focus', handleFocus);
+    return () => {
+      if (input) input.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   useEffect(() => {
