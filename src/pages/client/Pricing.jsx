@@ -93,9 +93,11 @@ const PRICE_DEFAULTS = {
 };
 
 const BASE_DEFAULTS = {
-  bdt:    { '1': 39900, '2': 54900,  '3': 74900,  '4': 99900,  '5': 119900 },
-  wc:     { '1': 74900, '2': 99900,  '3': 129900, '4': 149900, '5': 169900 },
-  wc_bdt: { '1': 99900, '2': 119900, '3': 149900, '4': 179900, '5': 219900 },
+  bdt:         { '1': 39900,  '2': 54900,  '3': 74900,  '4': 99900,  '5': 119900 },
+  bdt_high:    { '1': 99900,  '2': 119900, '3': 149900, '4': 179900, '5': 219900 },
+  wc:          { '1': 74900,  '2': 99900,  '3': 129900, '4': 149900, '5': 169900 },
+  wc_bdt:      { '1': 99900,  '2': 119900, '3': 149900, '4': 179900, '5': 219900 },
+  wc_bdt_high: { '1': 119900, '2': 149900, '3': 179900, '4': 219900, '5': 259900 },
 };
 
 function getCurrencySymbol(c) {
@@ -164,9 +166,11 @@ function PricingContent({ clientId }) {
 
   const [loading,    setLoading]    = useState(true);
   const [baseGrid,   setBaseGrid]   = useState([
-    { key: 'bdt',    label: 'BDT',     sub: 'Biological drain field',      values: hh.map(() => '') },
-    { key: 'wc',     label: 'WC only', sub: 'Water closet, no grey water', values: hh.map(() => '') },
-    { key: 'wc_bdt', label: 'WC+BDT',  sub: 'Full system',                 values: hh.map(() => '') },
+    { key: 'bdt',         label: 'BDT — Low Regulation',     sub: 'Grey water only, normal protection level',  values: hh.map(() => '') },
+    { key: 'bdt_high',    label: 'BDT — High Regulation',    sub: 'Grey water only, high protection level',    values: hh.map(() => '') },
+    { key: 'wc',          label: 'WC only',                  sub: 'Water closet, always high regulation',      values: hh.map(() => '') },
+    { key: 'wc_bdt',      label: 'WC+BDT — Low Regulation',  sub: 'Full system, normal protection level',      values: hh.map(() => '') },
+    { key: 'wc_bdt_high', label: 'WC+BDT — High Regulation', sub: 'Full system, high protection level',        values: hh.map(() => '') },
   ]);
   const [fixedCosts,  setFixedCosts]  = useState(makeList({}, FIXED_ENTRIES));
   const [perMeter,    setPerMeter]    = useState(makeList({}, PER_METER_ENTRIES));
@@ -196,9 +200,11 @@ function PricingContent({ clientId }) {
         const pm = p.per_meter_costs || {};
         const ao = p.addons          || {};
         setBaseGrid([
-          { key: 'bdt',    label: 'BDT',     sub: 'Biological drain field',      values: hh.map(h => { const v = bp.bdt?.[h];    return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.bdt[h]    ?? ''); }) },
-          { key: 'wc',     label: 'WC only', sub: 'Water closet, no grey water', values: hh.map(h => { const v = bp.wc?.[h];     return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc[h]     ?? ''); }) },
-          { key: 'wc_bdt', label: 'WC+BDT',  sub: 'Full system',                 values: hh.map(h => { const v = bp.wc_bdt?.[h]; return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc_bdt[h] ?? ''); }) },
+          { key: 'bdt',         label: 'BDT — Low Regulation',     sub: 'Grey water only, normal protection level',  values: hh.map(h => { const v = bp.bdt?.[h];         return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.bdt[h]         ?? ''); }) },
+          { key: 'bdt_high',    label: 'BDT — High Regulation',    sub: 'Grey water only, high protection level',    values: hh.map(h => { const v = bp.bdt_high?.[h];    return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.bdt_high[h]    ?? ''); }) },
+          { key: 'wc',          label: 'WC only',                  sub: 'Water closet, always high regulation',      values: hh.map(h => { const v = bp.wc?.[h];          return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc[h]          ?? ''); }) },
+          { key: 'wc_bdt',      label: 'WC+BDT — Low Regulation',  sub: 'Full system, normal protection level',      values: hh.map(h => { const v = bp.wc_bdt?.[h];      return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc_bdt[h]      ?? ''); }) },
+          { key: 'wc_bdt_high', label: 'WC+BDT — High Regulation', sub: 'Full system, high protection level',        values: hh.map(h => { const v = bp.wc_bdt_high?.[h]; return (v && v !== 0) ? String(v) : String(BASE_DEFAULTS.wc_bdt_high[h] ?? ''); }) },
         ]);
         setFixedCosts(makeList(fc, FIXED_ENTRIES));
         setPerMeter(makeList(pm, PER_METER_ENTRIES));
@@ -244,7 +250,7 @@ function PricingContent({ clientId }) {
     setRotPercent('30');
     setCurrency('SEK');
     await supabase.from('client_pricing').update({
-      base_prices: { bdt: zero5, wc: zero5, wc_bdt: zero5 },
+      base_prices: { bdt: zero5, bdt_high: zero5, wc: zero5, wc_bdt: zero5, wc_bdt_high: zero5 },
       fixed_costs: Object.fromEntries(fixedCosts.map(i => [i.key, 0])),
       per_meter_costs: Object.fromEntries(perMeter.map(i => [i.key, 0])),
       addons: Object.fromEntries(addOns.map(i => [i.key, 0])),
@@ -302,7 +308,7 @@ function PricingContent({ clientId }) {
     }
   }
 
-  const ROW_TINTS = { bdt: '#fafff9', wc: '#f8faff', wc_bdt: '#fdf8ff' };
+  const ROW_TINTS = { bdt: '#fafff9', bdt_high: '#fff8f0', wc: '#f8faff', wc_bdt: '#fdf8ff', wc_bdt_high: '#fff0f8' };
   const resetBtnStyle = { background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '2px 4px', lineHeight: 1 };
   const selStyle = { width: '100%', height: '42px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '10px', padding: '0 14px', fontSize: '13.5px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer', outline: 'none' };
 
@@ -568,9 +574,11 @@ function PricingContent({ clientId }) {
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>System Type</label>
                   <select value={previewSystemType} onChange={e => setPreviewSystemType(e.target.value)}
                     style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '9px 12px', fontSize: '13px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', cursor: 'pointer' }}>
-                    <option value="bdt">BDT</option>
+                    <option value="bdt">BDT — Low Regulation</option>
+                    <option value="bdt_high">BDT — High Regulation</option>
                     <option value="wc">WC only</option>
-                    <option value="wc_bdt">WC+BDT</option>
+                    <option value="wc_bdt">WC+BDT — Low Regulation</option>
+                    <option value="wc_bdt_high">WC+BDT — High Regulation</option>
                   </select>
                 </div>
                 <div>
