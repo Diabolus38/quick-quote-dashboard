@@ -231,7 +231,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
     return () => {
       if (input) input.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     if (!loading && locationInputRef.current) {
