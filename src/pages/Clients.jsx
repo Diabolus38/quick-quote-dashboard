@@ -260,9 +260,7 @@ export default function Clients() {
   }).length;
 
   function isOnTrial(c) {
-    if (c.plan !== 'scale') return false;
-    const days = (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24);
-    return days <= 14;
+    return c.plan === 'free_trial';
   }
   function trialDaysLeft(c) {
     const days = (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24);
