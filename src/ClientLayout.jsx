@@ -285,10 +285,10 @@ export default function ClientLayout({ title, subtitle, children }) {
             {/* Bell */}
             <div style={{ position: 'relative' }}>
               <button type="button" onClick={() => setShowNotif(v => !v)}
-                style={{ position: 'relative', background: 'transparent', border: 'none', padding: '6px', borderRadius: '8px', fontSize: '18px', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                🔔
+                style={{ position: 'relative', width: '36px', height: '36px', background: '#f4f3ef', border: '1px solid #e6e3dc', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                <span style={{ fontSize: '16px', lineHeight: 1 }}>🔔</span>
                 {unreadCount > 0 && (
-                  <span style={{ position: 'absolute', top: '2px', right: '2px', minWidth: '16px', height: '16px', borderRadius: '99px', backgroundColor: '#dc2626', color: '#fff', fontSize: '10px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', fontFamily: FONT, lineHeight: 1 }}>
+                  <span style={{ position: 'absolute', top: '4px', right: '4px', minWidth: '14px', height: '14px', borderRadius: '99px', backgroundColor: '#dc2626', color: '#fff', fontSize: '8px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', fontFamily: FONT, lineHeight: 1 }}>
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}

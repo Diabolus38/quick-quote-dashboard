@@ -281,18 +281,7 @@ export default function ClientOverview() {
             </span>
           )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button type="button" onClick={() => setSoundEnabled(p => !p)}
-              title={soundEnabled ? 'Sound notifications on' : 'Sound notifications off'}
-              style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
-              {soundEnabled ? '🔔' : '🔕'}
-            </button>
-            <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem('qq360_dnd', JSON.stringify(next)); }}
-              title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
-              style={{ border: '1px solid #e6e3dc', borderRadius: '20px', padding: '7px 14px', fontSize: '12px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#787670', fontWeight: '600', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>🔕</span> DND
-            </button>
-          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} />
         </div>
 
         {/* Stat cards */}
