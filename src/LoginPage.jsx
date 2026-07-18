@@ -137,7 +137,7 @@ export function AuthLeft() {
     <div style={{ flex: 1, background: 'linear-gradient(135deg, #0d1f12 0%, #166534 100%)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 64px' }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '52px' }}>
-        <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: LIME, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '800', color: DARK }}>Q</div>
+        <img src="/qq360-logo.png" alt="QuickQuote360" style={{ width: '44px', height: '44px', borderRadius: '10px', objectFit: 'contain' }} />
         <span style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>QuickQuote360</span>
       </div>
 
