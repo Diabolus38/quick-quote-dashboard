@@ -196,7 +196,9 @@ export default function ClientLayout({ title, subtitle, children }) {
           <span style={{ fontSize: '10px', fontWeight: '600', color: SECTION_LABEL, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Leads</span>
         </div>
         <nav style={{ flexShrink: 0 }}>
-          {LEADS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => <NavItem key={item.label} item={item} />)}
+          {LEADS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => (
+            <NavItem key={item.label} item={item} badge={item.label === 'Leads' && unreadCount > 0 ? unreadCount : null} />
+          ))}
         </nav>
 
         {/* CONFIGURATION Section */}
@@ -319,15 +321,23 @@ export default function ClientLayout({ title, subtitle, children }) {
                 </div>
               )}
             </div>
+            {/* Embed code button */}
+            <button type="button" onClick={() => navigate('/client/settings?tab=embed')}
+              style={{ width: '36px', height: '36px', background: '#f4f3ef', border: '1px solid #e6e3dc', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              <span style={{ fontSize: '13px', color: '#787670', fontFamily: 'monospace', fontWeight: '700' }}>&lt;/&gt;</span>
+            </button>
             {/* User Profile */}
             <div onClick={() => navigate('/client/settings')}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '9px', background: '#f4f3ef', border: '1px solid #e6e3dc', borderRadius: '10px', padding: '5px 10px 5px 6px', cursor: 'pointer' }}>
               {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                : <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>{initials}</div>
+                ? <img src={profile.avatar_url} alt="avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                : <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: PRIMARY, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>{initials}</div>
               }
-              <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{profile?.full_name || 'Account'}</span>
-              <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '2px' }}>▾</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#111827', lineHeight: 1.3 }}>{profile?.full_name || 'Account'}</span>
+                <span style={{ fontSize: '10px', color: '#a0a09a', lineHeight: 1 }}>{profile?.email || ''}</span>
+              </div>
+              <span style={{ fontSize: '11px', color: '#b0ada6', marginLeft: '2px' }}>▾</span>
             </div>
           </div>
         </header>
@@ -359,7 +369,7 @@ export default function ClientLayout({ title, subtitle, children }) {
 }
 
 /* ── NavItem ── */
-function NavItem({ item }) {
+function NavItem({ item, badge }) {
   const [hovered, setHovered] = useState(false);
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -386,6 +396,11 @@ function NavItem({ item }) {
     >
       <span style={{ fontSize: '14px', lineHeight: 1, flexShrink: 0, width: '16px', textAlign: 'center' }}>{item.icon}</span>
       <span>{item.label}</span>
+      {badge && (
+        <span style={{ marginLeft: 'auto', background: '#166534', color: '#fff', fontSize: '9px', fontWeight: '700', padding: '2px 7px', borderRadius: '20px', minWidth: '20px', textAlign: 'center' }}>
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </div>
   );
 }
