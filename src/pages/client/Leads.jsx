@@ -255,16 +255,6 @@ export default function Leads() {
               </div>
             )}
           </div>
-          <button type="button" onClick={() => setSoundEnabled(p => !p)}
-            title={soundEnabled ? 'Sound notifications on' : 'Sound notifications off'}
-            style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', borderRadius: '8px', padding: '7px 10px', fontSize: '16px', cursor: 'pointer' }}>
-            {soundEnabled ? '🔔' : '🔕'}
-          </button>
-          <button type="button" onClick={() => { const next = !dnd; setDnd(next); localStorage.setItem(`qq360_dnd_${profile?.id || 'anon'}`, JSON.stringify(next)); }}
-            title={dnd ? 'Do Not Disturb on' : 'Do Not Disturb off'}
-            style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer', backgroundColor: dnd ? '#fef9c3' : '#fff', color: dnd ? '#854d0e' : '#9ca3af', fontWeight: '600', fontFamily: FONT }}>
-            🌙 DND
-          </button>
           <button type="button" onClick={handleExportCSV} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#0d1117', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
             Export CSV
           </button>
