@@ -196,10 +196,14 @@ export default function Leads() {
     : null;
 
   const statCards = [
-    { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '▤' },
-    { label: 'This Month',         value: loading ? '—' : String(thisMonthCount),  color: '#dbeafe', textColor: '#1d4ed8', icon: '◎' },
-    { label: 'Conversion Rate',    value: `${conversionRate}%`,                     color: '#dcfce7', textColor: '#166534', icon: '▤' },
-    { label: 'Avg Estimate Value', value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString('sv-SE')} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '⊞' },
+    { label: 'Total Leads',        value: loading ? '—' : String(leads.length),    color: '#ecfccb', textColor: '#3f6212',
+      svg: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
+    { label: 'This Month',         value: loading ? '—' : String(thisMonthCount),  color: '#dbeafe', textColor: '#1d4ed8',
+      svg: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+    { label: 'Conversion Rate',    value: `${conversionRate}%`,                     color: '#dcfce7', textColor: '#166534',
+      svg: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> },
+    { label: 'Avg Estimate Value', value: loading ? '—' : avgPrice ? `${avgPrice.toLocaleString('sv-SE')} kr` : '—', color: '#fef9c3', textColor: '#854d0e',
+      svg: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> },
   ];
 
   return (
@@ -271,7 +275,9 @@ export default function Leads() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
           {statCards.map(card => (
             <div key={card.label} style={CARD}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.color, color: card.textColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '14px' }}>{card.icon}</div>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.color, color: card.textColor, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                {card.svg}
+              </div>
               <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
               <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{card.value}</p>
             </div>
