@@ -192,10 +192,10 @@ export default function ClientOverview() {
     : null;
 
   const statCards = [
-    { label: 'Leads Today',        value: loading ? '—' : String(todayLeads.length),    color: '#ecfccb', textColor: '#3f6212', icon: '📥' },
-    { label: 'Leads This Month',   value: loading ? '—' : String(thisMonthLeads.length), color: '#dbeafe', textColor: '#1d4ed8', icon: '📊' },
-    { label: 'Conversion Rate',    value: loading ? '—' : `${conversionRate}%`,          color: '#dcfce7', textColor: '#166534', icon: '🎯' },
-    { label: 'Avg Estimate Value', value: loading ? '—' : avg != null ? `${avg.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: '💰' },
+    { label: 'Leads Today',        value: loading ? '—' : String(todayLeads.length),    color: '#ecfccb', textColor: '#3f6212', icon: 'ti-inbox' },
+    { label: 'Leads This Month',   value: loading ? '—' : String(thisMonthLeads.length), color: '#dbeafe', textColor: '#1d4ed8', icon: 'ti-chart-bar' },
+    { label: 'Conversion Rate',    value: loading ? '—' : `${conversionRate}%`,          color: '#dcfce7', textColor: '#166534', icon: 'ti-target' },
+    { label: 'Avg Estimate Value', value: loading ? '—' : avg != null ? `${avg.toLocaleString()} kr` : '—', color: '#fef9c3', textColor: '#854d0e', icon: 'ti-currency-dollar' },
   ];
 
   const recentLeads = leads.slice(0, 8);
@@ -288,7 +288,9 @@ export default function ClientOverview() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
           {statCards.map(card => (
             <div key={card.label} style={CARD}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.color, color: card.textColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '14px' }}>{card.icon}</div>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: card.color, color: card.textColor, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                <i className={`ti ${card.icon}`} style={{ fontSize: '20px' }} aria-hidden="true" />
+              </div>
               <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{card.label}</p>
               <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{card.value}</p>
             </div>
