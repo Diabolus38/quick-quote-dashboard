@@ -36,7 +36,7 @@ export default function LoginPage() {
         .from('profiles')
         .select('role')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
       if (profileData?.role === 'super_admin') {
         navigate('/admin');
       } else {

@@ -19,7 +19,7 @@ export default function useClientPlan() {
       .from('clients')
       .select('plan, created_at')
       .eq('id', profile.client_id)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
         setPlan(error ? 'growth' : (data?.plan || 'growth'));
         setPlanLoading(false);

@@ -19,8 +19,8 @@ export default function OnboardingBanner() {
 
     async function fetchStatus() {
       const [settingsRes, pricingRes, municipalitiesRes, questionsRes] = await Promise.all([
-        supabase.from('client_settings').select('branding, pdf_content').eq('client_id', profile.client_id).single(),
-        supabase.from('client_pricing').select('base_prices').eq('client_id', profile.client_id).single(),
+        supabase.from('client_settings').select('branding, pdf_content').eq('client_id', profile.client_id).maybeSingle(),
+        supabase.from('client_pricing').select('base_prices').eq('client_id', profile.client_id).maybeSingle(),
         supabase.from('client_municipalities').select('id').eq('client_id', profile.client_id).limit(1),
         supabase.from('client_questions').select('id').eq('client_id', profile.client_id).not('label_en', 'is', null).limit(1),
       ]);
