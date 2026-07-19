@@ -370,7 +370,7 @@ export default function QuestionEditor() {
 
   useEffect(() => {
     if (!clientId) return;
-    supabase.from('clients').select('plan, created_at, install_preference').eq('id', clientId).single()
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', clientId).maybeSingle()
       .then(({ data }) => {
         setInstallPreference(data?.install_preference || null);
         if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true);
@@ -552,7 +552,7 @@ export default function QuestionEditor() {
               setQuestions(reset);
               setResetBanner(true);
               setTimeout(() => setResetBanner(false), 4000);
-              await handleSave(reset);
+              await handleSave(null);
             }}
               style={{ padding: '9px 18px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: '#fff', color: '#374151', border: '1px solid #e8ede8', cursor: 'pointer', fontFamily: FONT }}>
               Reset All

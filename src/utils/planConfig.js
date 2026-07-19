@@ -8,10 +8,10 @@ export const PLAN_YEARLY = { starter: 14000, growth: 30000, scale: 60000 };
 // integrated. Once Stripe is live this conversion will trigger an actual subscription checkout
 // before updating the plan.
 //
-// IMPORTANT: free_trial is never auto-assigned to any client. It can only be set manually by a
-// super_admin in the admin dashboard, or in the future via a dedicated free-trial signup flow.
-// No code anywhere should automatically change a client's plan to free_trial based on dates,
-// signup behavior, or any other automatic condition.
+// free_trial IS self-service today via the public signup form (SignupPage.jsx PLAN_CARDS). Repeat
+// trial abuse via email aliasing is blocked server-side by the qq360_block_repeat_free_trial trigger
+// on the clients table in Supabase (see migration run 2026-07-19) — do not remove that trigger without
+// replacing the protection it provides.
 export const PLAN_FEATURES = {
   starter: {
     dashboardAccess: true,

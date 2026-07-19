@@ -118,7 +118,7 @@ export default function LeadDetail() {
 
   async function fetchLead() {
     setLoading(true);
-    const { data, error } = await supabase.from('leads').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('leads').select('*').eq('id', id).maybeSingle();
     if (error || !data) { setNotFound(true); } else {
       setLead(data); setNotes(data.notes || '');
       const [{ data: prev }, { data: next }] = await Promise.all([
@@ -147,7 +147,7 @@ export default function LeadDetail() {
     setSendingToMe(true);
     setSentToMe('');
     try {
-      const { data: emailSettingsData } = await supabase.from('client_settings').select('email_settings').eq('client_id', profile.client_id).single();
+      const { data: emailSettingsData } = await supabase.from('client_settings').select('email_settings').eq('client_id', profile.client_id).maybeSingle();
       const answersText = Object.entries(lead.answers || {})
         .map(([k, v]) => `${KEY_LABELS[k] || k}: ${VALUE_LABELS[String(v)] || String(v)}`)
         .join('\n');
@@ -184,9 +184,9 @@ export default function LeadDetail() {
     setDownloadingPDF(true);
     try {
       const [{ data: settingsData }, { data: pricingData }, { data: clientData }] = await Promise.all([
-        supabase.from('client_settings').select('*').eq('client_id', profile.client_id).single(),
-        supabase.from('client_pricing').select('*').eq('client_id', profile.client_id).single(),
-        supabase.from('clients').select('*').eq('id', profile.client_id).single(),
+        supabase.from('client_settings').select('*').eq('client_id', profile.client_id).maybeSingle(),
+        supabase.from('client_pricing').select('*').eq('client_id', profile.client_id).maybeSingle(),
+        supabase.from('clients').select('*').eq('id', profile.client_id).maybeSingle(),
       ]);
       await generateQuotePDF({
         lead,
@@ -210,7 +210,7 @@ export default function LeadDetail() {
     if (!window.confirm(`Send the quote PDF to ${lead.email}?`)) return;
     setSendingEmail(true);
     try {
-      const { data: emailSettingsData } = await supabase.from('client_settings').select('email_settings').eq('client_id', profile.client_id).single();
+      const { data: emailSettingsData } = await supabase.from('client_settings').select('email_settings').eq('client_id', profile.client_id).maybeSingle();
       const res = await fetch('https://estimator-widget-production.up.railway.app/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

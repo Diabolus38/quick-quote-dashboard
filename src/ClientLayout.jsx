@@ -80,7 +80,7 @@ export default function ClientLayout({ title, subtitle, children }) {
         .from('clients')
         .select('plan, created_at')
         .eq('id', profile.client_id)
-        .single(),
+        .maybeSingle(),
     ]).then(([leadsRes, clientRes]) => {
       setLeadsThisMonth(leadsRes.count || 0);
       const plan = clientRes.data?.plan || 'starter';
@@ -104,7 +104,7 @@ export default function ClientLayout({ title, subtitle, children }) {
     if (!profile?.client_id) return;
     const clientId = profile.client_id;
     const channel = supabase
-      .channel('new-leads-notify-' + clientId)
+      .channel('new-leads-notify-' + clientId + '-' + Date.now())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: 'client_id=eq.' + clientId }, async (payload) => {
         const { data: inserted } = await supabase.from('notifications').insert({
           client_id: clientId,
@@ -112,7 +112,7 @@ export default function ClientLayout({ title, subtitle, children }) {
           title: 'New lead received',
           message: (payload.new.name || 'A visitor') + ' requested a quote' + (payload.new.municipality ? ' in ' + payload.new.municipality : '') + '.',
           read: false,
-        }).select('*').single();
+        }).select('*').maybeSingle();
         if (inserted) setNotifications(prev => [inserted, ...prev]);
 
         const newCount    = leadsThisMonthRef.current + 1;
@@ -128,7 +128,7 @@ export default function ClientLayout({ title, subtitle, children }) {
               : 'You have ' + threshold + ' estimate' + (threshold === 1 ? '' : 's') + ' remaining this month.';
             const { data: tw } = await supabase.from('notifications').insert({
               client_id: clientId, type: 'usage_warning', title, message: msg, read: false,
-            }).select('*').single();
+            }).select('*').maybeSingle();
             if (tw) setNotifications(prev => [tw, ...prev]);
           }
         }

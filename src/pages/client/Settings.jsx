@@ -178,7 +178,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
         setLoading(false);
         setTimeout(() => { _ll.current = true; }, 50);
       });
-    supabase.from('clients').select('company_location, company_lat, company_lng').eq('id', clientId).single()
+    supabase.from('clients').select('company_location, company_lat, company_lng').eq('id', clientId).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setCompanyLocation(data.company_location || '');
@@ -276,14 +276,15 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   async function handleLogoUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !clientId) return;
-    if (!file.type.startsWith('image/')) {
+    const ALLOWED_MIME = ['image/jpeg','image/png','image/gif','image/webp','image/bmp','image/x-icon','image/vnd.microsoft.icon'];
+    if (!ALLOWED_MIME.includes(file.type)) {
       setLogoUploadErr('Please select an image file.');
       setTimeout(() => setLogoUploadErr(''), 3000);
       return;
     }
     const _ext = file.name.split('.').pop()?.toLowerCase();
-    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
-      setLogoUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
+    if (!['jpg','jpeg','png','gif','webp','bmp','ico'].includes(_ext)) {
+      setLogoUploadErr('Invalid file type. Please use JPG, PNG, GIF, or WEBP.');
       setTimeout(() => setLogoUploadErr(''), 3000);
       return;
     }
@@ -314,14 +315,15 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   async function handleBubbleIconUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !clientId) return;
-    if (!file.type.startsWith('image/')) {
+    const ALLOWED_MIME = ['image/jpeg','image/png','image/gif','image/webp','image/bmp','image/x-icon','image/vnd.microsoft.icon'];
+    if (!ALLOWED_MIME.includes(file.type)) {
       setBubbleIconUploadErr('Please select an image file.');
       setTimeout(() => setBubbleIconUploadErr(''), 3000);
       return;
     }
     const _ext = file.name.split('.').pop()?.toLowerCase();
-    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
-      setBubbleIconUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
+    if (!['jpg','jpeg','png','gif','webp','bmp','ico'].includes(_ext)) {
+      setBubbleIconUploadErr('Invalid file type. Please use JPG, PNG, GIF, or WEBP.');
       setTimeout(() => setBubbleIconUploadErr(''), 3000);
       return;
     }
@@ -1052,7 +1054,7 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
 
   useEffect(() => {
     if (!profile?.id) return;
-    supabase.from('profiles').select('full_name, avatar_url').eq('id', profile.id).single()
+    supabase.from('profiles').select('full_name, avatar_url').eq('id', profile.id).maybeSingle()
       .then(({ data }) => {
         if (data) { setFullName(data.full_name || ''); setAvatarUrl(data.avatar_url || ''); }
         setDataReady(true);
@@ -1082,14 +1084,15 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
   async function handleAvatarUpload(e) {
     const file = e.target.files?.[0];
     if (!file || !profile?.id) return;
-    if (!file.type.startsWith('image/')) {
+    const ALLOWED_MIME = ['image/jpeg','image/png','image/gif','image/webp','image/bmp','image/x-icon','image/vnd.microsoft.icon'];
+    if (!ALLOWED_MIME.includes(file.type)) {
       setUploadErr('Please select an image file.');
       setTimeout(() => setUploadErr(''), 3000);
       return;
     }
     const _ext = file.name.split('.').pop()?.toLowerCase();
-    if (!['jpg','jpeg','png','gif','svg','webp','bmp','ico'].includes(_ext)) {
-      setUploadErr('Invalid file type. Please use JPG, PNG, GIF, SVG, or WEBP.');
+    if (!['jpg','jpeg','png','gif','webp','bmp','ico'].includes(_ext)) {
+      setUploadErr('Invalid file type. Please use JPG, PNG, GIF, or WEBP.');
       setTimeout(() => setUploadErr(''), 3000);
       return;
     }
@@ -1306,7 +1309,7 @@ function SubscriptionSection() {
 
   useEffect(() => {
     if (!profile?.client_id) return;
-    supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).single()
+    supabase.from('clients').select('plan, created_at').eq('id', profile.client_id).maybeSingle()
       .then(({ data }) => { if (data?.created_at) setCreatedAt(data.created_at); });
   }, [profile?.client_id]);
 

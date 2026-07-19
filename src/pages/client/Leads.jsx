@@ -73,7 +73,7 @@ export default function Leads() {
 
   useEffect(() => {
     if (!profile?.client_id) return;
-    supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).single()
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).maybeSingle()
       .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
   }, [profile?.client_id]);
 

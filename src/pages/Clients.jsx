@@ -179,7 +179,7 @@ export default function Clients() {
   }
 
   async function handleAdd(payload) {
-    const { data, error } = await supabase.from('clients').insert({ ...payload, active: true }).select('id').single();
+    const { data, error } = await supabase.from('clients').insert({ ...payload, active: true }).select('id').maybeSingle();
     if (!error && data?.id) {
       await Promise.all([
         supabase.from('client_settings').insert({

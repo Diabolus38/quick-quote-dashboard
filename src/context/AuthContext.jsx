@@ -123,17 +123,34 @@ export default function AuthProvider({ children }) {
     }
 
     if (!clientId) {
-      const { data: upsertData, error: upsertError } = await supabase
+      let effectivePlan = selectedPlan;
+      let { data: upsertData, error: upsertError } = await supabase
         .from('clients')
         .upsert(
-          { name: fullName || userEmail, email: userEmail, plan: selectedPlan, active: true },
+          { name: fullName || userEmail, email: userEmail, plan: effectivePlan, active: true },
           { onConflict: 'email', ignoreDuplicates: false }
         )
         .select('id')
-        .single();
-      if (upsertError) {
+        .maybeSingle();
+
+      if (upsertError?.message?.includes('QQ360_TRIAL_ALREADY_USED')) {
+        console.warn('ensureNewUserData: free trial already used for this email (normalized match), creating as starter instead:', userEmail);
+        effectivePlan = 'starter';
+        const retry = await supabase
+          .from('clients')
+          .upsert(
+            { name: fullName || userEmail, email: userEmail, plan: effectivePlan, active: true },
+            { onConflict: 'email', ignoreDuplicates: false }
+          )
+          .select('id')
+          .maybeSingle();
+        upsertData = retry.data;
+        upsertError = retry.error;
+      } else if (upsertError) {
         console.error('ensureNewUserData: clients upsert error:', upsertError);
-      } else if (upsertData?.id) {
+      }
+
+      if (!upsertError && upsertData?.id) {
         clientId = upsertData.id;
         console.log('ensureNewUserData: client row created/updated via upsert:', clientId);
       }

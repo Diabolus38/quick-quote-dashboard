@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, requiredRole }) {
   useEffect(() => {
     if (!profile?.client_id || profile?.role === 'super_admin') return;
     setCheckingActive(true);
-    supabase.from('clients').select('active').eq('id', profile.client_id).single()
+    supabase.from('clients').select('active').eq('id', profile.client_id).maybeSingle()
       .then(({ data }) => {
         if (data && data.active === false) setClientActive(false);
         setCheckingActive(false);

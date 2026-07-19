@@ -124,12 +124,12 @@ export default function AdminLeadDetail() {
 
   async function fetchData() {
     setLoading(true);
-    const { data: leadData, error } = await supabase.from('leads').select('*').eq('id', id).single();
+    const { data: leadData, error } = await supabase.from('leads').select('*').eq('id', id).maybeSingle();
     if (error || !leadData) { setNotFound(true); setLoading(false); return; }
     setLead(leadData);
     setNotes(leadData.notes || '');
     if (leadData.client_id) {
-      const { data: clientData } = await supabase.from('clients').select('*').eq('id', leadData.client_id).single();
+      const { data: clientData } = await supabase.from('clients').select('*').eq('id', leadData.client_id).maybeSingle();
       setClient(clientData || null);
     }
     const [{ data: prev }, { data: next }] = await Promise.all([

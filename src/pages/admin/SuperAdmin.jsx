@@ -107,7 +107,7 @@ function AddClientModal({ onClose, onSaved }) {
     setSaving(true);
     const payload = { name: name.trim(), email: email.trim(), plan, active: true };
     if (website.trim()) payload.website_url = website.trim();
-    const { data, error } = await supabase.from('clients').insert(payload).select('id').single();
+    const { data, error } = await supabase.from('clients').insert(payload).select('id').maybeSingle();
     if (!error && data?.id) {
       await Promise.all([
         supabase.from('client_settings').insert({
