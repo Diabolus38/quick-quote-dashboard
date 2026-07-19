@@ -607,7 +607,7 @@ export default function QuestionEditor() {
 
                 {/* Save bar top */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                  <button type="button" onClick={handleSave} disabled={saving}
+                  <button type="button" onClick={() => handleSave(null)} disabled={saving}
                     style={{ padding: '9px 24px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
                     {saving ? 'Saving…' : 'Save All'}
                   </button>
@@ -653,7 +653,7 @@ export default function QuestionEditor() {
 
                 {/* Save bar bottom */}
                 <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <button type="button" onClick={handleSave} disabled={saving}
+                  <button type="button" onClick={() => handleSave(null)} disabled={saving}
                     style={{ padding: '9px 24px', borderRadius: '10px', fontSize: '13.5px', fontWeight: '600', backgroundColor: saving ? '#9ca3af' : PRIMARY, color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: FONT, opacity: saving ? 0.7 : 1 }}>
                     {saving ? 'Saving…' : 'Save All'}
                   </button>
