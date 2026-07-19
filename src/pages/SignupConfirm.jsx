@@ -88,9 +88,10 @@ export default function SignupConfirm() {
       // We have the correct client_id from AuthContext — send to Stripe
       setStatus('Redirecting to payment...');
 
+      const { data: { session } } = await supabase.auth.getSession();
       fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({
           clientId:        clientId,
           email:           pendingEmail || profile?.email,
@@ -119,14 +120,15 @@ export default function SignupConfirm() {
     const pendingBilling = localStorage.getItem('qq360_pending_billing');
     const pendingEmail   = localStorage.getItem('qq360_pending_email');
     const pendingInstall = localStorage.getItem('qq360_pending_install') || 'none';
-    function retryPayment() {
+    async function retryPayment() {
       const clientId = profile?.client_id;
       if (!clientId || !pendingPlan) { setError('Session expired. Please sign up again.'); setCancelled(false); return; }
       setCancelled(false);
       setStatus('Redirecting to payment...');
+      const { data: { session } } = await supabase.auth.getSession();
       fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({ clientId, email: pendingEmail || profile?.email, planKey: pendingPlan, billingInterval: pendingBilling || 'monthly', installType: pendingInstall }),
       })
       .then(r => r.json())

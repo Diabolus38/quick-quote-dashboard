@@ -54,9 +54,10 @@ export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendP
                 if (plan.planKey === 'enterprise') { sendPlanEmail(plan.name); return; }
                 setRedirectingPlan(plan.planKey);
                 try {
+                  const { data: { session } } = await supabase.auth.getSession();
                   const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
                     body: JSON.stringify({ clientId, email: profile?.email, planKey: plan.planKey, billingInterval: 'month', installType: installPreference || 'none' }),
                   });
                   const data = await res.json();

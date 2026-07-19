@@ -106,9 +106,10 @@ export default function ClientOverview() {
     if (clientPlan !== 'free_trial') {
       setCheckoutLoading(true);
       try {
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch('https://estimator-widget-production.up.railway.app/create-checkout-session', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({
             clientId: profile.client_id,
             email: profile.email,
