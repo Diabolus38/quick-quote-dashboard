@@ -1363,8 +1363,8 @@ function SubscriptionSection() {
 
   const PLAN_ORDER = ['starter', 'scale'];
   const UPGRADE_PLAN_OPTIONS = [
-    { key: 'starter', label: 'Starter', monthly: '$49.99', yearly: '$499.90' },
-    { key: 'scale',   label: 'Scale',   monthly: '$379',   yearly: '$3,790'  },
+    { key: 'starter', label: 'Starter', monthly: '$49.99', yearly: '$539.89'   },
+    { key: 'scale',   label: 'Scale',   monthly: '$379',   yearly: '$3,865.80' },
   ];
   const planIdx = PLAN_ORDER.indexOf(plan);
   const upgradeOptions = UPGRADE_PLAN_OPTIONS.filter(p => planIdx < 0 || PLAN_ORDER.indexOf(p.key) > planIdx);
