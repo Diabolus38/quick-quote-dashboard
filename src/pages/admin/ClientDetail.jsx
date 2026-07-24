@@ -26,9 +26,8 @@ const STATUS_BADGE = {
 };
 
 const PLAN_STYLE = {
-  scale:   { bg: '#ecfccb', color: '#3f6212'  },
-  growth:  { bg: '#ede9fe', color: '#7c3aed'  },
-  starter: { bg: '#dbeafe', color: '#1d4ed8'  },
+  scale:   { bg: '#ecfccb', color: '#3f6212' },
+  starter: { bg: '#dbeafe', color: '#1d4ed8' },
 };
 
 const PLAN_LIMIT = PLAN_LIMITS;
@@ -60,7 +59,7 @@ function InfoRow({ label, children, last }) {
 }
 
 function UsageBarDetail({ count, plan }) {
-  if (plan === 'scale') {
+  if (plan === 'starter' || plan === 'enterprise' || plan === 'free_trial') {
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -73,7 +72,7 @@ function UsageBarDetail({ count, plan }) {
       </div>
     );
   }
-  const limit = PLAN_LIMIT[plan] || 30;
+  const limit = PLAN_LIMIT[plan] || 100;
   const pct   = Math.min(Math.round((count / limit) * 100), 100);
   const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
   return (
@@ -288,12 +287,12 @@ export default function ClientDetail() {
   const avgPrice = leads.length > 0
     ? Math.round(leads.reduce((s, l) => s + (Number(l.estimated_price) || 0), 0) / leads.length)
     : null;
-  const limit = client.plan === 'scale' ? '∞ Unlimited' : (PLAN_LIMIT[client.plan] || 30);
+  const limit = (client.plan === 'starter' || client.plan === 'enterprise' || client.plan === 'free_trial') ? '∞ Unlimited' : (PLAN_LIMIT[client.plan] || 100);
   const embedCode = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${id}"></script>`;
 
   const wonLeadsCount     = leads.filter(l => (l.status || '').toLowerCase().replace(/\s+/g,'_') === 'closed_won').length;
   const conversionRate    = leads.length > 0 ? (wonLeadsCount / leads.length) * 100 : 0;
-  const planLimitNum      = PLAN_LIMIT[client.plan] ?? 30;
+  const planLimitNum      = PLAN_LIMIT[client.plan] ?? 100;
   const usagePct          = planLimitNum === Infinity ? 0 : (leads.length / planLimitNum);
   let healthScore = 0;
   if (thisMonthLeads.length > 0) healthScore += 30;
@@ -619,9 +618,8 @@ export default function ClientDetail() {
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '6px', fontFamily: FONT }}>Change Plan</label>
                 <select value={changePlan} onChange={e => setChangePlan(e.target.value)}
                   style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: '10px', padding: '10px 14px', fontSize: '13.5px', fontFamily: FONT, outline: 'none', backgroundColor: '#fff', color: '#0d1117', marginBottom: '8px' }}>
-                  <option value="starter">Starter, {PLAN_FEES.starter.toLocaleString()} kr/mo</option>
-                  <option value="growth">Growth, {PLAN_FEES.growth.toLocaleString()} kr/mo</option>
-                  <option value="scale">Scale, {PLAN_FEES.scale.toLocaleString()} kr/mo</option>
+                  <option value="starter">Starter, $49.99/mo</option>
+                  <option value="scale">Scale, $379/mo</option>
                 </select>
                 <button type="button" onClick={handleSavePlan}
                   style={{ width: '100%', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 0', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>

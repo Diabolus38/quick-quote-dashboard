@@ -118,7 +118,7 @@ export default function AdminOverview() {
   const thisMonth  = now.getMonth();
   const thisYear   = now.getFullYear();
 
-  const { starterCount, growthCount, scaleCount } = getPlanCounts(clients);
+  const { starterCount, scaleCount } = getPlanCounts(clients);
   const mrr = calculateMRR(clients);
 
   const mrrGrowth = clients.filter(c => {
@@ -143,8 +143,7 @@ export default function AdminOverview() {
 
   const clientsNearLimit = clients.filter(c => {
     const count = leadCountPerClient[c.id] || 0;
-    if (c.plan === 'starter') return count >= 24;
-    if (c.plan === 'growth')  return count >= 60;
+    if (c.plan === 'scale') return count >= 90;
     return false;
   });
 
@@ -152,7 +151,7 @@ export default function AdminOverview() {
   clients.forEach((c, i) => { clientMap[c.id] = { name: c.name, paletteIdx: i % avatarPalette.length }; });
 
   const recentLeads = leads.slice(0, 8);
-  const maxPlan     = Math.max(starterCount, growthCount, scaleCount, 1);
+  const maxPlan     = Math.max(starterCount, scaleCount, 1);
 
   const PLAN_FEE_OV = PLAN_FEES;
   const conversionRatePerClient = {};
@@ -269,7 +268,7 @@ export default function AdminOverview() {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {clientsNearLimit.map(c => {
-                  const limit = c.plan === 'growth' ? 75 : 30;
+                  const limit = 100;
                   const count = leadCountPerClient[c.id] || 0;
                   return (
                     <span key={c.id} style={{ fontSize: '12px', color: '#92400e', backgroundColor: 'rgba(251,191,36,0.25)', borderRadius: '6px', padding: '2px 10px', fontWeight: '500' }}>
@@ -353,7 +352,6 @@ export default function AdminOverview() {
 
             {[
               { label: 'Starter', count: starterCount, sub: `× $${PLAN_FEES.starter}/mo`, fill: '#1d4ed8', bg: '#dbeafe' },
-              { label: 'Growth',  count: growthCount,  sub: `× $${PLAN_FEES.growth}/mo`,  fill: '#7c3aed', bg: '#ede9fe' },
               { label: 'Scale',   count: scaleCount,   sub: `× $${PLAN_FEES.scale}/mo`,   fill: LIME,      bg: '#ecfccb' },
             ].map(row => (
               <div key={row.label} style={{ marginBottom: '16px' }}>

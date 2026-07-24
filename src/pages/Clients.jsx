@@ -42,10 +42,10 @@ function getInitials(name) {
 }
 
 function UsageBar({ count, plan }) {
-  if (plan === 'scale') {
+  if (plan === 'starter' || plan === 'enterprise' || plan === 'free_trial') {
     return <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>;
   }
-  const limit = plan === 'growth' ? 75 : 30;
+  const limit = 100;
   const pct   = Math.min(Math.round((count / limit) * 100), 100);
   const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
   return (
@@ -99,9 +99,8 @@ function ClientModal({ title, initial, onClose, onSave }) {
         <div style={{ marginBottom: '28px' }}>
           <label style={LBL}>Plan</label>
           <select value={plan} onChange={e => setPlan(e.target.value)} style={{ ...INP, cursor: 'pointer' }}>
-            <option value="starter">Starter, 1,400 kr/mo</option>
-            <option value="growth">Growth, 3,000 kr/mo</option>
-            <option value="scale">Scale, 6,000 kr/mo</option>
+            <option value="starter">Starter, $49.99/mo</option>
+            <option value="scale">Scale, $379/mo</option>
           </select>
         </div>
 
@@ -353,7 +352,7 @@ export default function Clients() {
 
           {/* Plan filter */}
           <div style={{ display: 'flex', gap: '6px' }}>
-            {['All','Starter','Growth','Scale'].map(p => (
+            {['All','Starter','Scale'].map(p => (
               <button key={p} type="button" onClick={() => setPlanFilter(p)}
                 style={{ border: planFilter === p ? 'none' : '1px solid #e8ede8', backgroundColor: planFilter === p ? PRIMARY : '#fff', color: planFilter === p ? '#fff' : '#4b5563', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: planFilter === p ? '600' : '500', cursor: 'pointer', fontFamily: FONT }}>
                 {p}
@@ -497,10 +496,10 @@ export default function Clients() {
 
                     {/* Usage */}
                     <td style={{ padding: '14px 20px' }}>
-                      {client.plan === 'scale' ? (
+                      {(client.plan === 'starter' || client.plan === 'enterprise' || client.plan === 'free_trial') ? (
                         <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>
                       ) : (() => {
-                        const limit = client.plan === 'growth' ? 75 : 30;
+                        const limit = 100;
                         const pct   = Math.min(Math.round((count / limit) * 100), 100);
                         const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
                         return (

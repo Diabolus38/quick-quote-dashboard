@@ -23,7 +23,6 @@ const OVERAGE_RATE = OVERAGE_RATES;
 
 const PLAN_BADGE = {
   starter: { bg: '#f3f4f6', color: '#374151' },
-  growth:  { bg: '#ede9fe', color: '#7c3aed' },
   scale:   { bg: '#ecfccb', color: '#3f6212' },
 };
 

@@ -63,10 +63,10 @@ function avatarBg(id) {
 /* ── Usage Bar ───────────────────────────────────────────────── */
 
 function UsageBar({ count, plan }) {
-  if (plan === 'scale') {
+  if (plan === 'starter' || plan === 'enterprise' || plan === 'free_trial') {
     return <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>;
   }
-  const limit = plan === 'growth' ? 75 : 30;
+  const limit = 100;
   const pct   = Math.min(Math.round((count / limit) * 100), 100);
   const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
   return (
@@ -156,9 +156,8 @@ function AddClientModal({ onClose, onSaved }) {
         <div style={{ marginBottom: '28px' }}>
           <label style={lbl}>Plan</label>
           <select value={plan} onChange={e => setPlan(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-            <option value="starter">Starter, {PLAN_FEES.starter.toLocaleString()} kr/mo</option>
-            <option value="growth">Growth, {PLAN_FEES.growth.toLocaleString()} kr/mo</option>
-            <option value="scale">Scale, {PLAN_FEES.scale.toLocaleString()} kr/mo</option>
+            <option value="starter">Starter, $49.99/mo</option>
+            <option value="scale">Scale, $379/mo</option>
           </select>
         </div>
 
@@ -249,14 +248,13 @@ export default function SuperAdmin() {
   const leadsToday    = leads.filter(l => new Date(l.created_at).toDateString() === today).length;
   const thisMonthNew  = clients.filter(c => { const d = new Date(c.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
 
-  const { starterCount, growthCount, scaleCount } = getPlanCounts(clients);
+  const { starterCount, scaleCount } = getPlanCounts(clients);
   const mrr = calculateMRR(clients);
-  const maxPlan = Math.max(starterCount, growthCount, scaleCount, 1);
+  const maxPlan = Math.max(starterCount, scaleCount, 1);
 
   const startOfThisMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
   const prevClients       = clients.filter(c => new Date(c.created_at) < startOfThisMonth);
   const lastMonthMrr      = prevClients.filter(c => c.plan === 'starter').length * PLAN_FEES.starter
-                          + prevClients.filter(c => c.plan === 'growth').length  * PLAN_FEES.growth
                           + prevClients.filter(c => c.plan === 'scale').length   * PLAN_FEES.scale;
   const mrrDiff = mrr - lastMonthMrr;
 
@@ -276,7 +274,7 @@ export default function SuperAdmin() {
     }
   });
 
-  const PLAN_LIMIT_SA = { starter: Infinity, growth: 30, scale: 75 };
+  const PLAN_LIMIT_SA = { starter: Infinity, scale: 100 };
   const systemAlerts = [];
   clients.forEach(c => {
     const planLimit = PLAN_LIMIT_SA[c.plan] || 30;
@@ -332,8 +330,8 @@ export default function SuperAdmin() {
     const leadHeaders = ['ID','Client ID','Client Name','Customer Name','Email','Phone','Municipality','Estimated Price','Status','Language','Created At'];
     const leadRows = leads.map(l => [l.id, l.client_id || '', clientMap[l.client_id] || '', l.name || '', l.email || '', l.phone || '', l.municipality || '', l.estimated_price ?? '', l.status || '', l.language || '', l.created_at || '']);
     const PLAN_FEE_EX = PLAN_FEES;
-    const PLAN_LIMIT_EX = { starter: Infinity, growth: 30, scale: 75 };
-    const OVERAGE_RATE_EX = { starter: 0, growth: 25, scale: 18 };
+    const PLAN_LIMIT_EX = { starter: Infinity, scale: 100 };
+    const OVERAGE_RATE_EX = { starter: 0, scale: 129 };
     const now2 = new Date();
     const monthLeads = {};
     leads.forEach(l => {
@@ -371,7 +369,6 @@ export default function SuperAdmin() {
 
   const planBadge = {
     starter: { bg: '#dbeafe', color: '#1d4ed8' },
-    growth:  { bg: '#ede9fe', color: '#7c3aed' },
     scale:   { bg: '#ecfccb', color: '#3f6212' },
   };
 
@@ -524,7 +521,7 @@ export default function SuperAdmin() {
 
                           {/* Revenue */}
                           <td style={{ ...TD, fontWeight: '700', color: '#0d1117' }}>
-                            {(PLAN_FEES[client.plan] || PLAN_FEES.starter).toLocaleString()} kr/mo
+                            ${(PLAN_FEES[client.plan] || PLAN_FEES.starter)}/mo
                           </td>
 
                           {/* Estimates Used */}
@@ -628,9 +625,8 @@ export default function SuperAdmin() {
                 <p style={{ margin: '0 0 20px', fontSize: '15px', fontWeight: '600', color: '#0d1117' }}>Plan Distribution</p>
 
                 {[
-                  { label: 'Starter', count: starterCount, fill: LIME,    sub: `${PLAN_FEES.starter.toLocaleString()} kr/mo each`  },
-                  { label: 'Growth',  count: growthCount,  fill: PRIMARY, sub: `${PLAN_FEES.growth.toLocaleString()} kr/mo each`   },
-                  { label: 'Scale',   count: scaleCount,   fill: DARK,    sub: `${PLAN_FEES.scale.toLocaleString()} kr/mo each`    },
+                  { label: 'Starter', count: starterCount, fill: LIME, sub: `$${PLAN_FEES.starter}/mo each` },
+                  { label: 'Scale',   count: scaleCount,   fill: DARK, sub: `$${PLAN_FEES.scale}/mo each`   },
                 ].map(row => (
                   <div key={row.label} style={{ marginBottom: '18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>
