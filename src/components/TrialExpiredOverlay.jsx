@@ -35,8 +35,7 @@ export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendP
       {/* Plan cards */}
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
         {[
-          { name: 'Growth',     planKey: 'growth',     price: '3,000 kr', sub: '/mo',       features: ['30 estimates/month', 'Lead management', 'Export CSV', 'Municipality settings'],  btnBg: '#166534', btnColor: '#fff',    btnLabel: 'Choose Plan' },
-          { name: 'Scale',      planKey: 'scale',      price: '6,000 kr', sub: '/mo',       features: ['75 estimates/month', 'Full branding', 'PDF customization', 'Priority support'],   btnBg: '#a3e635', btnColor: '#0d1f12', btnLabel: 'Choose Plan' },
+          { name: 'Scale',      planKey: 'scale',      price: '$379', sub: '/mo',       features: ['100 estimates/month', 'Full dashboard access', 'Branding & PDF customization', 'Email settings', 'CSV export'],   btnBg: '#a3e635', btnColor: '#0d1f12', btnLabel: 'Choose Plan' },
           { name: 'Enterprise', planKey: 'enterprise', price: 'Custom', sub: ' pricing',  features: ['Unlimited estimates', 'White-label option', 'API access', 'Dedicated support'],  btnBg: '#0d1f12', btnColor: '#fff',    btnLabel: 'Contact Us'  },
         ].map(plan => (
           <div key={plan.name} style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', width: '220px' }}>

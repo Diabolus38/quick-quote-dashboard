@@ -1281,16 +1281,14 @@ function ConfigStatusCard() {
 /* ── 7. Subscription ─────────────────────────────────────────── */
 
 const PLAN_FEATURES = {
-  starter: ['Unlimited estimates', 'Automatic PDF generation', 'Lead email notifications', 'Powered by QuickQuote360 badge'],
-  growth:  ['Everything in Starter', '30 estimates/month', 'Question editor', 'Municipality editor', 'Leads dashboard + CSV export', 'Logo upload'],
-  scale:   ['Everything in Growth', '75 estimates/month', 'Full pricing editor', 'PDF content editor', 'Brand colors', 'Email settings', 'Lead status tracking', 'ROT deduction'],
+  starter: ['Unlimited estimates', 'Automatic PDF generation', 'Lead email notifications', 'Leads dashboard', 'Powered by QuickQuote360 badge'],
+  scale:   ['Everything in Starter', '100 estimates/month', 'Question editor', 'Municipality editor', 'CSV export', 'Full pricing editor', 'PDF content editor', 'Brand colors', 'Logo upload', 'Email settings', 'Lead status tracking', 'ROT deduction'],
 };
 
-const PLAN_PRICES = { starter: '1,400 kr/month', growth: '3,000 kr/month', scale: '6,000 kr/month', free_trial: 'Free (14-day trial)', enterprise: 'Custom' };
+const PLAN_PRICES = { starter: '$49.99/month', scale: '$379/month', free_trial: 'Free (14-day trial)', enterprise: 'Custom' };
 
 const PLAN_BADGE = {
   starter: { bg: '#f3f4f6', color: '#374151' },
-  growth:  { bg: '#dbeafe', color: '#1d4ed8' },
   scale:   { bg: '#dcfce7', color: '#166534' },
 };
 
@@ -1363,11 +1361,10 @@ function SubscriptionSection() {
     }
   }
 
-  const PLAN_ORDER = ['starter', 'growth', 'scale'];
+  const PLAN_ORDER = ['starter', 'scale'];
   const UPGRADE_PLAN_OPTIONS = [
-    { key: 'starter', label: 'Starter', monthly: '1,400kr', yearly: '14,000kr' },
-    { key: 'growth',  label: 'Growth',  monthly: '3,000kr', yearly: '30,000kr' },
-    { key: 'scale',   label: 'Scale',   monthly: '6,000kr', yearly: '60,000kr' },
+    { key: 'starter', label: 'Starter', monthly: '$49.99', yearly: '$499.90' },
+    { key: 'scale',   label: 'Scale',   monthly: '$379',   yearly: '$3,790'  },
   ];
   const planIdx = PLAN_ORDER.indexOf(plan);
   const upgradeOptions = UPGRADE_PLAN_OPTIONS.filter(p => planIdx < 0 || PLAN_ORDER.indexOf(p.key) > planIdx);

@@ -7,10 +7,9 @@ const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
 
 const PLAN_CARDS = [
-  { key: 'free_trial', name: 'Free Trial', monthlyPrice: 'Free',         yearlyPrice: 'Free',         subtext: 'Full Scale features, no credit card required' },
-  { key: 'starter',    name: 'Starter',    monthlyPrice: '1,400 kr/mo',  yearlyPrice: '14,000 kr/yr', subtext: 'No dashboard access, unlimited estimates'     },
-  { key: 'growth',     name: 'Growth',     monthlyPrice: '3,000 kr/mo',  yearlyPrice: '30,000 kr/yr', subtext: 'Full dashboard, 30 estimates/mo'              },
-  { key: 'scale',      name: 'Scale',      monthlyPrice: '6,000 kr/mo',  yearlyPrice: '60,000 kr/yr', subtext: 'Everything, 75 estimates/mo'                  },
+  { key: 'free_trial', name: 'Free Trial', monthlyPrice: 'Free',      yearlyPrice: 'Free',       subtext: 'Full Scale features, no credit card required' },
+  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$499.90/yr', subtext: 'Tool + leads dashboard, unlimited estimates'   },
+  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,790/yr',  subtext: 'Full dashboard access, 100 estimates/mo'       },
 ];
 
 export default function SignupPage() {
@@ -24,7 +23,7 @@ export default function SignupPage() {
   const [error,           setError]           = useState('');
   const [loading,         setLoading]         = useState(false);
   const [emailSent,       setEmailSent]       = useState(false);
-  const [selectedPlan,    setSelectedPlan]    = useState('growth');
+  const [selectedPlan,    setSelectedPlan]    = useState('scale');
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [redirecting,     setRedirecting]     = useState(false);
   const [installStep,     setInstallStep]     = useState(false);
@@ -33,7 +32,7 @@ export default function SignupPage() {
   useEffect(() => {
     const params    = new URLSearchParams(window.location.search);
     const planParam = params.get('plan');
-    if (['starter', 'growth', 'scale', 'free_trial'].includes(planParam)) setSelectedPlan(planParam);
+    if (['starter', 'scale', 'free_trial'].includes(planParam)) setSelectedPlan(planParam);
   }, []);
 
   async function handleSubmit() {

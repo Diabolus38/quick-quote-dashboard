@@ -38,15 +38,6 @@ export default function SignupConfirm() {
     const pendingEmail   = localStorage.getItem('qq360_pending_email');
     const pendingInstall = localStorage.getItem('qq360_pending_install') || 'none';
 
-    // Free trial — go straight to dashboard
-    if (!pendingPlan || pendingPlan === 'free_trial') {
-      localStorage.removeItem('qq360_pending_plan');
-      localStorage.removeItem('qq360_pending_billing');
-      localStorage.removeItem('qq360_pending_email');
-      window.location.href = '/client';
-      return;
-    }
-
     // Get clientId from AuthContext profile — this is set by ensureNewUserData
     // which AuthContext already ran. We never need to poll Supabase ourselves.
     const clientId = profile?.client_id;
@@ -68,11 +59,27 @@ export default function SignupConfirm() {
     }
 
     (async () => {
+      // Always verify the ACTUAL plan in Supabase — never trust localStorage alone.
+      // A client whose plan was silently changed server-side (e.g. free-trial abuse
+      // blocked by the repeat-trial trigger) must never be waved into the dashboard
+      // on a paid plan without having actually paid.
       const { data: clientRow } = await supabase
         .from('clients')
-        .select('stripe_subscription_id')
+        .select('plan, stripe_subscription_id')
         .eq('id', clientId)
         .maybeSingle();
+
+      const actualPlan = clientRow?.plan;
+
+      // Free trial — go straight to dashboard, but only if the DATABASE says free_trial.
+      if (actualPlan === 'free_trial') {
+        localStorage.removeItem('qq360_pending_plan');
+        localStorage.removeItem('qq360_pending_billing');
+        localStorage.removeItem('qq360_pending_email');
+        localStorage.removeItem('qq360_pending_install');
+        window.location.href = '/client';
+        return;
+      }
 
       // stripe_subscription_id is set by the Stripe webhook after payment.
       // If it exists, the client already paid — never send them to Stripe again.
@@ -85,7 +92,8 @@ export default function SignupConfirm() {
         return;
       }
 
-      // We have the correct client_id from AuthContext — send to Stripe
+      // Actual plan is paid and unpaid — send to Stripe using the real DB plan,
+      // never whatever localStorage happens to still say.
       setStatus('Redirecting to payment...');
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -95,7 +103,7 @@ export default function SignupConfirm() {
         body: JSON.stringify({
           clientId:        clientId,
           email:           pendingEmail || profile?.email,
-          planKey:         pendingPlan,
+          planKey:         actualPlan || pendingPlan,
           billingInterval: pendingBilling || 'monthly',
           installType:     pendingInstall,
         }),
