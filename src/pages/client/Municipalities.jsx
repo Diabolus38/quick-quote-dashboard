@@ -449,7 +449,7 @@ export default function Municipalities() {
 
   if (plan === 'starter') return (
     <ClientLayout title="Municipalities">
-      <UpgradeLock feature="Municipality Editor" requiredPlan="growth" />
+      <UpgradeLock feature="Municipality Editor" requiredPlan="scale" />
     </ClientLayout>
   );
 

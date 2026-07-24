@@ -525,7 +525,7 @@ export default function PdfContent() {
 
   if (plan === 'starter') return (
     <ClientLayout title="PDF Content">
-      <UpgradeLock feature="PDF Content Editor" requiredPlan="growth" />
+      <UpgradeLock feature="PDF Content Editor" requiredPlan="scale" />
     </ClientLayout>
   );
 

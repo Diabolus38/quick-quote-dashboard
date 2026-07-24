@@ -521,7 +521,7 @@ export default function QuestionEditor() {
   if (plan === 'starter') {
     return (
       <ClientLayout title="Questions">
-        <UpgradeLock feature="Question Editor" requiredPlan="growth" />
+        <UpgradeLock feature="Question Editor" requiredPlan="scale" />
       </ClientLayout>
     );
   }

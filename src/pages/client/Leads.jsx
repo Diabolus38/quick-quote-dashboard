@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
+import useClientPlan from '../../hooks/useClientPlan';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -51,6 +52,7 @@ const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: 'none',
 export default function Leads() {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { plan } = useClientPlan();
 
   const [leads,        setLeads]        = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -60,6 +62,7 @@ export default function Leads() {
   const [hoveredRow,   setHoveredRow]   = useState(null);
   const [currentPage,  setCurrentPage]  = useState(1);
   const [showToast,    setShowToast]    = useState(false);
+  const [csvLockMsg,   setCsvLockMsg]   = useState(false);
   const [trialExpired,      setTrialExpired]      = useState(false);
   const [planEmailSent,     setPlanEmailSent]     = useState(false);
   const [installPreference, setInstallPreference] = useState(null);
@@ -149,6 +152,11 @@ export default function Leads() {
   }
 
   function handleExportCSV() {
+    if (plan === 'starter') {
+      setCsvLockMsg(true);
+      setTimeout(() => setCsvLockMsg(false), 3000);
+      return;
+    }
     if (leads.length === 0) return;
     const headers = ['Date','Name','Email','Phone','Municipality','System Type','Estimated Price','Status'];
     const rows = leads.map(l => [formatDate(l.created_at), l.name||'', l.email||'', l.phone||'', l.municipality||'', l.answers?.wastewaterType||'', l.estimated_price??'', l.status||'']);
@@ -255,9 +263,10 @@ export default function Leads() {
               </div>
             )}
           </div>
-          <button type="button" onClick={handleExportCSV} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: '#0d1117', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
-            Export CSV
+          <button type="button" onClick={handleExportCSV} style={{ border: '1px solid #e8ede8', backgroundColor: '#fff', color: plan === 'starter' ? '#9ca3af' : '#0d1117', borderRadius: '10px', padding: '10px 20px', fontSize: '13.5px', fontWeight: '500', cursor: 'pointer', fontFamily: FONT }}>
+            {plan === 'starter' ? '🔒 Export CSV' : 'Export CSV'}
           </button>
+          {csvLockMsg && <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '8px', alignSelf: 'center' }}>Upgrade to Scale to export CSV.</span>}
           </div>
         </div>
 

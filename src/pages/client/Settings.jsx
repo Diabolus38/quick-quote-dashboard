@@ -248,7 +248,7 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
   if (loading || planLoading) return <SettingsSkeleton />;
 
-  if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="growth" />;
+  if (plan === 'starter') return <UpgradeLock feature="Branding" requiredPlan="scale" />;
 
   function currentBranding() {
     return { company_name: companyName, widget_company_name: widgetCompanyName, widget_subtitle: widgetSubtitle, primary_color: primaryColor, logo_url: logoUrl, company_phone: companyPhone, company_address: companyAddress, privacy_url: privacyUrl, widget_headline: widgetHeadline, widget_subtext: widgetSubtext, answer_selected_color: answerSelectedColor, bubble_text: bubbleText, bubble_bg_color: bubbleBgColor, bubble_text_color: bubbleTextColor, bubble_icon_url: bubbleIconUrl, show_powered_by: showPoweredBy };
@@ -619,7 +619,7 @@ function EmailSection({ clientId, setHasUnsaved, setSaveRef }) {
   useEffect(() => { setSaveRef?.(handleSave); });
 
   if (planLoading) return <SettingsSkeleton />;
-  if (plan !== 'scale') return <UpgradeLock feature="Email Settings" requiredPlan="scale" />;
+  if (!['scale', 'enterprise', 'free_trial'].includes(plan)) return <UpgradeLock feature="Email Settings" requiredPlan="scale" />;
   if (loading) return <SettingsSkeleton />;
 
   async function handleSave() {
@@ -918,7 +918,7 @@ function EmbedCodeSection({ clientId }) {
     </div>
   );
 
-  if (plan === 'starter') return <UpgradeLock feature="Embed Code" requiredPlan="growth" />;
+  if (plan === 'starter') return <UpgradeLock feature="Embed Code" requiredPlan="scale" />;
 
   return (
     <>
