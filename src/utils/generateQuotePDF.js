@@ -36,7 +36,7 @@ export default async function generateQuotePDF({ lead, client, settings }) {
   const contentW = pageW - margin * 2
   let y = 0
 
-  const plan = settings.plan || 'growth';
+  const plan = settings.plan || 'starter';
   const canBrand = ['scale', 'enterprise', 'free_trial'].includes(plan);
   const primaryHex = canBrand
     ? (settings.pdf_content?.pdf_primary_color || settings.branding?.primary_color || '#166534')
