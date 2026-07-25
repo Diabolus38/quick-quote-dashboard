@@ -112,8 +112,8 @@ export default function SignupPage() {
               <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#9ca3af' }}>How would you like your estimator widget installed on your website?</p>
 
               {[
-                { value: 'self',     label: 'Self-install',     price: '2 490 kr one-time', desc: 'I will install it myself. You will receive step-by-step instructions.' },
-                { value: 'assisted', label: 'Assisted install', price: '9 990 kr one-time', desc: 'Our team installs it for you. We contact you within 24 hours to schedule.' },
+                { value: 'self',     label: 'Self-install',     price: '$249 one-time', desc: 'I will install it myself. You will receive step-by-step instructions.' },
+                { value: 'assisted', label: 'Assisted install', price: '$999 one-time', desc: 'Our team installs it for you. We contact you within 24 hours to schedule.' },
                 { value: 'none',     label: 'Skip for now',     price: '',                  desc: 'I will decide later. You can always install from your dashboard.' },
               ].map(opt => (
                 <div key={opt.value} onClick={() => setInstallChoice(opt.value)}

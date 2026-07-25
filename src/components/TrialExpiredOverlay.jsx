@@ -81,8 +81,8 @@ export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendP
           <p style={{ margin: '0 0 12px', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Based on your selection during signup</p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {[
-              { key: 'self',     label: 'Self-Install',     sub: '2,490 kr one-time' },
-              { key: 'assisted', label: 'Assisted Install', sub: '9,990 kr one-time' },
+              { key: 'self',     label: 'Self-Install',     sub: '$249 one-time' },
+              { key: 'assisted', label: 'Assisted Install', sub: '$999 one-time' },
             ].map(ic => (
               <div key={ic.key} onClick={() => setLocalInstallChoice(ic.key)}
                 style={{ border: `2px solid ${localInstallChoice === ic.key ? '#ffffff' : 'rgba(255,255,255,0.2)'}`, borderRadius: '12px', padding: '12px 24px', cursor: 'pointer', backgroundColor: localInstallChoice === ic.key ? 'rgba(255,255,255,0.08)' : 'transparent', minWidth: '150px', textAlign: 'center' }}>

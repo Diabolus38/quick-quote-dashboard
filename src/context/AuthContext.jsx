@@ -98,7 +98,7 @@ export default function AuthProvider({ children }) {
   // Creates the profile + client rows for a first-time user, then returns a
   // freshly-fetched profile. Called only when fetchProfile returns null.
   async function ensureNewUserData(session) {
-    const selectedPlan = session.user.user_metadata?.selected_plan || 'growth';
+    const selectedPlan = session.user.user_metadata?.selected_plan || 'starter';
     const fullName     = session.user.user_metadata?.full_name || '';
     const userEmail    = session.user.email;
 
