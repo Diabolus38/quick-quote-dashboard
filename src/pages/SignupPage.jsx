@@ -8,8 +8,8 @@ const PRIMARY = '#166534';
 
 const PLAN_CARDS = [
   { key: 'free_trial', name: 'Free Trial', monthlyPrice: 'Free',      yearlyPrice: 'Free',       subtext: 'Full Scale features, no credit card required' },
-  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$499.90/yr', subtext: 'Tool + leads dashboard, unlimited estimates'   },
-  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,790/yr',  subtext: 'Full dashboard access, 100 estimates/mo'       },
+  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$539.89/yr', subtext: 'Tool + leads dashboard, unlimited estimates'   },
+  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,865.80/yr', subtext: 'Full dashboard access, 100 estimates/mo'       },
 ];
 
 export default function SignupPage() {
