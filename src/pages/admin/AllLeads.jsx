@@ -44,14 +44,12 @@ function getInitials(name) {
 function calcLeadScore(lead) {
   const a = lead.answers || {};
   let score = 0;
-  if (a.projectType === 'new_installation') score += 2;
-  if (a.wastewaterType === 'wc_bdt' || a.wastewaterType === 'wc') score += 2;
-  if (Number(a.households) >= 2) score += 1;
-  if (lead.company) score += 1;
-  if (lead.phone) score += 1;
+  if (lead.company) score += 2;
+  if (lead.phone) score += 2;
   const price = Number(lead.estimated_price) || 0;
-  if (price > 100000) score += 2;
-  else if (price > 50000) score += 1;
+  if (price > 100000) score += 4;
+  else if (price > 50000) score += 2;
+  if (Object.keys(a).length >= 3) score += 2;
   return score;
 }
 

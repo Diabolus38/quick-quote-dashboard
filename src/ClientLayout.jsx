@@ -104,33 +104,11 @@ export default function ClientLayout({ title, subtitle, children }) {
     if (!profile?.client_id) return;
     const clientId = profile.client_id;
     const channel = supabase
-      .channel('new-leads-notify-' + clientId + '-' + Date.now())
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads', filter: 'client_id=eq.' + clientId }, async (payload) => {
-        const { data: inserted } = await supabase.from('notifications').insert({
-          client_id: clientId,
-          type: 'new_lead',
-          title: 'New lead received',
-          message: (payload.new.name || 'A visitor') + ' requested a quote' + (payload.new.municipality ? ' in ' + payload.new.municipality : '') + '.',
-          read: false,
-        }).select('*').maybeSingle();
-        if (inserted) setNotifications(prev => [inserted, ...prev]);
-
-        const newCount    = leadsThisMonthRef.current + 1;
-        setLeadsThisMonth(newCount);
-        const remaining   = Math.max(0, planLimitRef.current - newCount);
-        for (const threshold of [10, 5, 3, 0]) {
-          const key = 'qq360_notif_' + clientId + '_' + threshold;
-          if (remaining === threshold && !localStorage.getItem(key)) {
-            localStorage.setItem(key, '1');
-            const title = threshold === 0 ? 'Estimate limit reached' : 'Running low on estimates';
-            const msg   = threshold === 0
-              ? 'You have reached your monthly estimate limit.'
-              : 'You have ' + threshold + ' estimate' + (threshold === 1 ? '' : 's') + ' remaining this month.';
-            const { data: tw } = await supabase.from('notifications').insert({
-              client_id: clientId, type: 'usage_warning', title, message: msg, read: false,
-            }).select('*').maybeSingle();
-            if (tw) setNotifications(prev => [tw, ...prev]);
-          }
+      .channel('new-notifications-' + clientId + '-' + Date.now())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'client_id=eq.' + clientId }, (payload) => {
+        setNotifications(prev => [payload.new, ...prev]);
+        if (payload.new.type === 'new_lead') {
+          setLeadsThisMonth(prev => prev + 1);
         }
       })
       .subscribe();

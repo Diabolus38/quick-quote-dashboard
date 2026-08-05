@@ -60,14 +60,12 @@ const VALUE_LABELS = {
 function calcLeadScore(lead) {
   const a = lead.answers || {};
   let score = 0;
-  if (a.projectType === 'new_installation') score += 2;
-  if (a.wastewaterType === 'wc_bdt' || a.wastewaterType === 'wc') score += 2;
-  if (Number(a.households) >= 2) score += 1;
-  if (lead.company) score += 1;
-  if (lead.phone) score += 1;
+  if (lead.company) score += 2;
+  if (lead.phone) score += 2;
   const price = Number(lead.estimated_price) || 0;
-  if (price > 100000) score += 2;
-  else if (price > 50000) score += 1;
+  if (price > 100000) score += 4;
+  else if (price > 50000) score += 2;
+  if (Object.keys(a).length >= 3) score += 2;
   return score;
 }
 
@@ -428,21 +426,15 @@ export default function LeadDetail() {
               const answers = lead.answers || {};
               let score = 0;
               let breakdown = [];
-              if (answers.projectType === 'new_installation') { score += 2; breakdown.push({ label: 'New installation project', points: 2, earned: true }); }
-              else { breakdown.push({ label: 'New installation project', points: 2, earned: false }); }
-              if (['wc_bdt', 'wc'].includes(answers.wastewaterType)) { score += 2; breakdown.push({ label: 'Full wastewater system', points: 2, earned: true }); }
-              else { breakdown.push({ label: 'Full wastewater system', points: 2, earned: false }); }
-              if (Number(answers.households) >= 2) { score += 1; breakdown.push({ label: '2+ households', points: 1, earned: true }); }
-              else { breakdown.push({ label: '2+ households', points: 1, earned: false }); }
-              if (answers.existingSystem === 'no' || answers.existingSystem === 'none') { score += 1; breakdown.push({ label: 'No existing system', points: 1, earned: true }); }
-              else { breakdown.push({ label: 'No existing system', points: 1, earned: false }); }
-              if (lead.company) { score += 1; breakdown.push({ label: 'Has company name', points: 1, earned: true }); }
-              else { breakdown.push({ label: 'Has company name', points: 1, earned: false }); }
-              if (lead.phone) { score += 1; breakdown.push({ label: 'Phone number provided', points: 1, earned: true }); }
-              else { breakdown.push({ label: 'Phone number provided', points: 1, earned: false }); }
-              if (Number(lead.estimated_price) > 100000) { score += 2; breakdown.push({ label: 'Estimate over 100,000 kr', points: 2, earned: true }); }
-              else if (Number(lead.estimated_price) > 50000) { score += 1; breakdown.push({ label: 'Estimate over 50,000 kr', points: 1, earned: true }); }
-              else { breakdown.push({ label: 'High estimate value', points: 2, earned: false }); }
+              if (lead.company) { score += 2; breakdown.push({ label: 'Has company name', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'Has company name', points: 2, earned: false }); }
+              if (lead.phone) { score += 2; breakdown.push({ label: 'Phone number provided', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'Phone number provided', points: 2, earned: false }); }
+              if (Number(lead.estimated_price) > 100000) { score += 4; breakdown.push({ label: 'Estimate over 100,000 kr', points: 4, earned: true }); }
+              else if (Number(lead.estimated_price) > 50000) { score += 2; breakdown.push({ label: 'Estimate over 50,000 kr', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'High estimate value', points: 4, earned: false }); }
+              if (Object.keys(answers).length >= 3) { score += 2; breakdown.push({ label: 'Question form mostly completed', points: 2, earned: true }); }
+              else { breakdown.push({ label: 'Question form mostly completed', points: 2, earned: false }); }
               const maxScore = 10;
               const qualification = score >= 7 ? 'Hot' : score >= 4 ? 'Warm' : 'Cold';
               const qualColor = score >= 7 ? '#dc2626' : score >= 4 ? '#d97706' : '#6b7280';

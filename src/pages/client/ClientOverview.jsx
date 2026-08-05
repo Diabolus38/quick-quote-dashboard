@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
-import OnboardingBanner from '../../components/OnboardingBanner';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
@@ -270,8 +269,6 @@ export default function ClientOverview() {
         </div>
       )}
       <div style={{ fontFamily: FONT }}>
-
-        <OnboardingBanner />
 
         {/* Page header */}
         <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>

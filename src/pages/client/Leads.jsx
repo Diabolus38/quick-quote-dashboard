@@ -31,14 +31,11 @@ const COLUMNS = ['Date', 'Name', 'Email', 'Phone', 'Municipality', 'System Type'
 function getLeadScore(lead) {
   const a = lead.answers || {};
   let s = 0;
-  if (a.projectType === 'new_installation') s += 2;
-  if (['wc_bdt', 'wc'].includes(a.wastewaterType)) s += 2;
-  if (Number(a.households) >= 2) s += 1;
-  if (a.existingSystem === 'no' || a.existingSystem === 'none') s += 1;
-  if (lead.company) s += 1;
-  if (lead.phone) s += 1;
-  if (Number(lead.estimated_price) > 100000) s += 2;
-  else if (Number(lead.estimated_price) > 50000) s += 1;
+  if (lead.company) s += 2;
+  if (lead.phone) s += 2;
+  if (Number(lead.estimated_price) > 100000) s += 4;
+  else if (Number(lead.estimated_price) > 50000) s += 2;
+  if (Object.keys(a).length >= 3) s += 2;
   return s;
 }
 

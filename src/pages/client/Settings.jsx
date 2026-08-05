@@ -1041,6 +1041,93 @@ function EmbedCodeSection({ clientId }) {
 
 /* ── 5. Account ──────────────────────────────────────────────── */
 
+function NotificationsSection({ clientId, setHasUnsaved, setSaveRef }) {
+  const { profile } = useAuth();
+  const [notifEmail, setNotifEmail] = useState('');
+  const [evtNewLead, setEvtNewLead] = useState(true);
+  const [evtUsage,   setEvtUsage]   = useState(true);
+  const [evtAccount, setEvtAccount] = useState(true);
+  const [loading,    setLoading]    = useState(true);
+  const [saveMsg, flash] = useSaveMsg();
+  const _ll = useRef(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    supabase.from('client_settings').select('notification_settings').eq('client_id', clientId).maybeSingle()
+      .then(({ data }) => {
+        const ns = data?.notification_settings || {};
+        setNotifEmail(ns.email || profile?.email || '');
+        setEvtNewLead(ns.events?.new_lead !== false);
+        setEvtUsage(ns.events?.usage_warning !== false);
+        setEvtAccount(ns.events?.account_changes !== false);
+        setLoading(false);
+        setTimeout(() => { _ll.current = true; }, 50);
+      });
+  }, [clientId]);
+
+  useEffect(() => {
+    if (_ll.current) setHasUnsaved?.(true);
+  }, [notifEmail, evtNewLead, evtUsage, evtAccount]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSaveRef?.(handleSave); });
+
+  if (loading) return <SettingsSkeleton />;
+
+  async function handleSave() {
+    await supabase.from('client_settings').upsert(
+      { client_id: clientId, notification_settings: { email: notifEmail, events: { new_lead: evtNewLead, usage_warning: evtUsage, account_changes: evtAccount } } },
+      { onConflict: 'client_id' }
+    );
+    flash();
+    setHasUnsaved?.(false);
+  }
+
+  return (
+    <>
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Notifications</h2>
+        <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Choose what you get notified about and where.</p>
+      </div>
+
+      <div style={CARD}>
+        <FieldRow label="Notification Email">
+          <TextInput type="email" value={notifEmail} onChange={setNotifEmail} placeholder={profile?.email || 'you@example.com'} />
+        </FieldRow>
+        <p style={{ margin: '-8px 0 16px', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
+          Defaults to your login email. Alerts always also appear in the notification bell in the dashboard.
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #f4f6f4' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>New leads</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Email me when a new lead comes in</p>
+          </div>
+          <Toggle value={evtNewLead} onChange={setEvtNewLead} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #f4f6f4' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Usage warnings</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Email me when I'm close to my monthly estimate limit</p>
+          </div>
+          <Toggle value={evtUsage} onChange={setEvtUsage} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #f4f6f4' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Account changes</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Email me about plan upgrades, downgrades, cancellations, and billing issues</p>
+          </div>
+          <Toggle value={evtAccount} onChange={setEvtAccount} />
+        </div>
+      </div>
+
+      <SaveRow onClick={handleSave} msg={saveMsg} />
+    </>
+  );
+}
+
 function AccountSection({ setHasUnsaved, setSaveRef }) {
   const { profile } = useAuth();
   const [fullName,    setFullName]    = useState('');
@@ -1584,7 +1671,7 @@ function GetHelpSection() {
 
 /* ── Root ────────────────────────────────────────────────────── */
 
-const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Subscription', 'Get Help', 'Danger Zone'];
+const NAV_ITEMS = ['Branding', 'Email Settings', 'Languages', 'Embed Code', 'Account', 'Notifications', 'Subscription', 'Get Help', 'Danger Zone'];
 
 export default function ClientSettingsPage() {
   const { profile } = useAuth();
@@ -1685,6 +1772,7 @@ export default function ClientSettingsPage() {
           {activeSection === 'Languages'      && <LanguagesSection key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeSection === 'Embed Code'     && <EmbedCodeSection clientId={clientId} />}
           {activeSection === 'Account'        && <AccountSection setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
+          {activeSection === 'Notifications'  && <NotificationsSection key={clientId} clientId={clientId} setHasUnsaved={setHasUnsaved} setSaveRef={fn => { saveRef.current = fn; }} />}
           {activeSection === 'Subscription'   && <SubscriptionSection />}
           {activeSection === 'Get Help'       && <GetHelpSection />}
           {activeSection === 'Danger Zone'    && <DangerZoneSection />}
