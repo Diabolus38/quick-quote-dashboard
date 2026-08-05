@@ -57,18 +57,15 @@ You are responsible for all activity that occurs under your account.`,
     id: 'billing',
     num: '05',
     title: 'Subscription Plans and Billing',
-    body: `The Service is available on the following subscription plans (prices in SEK, excluding VAT):
+    body: `The Service is available on the following subscription plans (prices in USD, excluding applicable tax):
 
-Starter — 1,400 kr/month or 14,000 kr/year
-Includes unlimited estimates. No configuration options.
+Starter — $49.99/month or $539.89/year
+Includes unlimited estimates. Tool and leads dashboard access only.
 
-Growth — 3,000 kr/month or 30,000 kr/year
-Includes 30 estimates per month. Overage: 250 kr per additional estimate.
+Scale — $379/month or $3,865.80/year
+Includes 100 estimates per month. Overage: $129 per additional estimate. Full dashboard access and branding customisation.
 
-Scale — 6,000 kr/month or 60,000 kr/year
-Includes 75 estimates per month. Overage: 180 kr per additional estimate. Full branding customisation.
-
-All subscriptions are billed in advance via Stripe. By subscribing you authorise us to charge your payment method on a recurring basis. Applicable Swedish VAT will be added to all prices.`,
+All subscriptions are billed in advance via Stripe. By subscribing you authorise us to charge your payment method on a recurring basis. Applicable tax will be added to all prices.`,
   },
   {
     id: 'trial',
