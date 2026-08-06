@@ -143,7 +143,6 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
   const [answerSelectedHex,   setAnswerSelectedHex]   = useState('#dcfce7');
   const [showPoweredBy,       setShowPoweredBy]       = useState(true);
   const [saveMsg, flash] = useSaveMsg();
-  const [previewTab, setPreviewTab] = useState('header');
   const [loading, setLoading] = useState(true);
   const [lastSavedBranding, setLastSavedBranding] = useState(() => localStorage.getItem(`qq360_last_saved_branding_${profile?.id || 'anon'}`) || '');
   const [logoUploading, setLogoUploading] = useState(false);
@@ -536,45 +535,6 @@ function BrandingSection({ clientId, setHasUnsaved, setSaveRef }) {
 
       <SaveRow onClick={handleSave} msg={saveMsg} />
       <LastSaved ts={lastSavedBranding} />
-
-      <div style={{ marginTop: '24px' }}>
-        <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: FONT }}>Live Preview</p>
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-          {[{ key: 'header', label: 'Widget Header' }, { key: 'lead', label: 'Lead Card' }].map(tab => (
-            <button key={tab.key} type="button" onClick={() => setPreviewTab(tab.key)}
-              style={{ padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, border: previewTab === tab.key ? 'none' : '1px solid #d1d5db', backgroundColor: previewTab === tab.key ? primaryColor : '#fff', color: previewTab === tab.key ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        {previewTab === 'header' && (
-          <div style={{ backgroundColor: primaryColor, borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {logoUrl && isValidUrl(logoUrl) ? (
-              <img src={logoUrl} alt="logo" style={{ height: '36px', width: '36px', borderRadius: '8px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.15)', flexShrink: 0 }}
-                onError={e => { e.target.style.display = 'none'; }} />
-            ) : (
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
-            )}
-            <span style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', flex: 1, fontFamily: FONT }}>
-              {companyName || 'Your Company Name'}
-            </span>
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: '600', color: primaryColor, cursor: 'default', whiteSpace: 'nowrap', fontFamily: FONT }}>
-              Get a Quote
-            </div>
-          </div>
-        )}
-        {previewTab === 'lead' && (
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-            <div style={{ height: '6px', backgroundColor: primaryColor, borderRadius: '6px 6px 0 0' }} />
-            <div style={{ padding: '20px' }}>
-              <p style={{ margin: '0 0 2px', fontSize: '15px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Erik Bergström</p>
-              <p style={{ margin: '0 0 14px', fontSize: '12.5px', color: '#9ca3af', fontFamily: FONT }}>erik.b@example.com</p>
-              <p style={{ margin: '0 0 12px', fontSize: '26px', fontWeight: '800', color: primaryColor, letterSpacing: '-0.5px', fontFamily: FONT }}>148,000 kr</p>
-              <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: '#dbeafe', color: '#1d4ed8', fontFamily: FONT }}>New</span>
-            </div>
-          </div>
-        )}
-      </div>
     </>
   );
 }
