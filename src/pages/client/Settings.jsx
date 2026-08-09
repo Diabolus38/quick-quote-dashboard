@@ -843,7 +843,6 @@ function EmbedCodeSection({ clientId }) {
   const [copiedAlt,     setCopiedAlt]     = useState(false);
   const [copiedIframe,  setCopiedIframe]  = useState(false);
   const [copiedLink,    setCopiedLink]    = useState(false);
-  const [qrSize,        setQrSize]        = useState(200);
   const scriptTag    = `<script src="https://estimator.quickquote360.com/embed.js?clientId=${clientId || 'CLIENT_ID_HERE'}"></script>`;
   const scriptTagAlt = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${clientId || 'CLIENT_ID_HERE'}"></script>`;
   const iframeTag    = `<iframe src="https://estimator.quickquote360.com?clientId=${clientId || 'CLIENT_ID_HERE'}" width="100%" height="700" frameborder="0"></iframe>`;
@@ -931,25 +930,6 @@ function EmbedCodeSection({ clientId }) {
             Open in new tab →
           </a>
         </div>
-
-        <p style={{ margin: '24px 0 8px', fontSize: '12px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>QR Code</p>
-        <img
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(directLink)}`}
-          alt="QR Code for estimator link"
-          style={{ width: '160px', height: '160px', borderRadius: '8px', border: '1px solid #e8ede8', display: 'block', marginBottom: '12px' }}
-        />
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-          {[{ label: 'Small', size: 150 }, { label: 'Medium', size: 200 }, { label: 'Large', size: 300 }].map(opt => (
-            <button key={opt.size} type="button" onClick={() => setQrSize(opt.size)}
-              style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, border: qrSize === opt.size ? 'none' : '1px solid #e8ede8', backgroundColor: qrSize === opt.size ? '#0d1117' : '#fff', color: qrSize === opt.size ? '#fff' : '#4b5563' }}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <button type="button" onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(directLink)}`, '_blank')}
-          style={{ backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 22px', fontSize: '13.5px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-          Download QR Code
-        </button>
 
         <div style={{ borderTop: '1px solid #f4f6f4', marginTop: '28px', paddingTop: '20px' }}>
           <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Powered By Badge</p>
