@@ -8,8 +8,8 @@ const PRIMARY = '#166534';
 
 const PLAN_CARDS = [
   { key: 'free_trial', name: 'Free Trial', monthlyPrice: 'Free',      yearlyPrice: 'Free',       subtext: 'Full Scale features, no credit card required' },
-  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$539.89/yr', subtext: 'Tool + leads dashboard, unlimited estimates'   },
-  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,865.80/yr', subtext: 'Full dashboard access, 100 estimates/mo'       },
+  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$539.89/yr', subtext: 'Tool + leads dashboard, unlimited estimates',   yearlySavingsPct: 10 },
+  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,865.80/yr', subtext: 'Full dashboard access, 100 estimates/mo',      yearlySavingsPct: 15 },
 ];
 
 export default function SignupPage() {
@@ -201,7 +201,7 @@ export default function SignupPage() {
                 </div>
                 {selectedPlan !== 'free_trial' && (
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px' }}>
-                    {[['monthly', 'Monthly'], ['yearly', 'Yearly (save ~17%)']].map(([val, label]) => (
+                    {[['monthly', 'Monthly'], ['yearly', `Yearly (save ~${PLAN_CARDS.find(p => p.key === selectedPlan)?.yearlySavingsPct ?? 15}%)`]].map(([val, label]) => (
                       <button key={val} type="button" onClick={() => setBillingInterval(val)}
                         style={{ backgroundColor: billingInterval === val ? PRIMARY : '#fff', color: billingInterval === val ? '#fff' : '#374151', border: billingInterval === val ? 'none' : '1px solid #e8ede8', borderRadius: '20px', padding: '6px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
                         {label}
