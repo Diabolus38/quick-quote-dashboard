@@ -16,13 +16,6 @@ export default function TrialExpiredOverlay({ trialExpired, planEmailSent, sendP
 
   if (!trialExpired) return null;
 
-  async function choosePlan(planKey) {
-    if (!clientId) return;
-    await supabase.from('clients').update({ plan: planKey }).eq('id', clientId);
-    await supabase.from('profiles').update({ updated_at: new Date().toISOString() }).eq('client_id', clientId);
-    window.location.reload();
-  }
-
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(13,31,18,0.97)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, overflowY: 'auto', padding: '40px 20px' }}>
       <div style={{ marginBottom: '24px', textAlign: 'center' }}>

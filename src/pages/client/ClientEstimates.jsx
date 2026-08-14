@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -39,6 +40,9 @@ export default function ClientEstimates() {
   const [leads,        setLeads]        = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [trialExpired,      setTrialExpired]      = useState(false);
+  const [planEmailSent,     setPlanEmailSent]     = useState(false);
+  const [installPreference, setInstallPreference] = useState(null);
 
   useEffect(() => {
     if (!profile?.client_id) return;
@@ -49,6 +53,17 @@ export default function ClientEstimates() {
       .order('created_at', { ascending: false })
       .then(({ data }) => { setLeads(data || []); setLoading(false); });
   }, [profile?.client_id]);
+
+  useEffect(() => {
+    if (!profile?.client_id) return;
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).maybeSingle()
+      .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [profile?.client_id]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@quickquote360.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   const weekStart  = startOfWeek();
   const monthStart = startOfMonth();
@@ -61,6 +76,7 @@ export default function ClientEstimates() {
 
   return (
     <ClientLayout title="Estimates">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} clientId={profile?.client_id} installPreference={installPreference} />
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden', fontFamily: FONT }}>
 
         {/* Card header */}

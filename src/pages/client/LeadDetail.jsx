@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
 import { useAuth } from '../../context/AuthContext';
 import generateQuotePDF from '../../utils/generateQuotePDF';
+import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -111,8 +112,22 @@ export default function LeadDetail() {
   const [copiedContact,  setCopiedContact]  = useState(false);
   const [prevLead, setPrevLead] = useState(null);
   const [nextLead, setNextLead] = useState(null);
+  const [trialExpired,      setTrialExpired]      = useState(false);
+  const [planEmailSent,     setPlanEmailSent]     = useState(false);
+  const [installPreference, setInstallPreference] = useState(null);
 
   useEffect(() => { fetchLead(); }, [id]);
+
+  useEffect(() => {
+    if (!profile?.client_id) return;
+    supabase.from('clients').select('plan, created_at, install_preference').eq('id', profile.client_id).maybeSingle()
+      .then(({ data }) => { setInstallPreference(data?.install_preference || null); if (data?.plan === 'free_trial' && (Date.now() - new Date(data.created_at).getTime()) / 86400000 > 14) setTrialExpired(true); });
+  }, [profile?.client_id]);
+
+  async function sendPlanEmail(planName) {
+    await fetch('https://estimator-widget-production.up.railway.app/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'team@quickquote360.com', subject: `Plan Upgrade Request: ${planName}`, body: `${profile?.full_name || 'A client'} (${profile?.email || ''}) requested the ${planName} plan. Client ID: ${profile?.client_id}.` }) }).catch(() => {});
+    setPlanEmailSent(true);
+  }
 
   async function fetchLead() {
     setLoading(true);
@@ -249,6 +264,7 @@ export default function LeadDetail() {
 
   return (
     <ClientLayout title="Lead Detail">
+      <TrialExpiredOverlay trialExpired={trialExpired} planEmailSent={planEmailSent} sendPlanEmail={sendPlanEmail} clientId={profile?.client_id} installPreference={installPreference} />
       <style>{`@media print { body * { visibility: hidden; } #lead-print-area, #lead-print-area * { visibility: visible; } #lead-print-area { position: absolute; left: 0; top: 0; } }`}</style>
       <div id="lead-print-area" style={{ fontFamily: FONT }}>
 
