@@ -4,6 +4,7 @@ import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
 import { ensureClientData } from '../utils/ensureClientData';
 import { useAuth } from '../context/AuthContext';
+import { PLAN_LIMITS } from '../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -42,10 +43,10 @@ function getInitials(name) {
 }
 
 function UsageBar({ count, plan }) {
-  if (plan === 'starter' || plan === 'enterprise' || plan === 'free_trial') {
+  const limit = PLAN_LIMITS[plan] ?? Infinity;
+  if (!Number.isFinite(limit)) {
     return <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>;
   }
-  const limit = 100;
   const pct   = Math.min(Math.round((count / limit) * 100), 100);
   const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
   return (
@@ -496,10 +497,10 @@ export default function Clients() {
 
                     {/* Usage */}
                     <td style={{ padding: '14px 20px' }}>
-                      {(client.plan === 'starter' || client.plan === 'enterprise' || client.plan === 'free_trial') ? (
+                      {!Number.isFinite(PLAN_LIMITS[client.plan] ?? Infinity) ? (
                         <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>
                       ) : (() => {
-                        const limit = 100;
+                        const limit = PLAN_LIMITS[client.plan];
                         const pct   = Math.min(Math.round((count / limit) * 100), 100);
                         const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
                         return (

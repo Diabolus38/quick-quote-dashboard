@@ -54,13 +54,13 @@ export default function ClientLayout({ title, subtitle, children }) {
   const [notifications,   setNotifications]   = useState([]);
   const [showBugReport,   setShowBugReport]   = useState(false);
   const [leadsThisMonth,  setLeadsThisMonth]  = useState(0);
-  const [planLimit,       setPlanLimit]       = useState(30);
+  const [planLimit,       setPlanLimit]       = useState(Infinity);
   const [sidebarSearch,   setSidebarSearch]   = useState('');
   const [clientPlan,      setClientPlan]      = useState('starter');
   const [clientCreatedAt, setClientCreatedAt] = useState(null);
 
   const leadsThisMonthRef = useRef(0);
-  const planLimitRef      = useRef(30);
+  const planLimitRef      = useRef(Infinity);
   useEffect(() => { leadsThisMonthRef.current = leadsThisMonth; }, [leadsThisMonth]);
   useEffect(() => { planLimitRef.current = planLimit; }, [planLimit]);
 
@@ -84,7 +84,7 @@ export default function ClientLayout({ title, subtitle, children }) {
     ]).then(([leadsRes, clientRes]) => {
       setLeadsThisMonth(leadsRes.count || 0);
       const plan = clientRes.data?.plan || 'starter';
-      setPlanLimit(PLAN_LIMITS[plan] || 30);
+      setPlanLimit(PLAN_LIMITS[plan] ?? Infinity);
       setClientPlan(plan);
       setClientCreatedAt(clientRes.data?.created_at || null);
     });
@@ -128,8 +128,10 @@ export default function ClientLayout({ title, subtitle, children }) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const pct           = planLimit > 0 ? Math.min(100, Math.round((leadsThisMonth / planLimit) * 100)) : 0;
-  const remaining     = Math.max(0, planLimit - leadsThisMonth);
+  const isUnlimited   = !Number.isFinite(planLimit);
+  const pct           = (!isUnlimited && planLimit > 0) ? Math.min(100, Math.round((leadsThisMonth / planLimit) * 100)) : 0;
+  const remaining     = isUnlimited ? Infinity : Math.max(0, planLimit - leadsThisMonth);
+  const overLimit     = !isUnlimited && leadsThisMonth > planLimit ? leadsThisMonth - planLimit : 0;
   const barColor      = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : '#a3e635';
   const trialDaysLeft = clientPlan === 'free_trial' && clientCreatedAt
     ? Math.max(0, 14 - Math.floor((Date.now() - new Date(clientCreatedAt).getTime()) / (1000 * 60 * 60 * 24)))
@@ -208,14 +210,19 @@ export default function ClientLayout({ title, subtitle, children }) {
             )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0' }}>
               <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151', fontFamily: FONT }}>Estimates this month</span>
-              <span style={{ fontSize: '11px', fontWeight: '700', color: '#111827', fontFamily: FONT }}>{leadsThisMonth}/{planLimit}</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#111827', fontFamily: FONT }}>{isUnlimited ? `${leadsThisMonth} · Unlimited` : `${leadsThisMonth}/${planLimit}`}</span>
             </div>
-            <div style={{ height: '6px', borderRadius: '99px', backgroundColor: '#e5e7eb', overflow: 'hidden', margin: '8px 0 4px' }}>
-              <div style={{ width: `${pct}%`, height: '100%', backgroundColor: barColor, borderRadius: '99px', transition: 'width 0.4s' }} />
-            </div>
-            <p style={{ margin: 0, fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{remaining} left this month</p>
-            {pct >= 80 && (
-              <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: '600', color: '#d97706', fontFamily: FONT }}>⚠ Running low</p>
+            {!isUnlimited && (
+              <div style={{ height: '6px', borderRadius: '99px', backgroundColor: '#e5e7eb', overflow: 'hidden', margin: '8px 0 4px' }}>
+                <div style={{ width: `${pct}%`, height: '100%', backgroundColor: barColor, borderRadius: '99px', transition: 'width 0.4s' }} />
+              </div>
+            )}
+            <p style={{ margin: isUnlimited ? '6px 0 0' : 0, fontSize: '10px', color: '#9ca3af', fontFamily: FONT }}>{isUnlimited ? 'Unlimited estimates on your plan' : `${remaining} left this month`}</p>
+            {!isUnlimited && overLimit > 0 && (
+              <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: '600', color: '#dc2626', fontFamily: FONT }}>Over limit by {overLimit} · $9.99 each, tool keeps working</p>
+            )}
+            {!isUnlimited && overLimit === 0 && pct >= 80 && (
+              <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: '600', color: '#d97706', fontFamily: FONT }}>⚠ {pct >= 100 ? 'Limit reached' : 'Running low'}</p>
             )}
           </div>
 

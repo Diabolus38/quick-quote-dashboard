@@ -8,8 +8,8 @@ const PRIMARY = '#166534';
 
 const PLAN_CARDS = [
   { key: 'free_trial', name: 'Free Trial', monthlyPrice: 'Free',      yearlyPrice: 'Free',       subtext: 'Full Scale features, no credit card required' },
-  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$539.89/yr', subtext: 'Tool + leads dashboard, unlimited estimates',   yearlySavingsPct: 10 },
-  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,865.80/yr', subtext: 'Full dashboard access, 100 estimates/mo',      yearlySavingsPct: 15 },
+  { key: 'starter',    name: 'Starter',    monthlyPrice: '$49.99/mo', yearlyPrice: '$539.89/yr', subtext: 'Tool + leads dashboard, 100 estimates/mo',      yearlySavingsPct: 10 },
+  { key: 'scale',      name: 'Scale',      monthlyPrice: '$379/mo',   yearlyPrice: '$3,865.80/yr', subtext: 'Full dashboard access, unlimited estimates',   yearlySavingsPct: 15 },
 ];
 
 export default function SignupPage() {
@@ -27,7 +27,7 @@ export default function SignupPage() {
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [redirecting,     setRedirecting]     = useState(false);
   const [installStep,     setInstallStep]     = useState(false);
-  const [installChoice,   setInstallChoice]   = useState('none');
+  const [installChoice,   setInstallChoice]   = useState('self');
 
   useEffect(() => {
     const params    = new URLSearchParams(window.location.search);
@@ -112,9 +112,8 @@ export default function SignupPage() {
               <p style={{ margin: '0 0 24px', fontSize: '14px', color: '#9ca3af' }}>How would you like your estimator widget installed on your website?</p>
 
               {[
-                { value: 'self',     label: 'Self-install',     price: '$249 one-time', desc: 'I will install it myself. You will receive step-by-step instructions.' },
-                { value: 'assisted', label: 'Assisted install', price: '$999 one-time', desc: 'Our team installs it for you. We contact you within 24 hours to schedule.' },
-                { value: 'none',     label: 'Skip for now',     price: '',                  desc: 'I will decide later. You can always install from your dashboard.' },
+                { value: 'self',     label: 'I will install it myself', price: 'Free',       desc: 'Paste the snippet and follow the step-by-step guides in your dashboard.' },
+                { value: 'assisted', label: 'Install it for me',        price: '$249, once', desc: 'Our team installs it for you. We contact you within 24 hours to schedule.' },
               ].map(opt => (
                 <div key={opt.value} onClick={() => setInstallChoice(opt.value)}
                   style={{ border: `2px solid ${installChoice === opt.value ? PRIMARY : '#e8ede8'}`, borderRadius: '12px', padding: '16px', marginBottom: '12px', cursor: 'pointer', backgroundColor: '#fff' }}>
@@ -131,7 +130,7 @@ export default function SignupPage() {
                 Continue
               </button>
               <p style={{ margin: '12px 0 0', fontSize: '12px', color: '#9ca3af', textAlign: 'center' }}>
-                Installation fees are charged once at checkout alongside your subscription.
+                Assisted installation is charged once at checkout alongside your subscription. Self-installation is free.
               </p>
             </div>
 

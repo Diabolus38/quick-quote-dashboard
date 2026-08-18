@@ -1,6 +1,6 @@
 export const PLAN_FEES = { starter: 49.99, scale: 379, enterprise: 0, free_trial: 0 };
-export const PLAN_LIMITS = { starter: Infinity, scale: 100, enterprise: Infinity, free_trial: Infinity };
-export const OVERAGE_RATES = { starter: 0, scale: 129, enterprise: 0, free_trial: 0 };
+export const PLAN_LIMITS = { starter: 100, scale: Infinity, enterprise: Infinity, free_trial: Infinity };
+export const OVERAGE_RATES = { starter: 9.99, scale: 0, enterprise: 0, free_trial: 0 };
 export const PLAN_YEARLY = { starter: 539.89, scale: 3865.80 };
 
 // Trial-to-paid conversion: when a free_trial client selects a plan after trial expiry, their plan
@@ -24,7 +24,8 @@ export const PLAN_FEATURES = {
     canExportCSV: false,
     canUploadLogo: false,
     canViewLeads: true,
-    canViewEmbed: false,
+    canViewEmbed: true,
+    canEditLeadStatus: false,
     teamMembers: 1,
     hasFreeTrialDays: 0,
     poweredByBadge: true,
@@ -45,6 +46,7 @@ export const PLAN_FEATURES = {
     canUploadLogo: true,
     canViewLeads: true,
     canViewEmbed: true,
+    canEditLeadStatus: true,
     teamMembers: 5,
     hasFreeTrialDays: 0,
     poweredByBadge: true,
@@ -65,6 +67,7 @@ export const PLAN_FEATURES = {
     canUploadLogo: true,
     canViewLeads: true,
     canViewEmbed: true,
+    canEditLeadStatus: true,
     teamMembers: Infinity,
     hasFreeTrialDays: 0,
     poweredByBadge: false,
@@ -85,6 +88,7 @@ export const PLAN_FEATURES = {
     canUploadLogo: true,
     canViewLeads: true,
     canViewEmbed: true,
+    canEditLeadStatus: true,
     teamMembers: 5,
     hasFreeTrialDays: 14,
     poweredByBadge: true,

@@ -4,7 +4,7 @@ import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { calculateMRR, getPlanCounts } from '../../utils/mrrUtils';
-import { PLAN_FEES } from '../../utils/planConfig';
+import { PLAN_FEES, PLAN_LIMITS, OVERAGE_RATES } from '../../utils/planConfig';
 import { ensureClientData } from '../../utils/ensureClientData';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
@@ -63,10 +63,10 @@ function avatarBg(id) {
 /* ── Usage Bar ───────────────────────────────────────────────── */
 
 function UsageBar({ count, plan }) {
-  if (plan === 'starter' || plan === 'enterprise' || plan === 'free_trial') {
+  const limit = PLAN_LIMITS[plan] ?? Infinity;
+  if (!Number.isFinite(limit)) {
     return <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>∞ unlimited</span>;
   }
-  const limit = 100;
   const pct   = Math.min(Math.round((count / limit) * 100), 100);
   const fill  = pct >= 100 ? '#dc2626' : pct >= 80 ? '#d97706' : LIME;
   return (
@@ -330,8 +330,8 @@ export default function SuperAdmin() {
     const leadHeaders = ['ID','Client ID','Client Name','Customer Name','Email','Phone','Municipality','Estimated Price','Status','Language','Created At'];
     const leadRows = leads.map(l => [l.id, l.client_id || '', clientMap[l.client_id] || '', l.name || '', l.email || '', l.phone || '', l.municipality || '', l.estimated_price ?? '', l.status || '', l.language || '', l.created_at || '']);
     const PLAN_FEE_EX = PLAN_FEES;
-    const PLAN_LIMIT_EX = { starter: Infinity, scale: 100 };
-    const OVERAGE_RATE_EX = { starter: 0, scale: 129 };
+    const PLAN_LIMIT_EX = PLAN_LIMITS;
+    const OVERAGE_RATE_EX = OVERAGE_RATES;
     const now2 = new Date();
     const monthLeads = {};
     leads.forEach(l => {

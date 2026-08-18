@@ -26,8 +26,8 @@ const CARD = { backgroundColor: '#ffffff', borderRadius: '16px', border: 'none',
 const COLUMNS = ['Name', 'Municipality', 'Estimated Price', 'Status', 'Date'];
 
 const INSTALL_CARDS = [
-  { key: 'self',     name: 'Self-Install',     price: '$249 one-time', subtext: 'You install the embed code yourself using our step-by-step guide.' },
-  { key: 'assisted', name: 'Assisted Install', price: '$999 one-time', subtext: 'Our team installs it for you within 48 hours.' },
+  { key: 'self',     name: 'I will install it myself', price: 'Free',       subtext: 'You install the embed code yourself using our step-by-step guide.' },
+  { key: 'assisted', name: 'Install it for me',        price: '$249, once', subtext: 'Our team installs it for you within 48 hours.' },
 ];
 
 export default function ClientOverview() {

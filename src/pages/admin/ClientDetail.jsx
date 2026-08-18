@@ -59,7 +59,7 @@ function InfoRow({ label, children, last }) {
 }
 
 function UsageBarDetail({ count, plan }) {
-  if (plan === 'starter' || plan === 'enterprise' || plan === 'free_trial') {
+  if (!Number.isFinite(PLAN_LIMIT[plan] ?? Infinity)) {
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
@@ -287,7 +287,7 @@ export default function ClientDetail() {
   const avgPrice = leads.length > 0
     ? Math.round(leads.reduce((s, l) => s + (Number(l.estimated_price) || 0), 0) / leads.length)
     : null;
-  const limit = (client.plan === 'starter' || client.plan === 'enterprise' || client.plan === 'free_trial') ? '∞ Unlimited' : (PLAN_LIMIT[client.plan] || 100);
+  const limit = !Number.isFinite(PLAN_LIMIT[client.plan] ?? Infinity) ? '∞ Unlimited' : PLAN_LIMIT[client.plan];
   const embedCode = `<script src="https://estimator.quickquote360.com/embed.js" data-client-id="${id}"></script>`;
 
   const wonLeadsCount     = leads.filter(l => (l.status || '').toLowerCase().replace(/\s+/g,'_') === 'closed_won').length;
