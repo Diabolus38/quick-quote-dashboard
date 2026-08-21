@@ -695,7 +695,7 @@ export default function Pricing() {
 
   if (plan === 'starter') return (
     <ClientLayout title="Pricing">
-      <UpgradeLock feature="Pricing Editor" requiredPlan="growth" />
+      <UpgradeLock feature="Pricing Editor" requiredPlan="scale" />
     </ClientLayout>
   );
 

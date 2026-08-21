@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const BADGE_STYLES = {
-  growth: { backgroundColor: '#dbeafe', color: '#1d4ed8' },
   scale:  { backgroundColor: '#dcfce7', color: '#166534' },
 };
 
@@ -13,8 +12,8 @@ export default function UpgradeLock({ feature, requiredPlan }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const badge = BADGE_STYLES[requiredPlan] || BADGE_STYLES.growth;
-  const planLabel = requiredPlan === 'scale' ? 'Scale' : 'Growth';
+  const badge = BADGE_STYLES[requiredPlan] || BADGE_STYLES.scale;
+  const planLabel = 'Scale';
 
   const handleRequestUpgrade = async () => {
     setSending(true);

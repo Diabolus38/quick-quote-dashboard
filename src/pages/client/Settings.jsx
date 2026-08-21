@@ -1285,8 +1285,8 @@ function ConfigStatusCard() {
 /* ── 7. Subscription ─────────────────────────────────────────── */
 
 const PLAN_FEATURES = {
-  starter: ['Unlimited estimates', 'Automatic PDF generation', 'Lead email notifications', 'Leads dashboard', 'Powered by QuickQuote360 badge'],
-  scale:   ['Everything in Starter', '100 estimates/month', 'Question editor', 'Municipality editor', 'CSV export', 'Full pricing editor', 'PDF content editor', 'Brand colors', 'Logo upload', 'Email settings', 'Lead status tracking', 'ROT deduction'],
+  starter: ['100 estimates/month ($9.99 per additional estimate)', 'Automatic PDF generation', 'Lead email notifications', 'Leads dashboard', 'Powered by QuickQuote360 badge'],
+  scale:   ['Everything in Starter', 'Unlimited estimates, no overage', 'Question editor', 'Municipality editor', 'CSV export', 'Full pricing editor', 'PDF content editor', 'Brand colors', 'Logo upload', 'Email settings', 'Lead status tracking', 'ROT deduction', 'Up to 5 team members'],
 };
 
 const PLAN_PRICES = { starter: '$49.99/month', scale: '$379/month', free_trial: 'Free (14-day trial)', enterprise: 'Custom' };
@@ -1303,7 +1303,7 @@ function SubscriptionSection() {
   const [cancelMsg, setCancelMsg] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [showUpgradeCards, setShowUpgradeCards] = useState(false);
-  const [selectedUpgradePlan, setSelectedUpgradePlan] = useState('growth');
+  const [selectedUpgradePlan, setSelectedUpgradePlan] = useState('scale');
   const [selectedInterval, setSelectedInterval] = useState('month');
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -1346,7 +1346,7 @@ function SubscriptionSection() {
   }
 
   async function handleCancel() {
-    if (!window.confirm('Are you sure you want to cancel your subscription? Your account will remain active until the end of your billing period.')) return;
+    if (!window.confirm('Are you sure you want to cancel your subscription? Access ends as soon as the cancellation is processed and nothing further is charged. Your data is kept for 30 days so you can export it.')) return;
     setCancelling(true);
     try {
       await fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
@@ -1438,7 +1438,7 @@ function SubscriptionSection() {
 
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {upgradeOptions.length > 0 && (
-          <button type="button" onClick={() => { setSelectedUpgradePlan(upgradeOptions[0]?.key || 'growth'); setShowUpgradeCards(true); }}
+          <button type="button" onClick={() => { setSelectedUpgradePlan(upgradeOptions[0]?.key || 'scale'); setShowUpgradeCards(true); }}
             style={{ backgroundColor: PRIMARY, color: '#fff', borderRadius: '10px', padding: '10px 24px', fontSize: '13.5px', fontWeight: '600', border: 'none', cursor: 'pointer', fontFamily: FONT }}>
             Upgrade Plan →
           </button>

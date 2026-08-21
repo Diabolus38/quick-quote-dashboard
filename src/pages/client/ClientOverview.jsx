@@ -79,11 +79,15 @@ export default function ClientOverview() {
     const { error: updateError } = await supabase.from('clients').update({ install_preference: installChoice }).eq('id', profile.client_id);
     if (updateError) console.error('Failed to save install preference:', updateError);
 
-    if (installChoice === 'assisted') {
-      const emailPayload = {
+    if (installChoice === 'assisted' || installChoice === 'self') {
+      const emailPayload = installChoice === 'assisted' ? {
         email:   'team@quickquote360.com',
         subject: 'Assisted Install Requested - Free Trial Signup',
         body:    `Free trial client has selected assisted install.\n\nName: ${profile?.full_name || ''}\nEmail: ${profile?.email || ''}\nClient ID: ${profile?.client_id || ''}\n\nPlease contact this client to schedule their assisted install within 48 hours.`,
+      } : {
+        email:   'team@quickquote360.com',
+        subject: 'Self-Install Chosen - Free Trial Signup',
+        body:    `Free trial client has selected self-install (free).\n\nName: ${profile?.full_name || ''}\nEmail: ${profile?.email || ''}\nClient ID: ${profile?.client_id || ''}`,
       };
       console.log('Sending assisted install notification:', emailPayload);
       try {

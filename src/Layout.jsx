@@ -14,6 +14,7 @@ const MGMT_ITEMS = [
   { icon: '◎', label: 'Clients',  route: '/admin/clients' },
   { icon: '▤', label: 'Leads',    route: '/admin/leads'   },
   { icon: '$', label: 'Billing',  route: '/admin/billing' },
+  { icon: '◔', label: 'Analytics', route: '/admin/analytics' },
 ];
 
 const TOOLS_ITEMS = [

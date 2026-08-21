@@ -126,7 +126,8 @@ export default function ClientLayout({ title, subtitle, children }) {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount     = notifications.filter(n => !n.read).length;
+  const unreadLeadCount = notifications.filter(n => !n.read && n.type === 'new_lead').length;
 
   const isUnlimited   = !Number.isFinite(planLimit);
   const pct           = (!isUnlimited && planLimit > 0) ? Math.min(100, Math.round((leadsThisMonth / planLimit) * 100)) : 0;
@@ -177,7 +178,7 @@ export default function ClientLayout({ title, subtitle, children }) {
         </div>
         <nav style={{ flexShrink: 0 }}>
           {LEADS_ITEMS.filter(item => !sidebarSearch || item.label.toLowerCase().includes(sidebarSearch.toLowerCase())).map(item => (
-            <NavItem key={item.label} item={item} badge={item.label === 'Leads' && unreadCount > 0 ? unreadCount : null} />
+            <NavItem key={item.label} item={item} badge={item.label === 'Leads' && unreadLeadCount > 0 ? unreadLeadCount : null} />
           ))}
         </nav>
 
@@ -345,7 +346,7 @@ export default function ClientLayout({ title, subtitle, children }) {
               onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
               Privacy Policy
             </a>
-            {' · team@quickquote360.com'}
+            {' · support@quickquote360.com'}
           </div>
         </main>
       </div>

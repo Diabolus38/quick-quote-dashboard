@@ -26,6 +26,7 @@ const AllLeads       = lazy(() => import('./pages/admin/AllLeads'));
 const AdminLeadDetail = lazy(() => import('./pages/admin/AdminLeadDetail'));
 const Estimates      = lazy(() => import('./pages/Estimates'));
 const Billing        = lazy(() => import('./pages/Billing'));
+const Analytics      = lazy(() => import('./pages/admin/Analytics'));
 const Settings       = lazy(() => import('./pages/Settings'));
 
 // Client pages
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="/admin/leads/:id"   element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><AdminLeadDetail /></ProtectedRoute></ErrorBoundary>} />
             <Route path="/admin/estimates"   element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Estimates /></ProtectedRoute></ErrorBoundary>} />
             <Route path="/admin/billing"     element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Billing /></ProtectedRoute></ErrorBoundary>} />
+            <Route path="/admin/analytics"   element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Analytics /></ProtectedRoute></ErrorBoundary>} />
             <Route path="/admin/settings"    element={<ErrorBoundary><ProtectedRoute requiredRole="super_admin"><Settings /></ProtectedRoute></ErrorBoundary>} />
 
             {/* ── Client protected ── */}

@@ -5,6 +5,7 @@ import ClientLayout from '../../ClientLayout';
 import { useAuth } from '../../context/AuthContext';
 import generateQuotePDF from '../../utils/generateQuotePDF';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
+import useClientPlan from '../../hooks/useClientPlan';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -97,6 +98,8 @@ export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { plan: clientPlan } = useClientPlan();
+  const canEditStatus = clientPlan !== 'starter';
 
   const [lead,           setLead]           = useState(null);
   const [loading,        setLoading]        = useState(true);
@@ -208,7 +211,7 @@ export default function LeadDetail() {
           pdf_content: settingsData?.pdf_content || {},
           pricing: pricingData || {},
           branding: settingsData?.branding || {},
-          plan: clientData?.plan || 'growth',
+          plan: clientData?.plan || 'starter',
         },
       });
     } catch (err) {
@@ -291,7 +294,8 @@ export default function LeadDetail() {
               {[lead.email, lead.phone, lead.municipality].filter(Boolean).join(' · ')}
             </p>
             <div style={{ marginBottom: '20px' }}>
-              <select value={lead.status || 'New'} onChange={e => {
+              <select value={lead.status || 'New'} disabled={!canEditStatus} title={canEditStatus ? undefined : 'Lead status tracking is available on the Scale plan'} onChange={e => {
+                if (!canEditStatus) return;
                 const newStatus = e.target.value;
                 if (newStatus === 'Closed Lost') {
                   if (!window.confirm('Mark this lead as Closed Lost? This will move it out of your active pipeline.')) {

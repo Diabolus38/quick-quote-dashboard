@@ -14,7 +14,7 @@ Name: Christophe Hasley
 Address: Kyrkogatan 7, Strängnäs, Sweden
 Organisation number: 030516-5573
 VAT number: SE030516557301
-Contact: team@quickquote360.com`,
+Contact: support@quickquote360.com`,
   },
   {
     id: 'acceptance',
@@ -49,7 +49,7 @@ The Service is provided on an "as is" and "as available" basis. We reserve the r
 • Be legally authorised to enter into binding contracts
 • Maintain one account per person (accounts are non-transferable)
 • Keep your login credentials confidential
-• Notify us immediately at team@quickquote360.com if you suspect unauthorised access
+• Notify us immediately at support@quickquote360.com if you suspect unauthorised access
 
 You are responsible for all activity that occurs under your account.`,
   },
@@ -60,10 +60,12 @@ You are responsible for all activity that occurs under your account.`,
     body: `The Service is available on the following subscription plans (prices in USD, excluding applicable tax):
 
 Starter — $49.99/month or $539.89/year
-Includes unlimited estimates. Tool and leads dashboard access only.
+Includes 100 estimates per month. Additional estimates are charged at $9.99 each. Leads dashboard access and the estimator tool with standard questions, pricing and QuickQuote360 branding.
 
 Scale — $379/month or $3,865.80/year
-Includes 100 estimates per month. Overage: $129 per additional estimate. Full dashboard access and branding customisation.
+Unlimited estimates, no overage. Full dashboard access including question flow, pricing, branding, PDF and email customisation, and up to 5 team members.
+
+Installation: self-installation is free. Assisted installation, where we install the tool for you, is a one-time fee of $249.
 
 All subscriptions are billed in advance via Stripe. By subscribing you authorise us to charge your payment method on a recurring basis. Applicable tax will be added to all prices.`,
   },
@@ -79,13 +81,15 @@ Data created during the trial is retained for 30 days after the trial ends. Only
     id: 'cancellation',
     num: '07',
     title: 'Cancellation and Refunds',
-    body: `You may cancel your subscription at any time via the dashboard Settings page or by emailing team@quickquote360.com. Cancellation takes effect at the end of the current billing period; you retain access until that date.
+    body: `You may cancel your subscription at any time via the dashboard Settings page or by emailing support@quickquote360.com. Cancellation takes effect immediately: your access to the Service ends as soon as the cancellation is processed, and nothing further is charged.
 
-No refunds are issued for partial billing periods, except in the following cases:
-• The Service was unavailable for 72 or more consecutive hours due to a fault on our part
-• A technical billing error resulted in an incorrect charge
+Your data (leads and settings) is retained for 30 days after cancellation so that you can export it. After 30 days it is permanently deleted.
 
-EU consumers have a 14-day statutory right of withdrawal; however, by starting to use the Service immediately after subscription, you expressly waive this right. Installation and setup fees are non-refundable once the installation guide has been accessed.`,
+Refunds: if you are not satisfied within 14 days of your first paid subscription invoice, contact us and the subscription fee will be refunded in full. The one-time assisted installation fee ($249) and any personalisation hours are non-refundable. Outside this 14-day window, no refunds are issued for partial billing periods, except where:
+- The Service was unavailable for 72 or more consecutive hours due to a fault on our part
+- A technical billing error resulted in an incorrect charge
+
+EU consumers have a 14-day statutory right of withdrawal; the refund policy above applies in addition to, and does not limit, any statutory rights.`,
   },
   {
     id: 'acceptable-use',
@@ -176,7 +180,7 @@ EU consumers may also use the European Commission Online Dispute Resolution plat
 
 Christophe Hasley
 Kyrkogatan 7, Strängnäs, Sweden
-Email: team@quickquote360.com`,
+Email: support@quickquote360.com`,
   },
 ];
 
@@ -248,9 +252,9 @@ export default function TermsOfService() {
               <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7 }}>
                 We're happy to clarify anything. We'll respond within one business day.
               </p>
-              <a href="mailto:team@quickquote360.com"
+              <a href="mailto:support@quickquote360.com"
                 style={{ display: 'inline-block', backgroundColor: '#a3e635', color: PRIMARY, padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
-                team@quickquote360.com
+                support@quickquote360.com
               </a>
             </div>
 

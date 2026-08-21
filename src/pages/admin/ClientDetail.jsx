@@ -107,6 +107,7 @@ export default function ClientDetail() {
   const [welcomeMsg,     setWelcomeMsg]     = useState('');
   const [sendingWelcome, setSendingWelcome] = useState(false);
   const [changePlan,     setChangePlan]     = useState('');
+  const [planSaveMsg,    setPlanSaveMsg]    = useState('');
   const [planSaved,      setPlanSaved]      = useState(false);
   const [lastActivity,   setLastActivity]   = useState(null);
   const [setupChecklist, setSetupChecklist] = useState(null);
@@ -211,10 +212,37 @@ export default function ClientDetail() {
   }
 
   async function handleSavePlan() {
+    setPlanSaveMsg('');
+    // Preferred path: backend updates the Stripe subscription AND clients.plan together.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('https://estimator-widget-production.up.railway.app/admin/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ clientId: id, planKey: changePlan }),
+      });
+      if (res.ok) {
+        setClient(prev => ({ ...prev, plan: changePlan }));
+        setPlanSaved(true);
+        setPlanSaveMsg('Plan updated in Stripe and dashboard.');
+        setTimeout(() => setPlanSaved(false), 2000);
+        return;
+      }
+      if (res.status !== 404) {
+        const err = await res.json().catch(() => ({}));
+        setPlanSaveMsg('Stripe update failed: ' + (err.error || res.status) + '. Plan NOT changed.');
+        return;
+      }
+      // 404 = endpoint not deployed yet, fall through to dashboard-only update below.
+    } catch {
+      // network error, fall through
+    }
+    // Fallback: dashboard-only update (legacy behaviour). Stripe is NOT touched.
     await supabase.from('clients').update({ plan: changePlan }).eq('id', id);
     await supabase.from('profiles').update({ updated_at: new Date().toISOString() }).eq('client_id', id);
     setClient(prev => ({ ...prev, plan: changePlan }));
     setPlanSaved(true);
+    setPlanSaveMsg('Saved in dashboard only. Stripe was NOT updated, change the subscription in Stripe manually.');
     setTimeout(() => setPlanSaved(false), 2000);
   }
 
@@ -625,6 +653,7 @@ export default function ClientDetail() {
                   style={{ width: '100%', backgroundColor: PRIMARY, color: '#fff', border: 'none', borderRadius: '10px', padding: '9px 0', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
                   {planSaved ? '✓ Plan Saved!' : 'Save Plan'}
                 </button>
+                {planSaveMsg && <p style={{ margin: '8px 0 0', fontSize: '12px', color: planSaveMsg.includes('NOT') || planSaveMsg.includes('failed') ? '#dc2626' : '#166534', fontFamily: FONT }}>{planSaveMsg}</p>}
               </div>
 
               <button type="button" onClick={() => window.open('/client', '_blank')} style={BTN_PRIMARY}>

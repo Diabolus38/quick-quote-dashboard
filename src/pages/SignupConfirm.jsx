@@ -44,7 +44,7 @@ export default function SignupConfirm() {
 
     if (!clientId) {
       // AuthContext finished but client_id is still null — something went wrong in ensureNewUserData
-      setError('We could not complete your account setup. Please contact team@quickquote360.com with your email address and we will fix this within 24 hours.');
+      setError('We could not complete your account setup. Please contact support@quickquote360.com with your email address and we will fix this within 24 hours.');
       // Send alert
       fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
         method: 'POST',
@@ -70,6 +70,20 @@ export default function SignupConfirm() {
         .maybeSingle();
 
       const actualPlan = clientRow?.plan;
+
+      // Persist the install choice made at signup and notify the team, for every plan.
+      if (pendingInstall === 'self' || pendingInstall === 'assisted') {
+        await supabase.from('clients').update({ install_preference: pendingInstall }).eq('id', clientId);
+        fetch('https://estimator-widget-production.up.railway.app/send-simple-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email:   'team@quickquote360.com',
+            subject: (pendingInstall === 'assisted' ? 'Assisted Install Requested' : 'Self-Install Chosen') + ' - New Signup (' + (actualPlan || pendingPlan || 'unknown') + ')',
+            body:    'A new client chose ' + (pendingInstall === 'assisted' ? 'ASSISTED install ($249)' : 'SELF install (free)') + ' at signup.\n\nName: ' + (profile?.full_name || '') + '\nEmail: ' + (pendingEmail || profile?.email || '') + '\nPlan: ' + (actualPlan || pendingPlan || '') + '\nClient ID: ' + clientId + (pendingInstall === 'assisted' ? '\n\nPlease contact this client to schedule their assisted install within 24 hours.' : ''),
+          }),
+        }).catch(() => {});
+      }
 
       // Free trial — go straight to dashboard, but only if the DATABASE says free_trial.
       if (actualPlan === 'free_trial') {
@@ -113,11 +127,11 @@ export default function SignupConfirm() {
         if (data.url) {
           window.location.href = data.url;
         } else {
-          setError('Payment page could not be loaded. Please contact team@quickquote360.com');
+          setError('Payment page could not be loaded. Please contact support@quickquote360.com');
         }
       })
       .catch(() => {
-        setError('Payment page could not be loaded. Please contact team@quickquote360.com');
+        setError('Payment page could not be loaded. Please contact support@quickquote360.com');
       });
     })();
 
@@ -140,8 +154,8 @@ export default function SignupConfirm() {
         body: JSON.stringify({ clientId, email: pendingEmail || profile?.email, planKey: pendingPlan, billingInterval: pendingBilling || 'monthly', installType: pendingInstall }),
       })
       .then(r => r.json())
-      .then(data => { if (data.url) { window.location.href = data.url; } else { setError('Payment page could not be loaded. Please contact team@quickquote360.com'); } })
-      .catch(() => { setError('Payment page could not be loaded. Please contact team@quickquote360.com'); });
+      .then(data => { if (data.url) { window.location.href = data.url; } else { setError('Payment page could not be loaded. Please contact support@quickquote360.com'); } })
+      .catch(() => { setError('Payment page could not be loaded. Please contact support@quickquote360.com'); });
     }
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}>
