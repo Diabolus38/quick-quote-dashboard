@@ -64,10 +64,12 @@ export default function Analytics() {
 
   useEffect(() => {
     supabase.from('clients').select('id, name').order('name')
-      .then(({ data }) => setClients(data || []));
+      .then(({ data }) => setClients(data || []))
+      .catch(() => setClients([])); // network hiccup: just show an empty client list, don't hang
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: standard fetch-on-change loading flag
     setLoading(true);
     setLoadError('');
     let q = supabase.from('widget_events')
@@ -83,10 +85,16 @@ export default function Analytics() {
       if (error) { setLoadError(error.message); setEvents([]); }
       else setEvents(data || []);
       setLoading(false);
+    }).catch(err => {
+      // network-level failure (not a Supabase/RLS error) - show it instead of spinning forever
+      setLoadError(err?.message || 'Network error while loading analytics data.');
+      setEvents([]);
+      setLoading(false);
     });
   }, [selectedClient, range]);
 
   const stats = useMemo(() => {
+   try {
     const sessions = {};
     for (const e of events) {
       const s = sessions[e.session_id] || (sessions[e.session_id] = {
@@ -264,8 +272,21 @@ export default function Analytics() {
       totalSessions, openedCount, base, funnel, reachedContact, completed, abandonedContact,
       avgFurthest, stepCount: stepOrder.length, pdfCount, emailCount,
       biggestLeak, timePerStep, typicalFinishMs, trend, trendTruncated, bucketByWeek,
-      devices, sources, perClient,
+      devices, sources, perClient, error: null,
     };
+   } catch (err) {
+    // Belt and suspenders: if anything above throws on unexpected data, show an empty,
+    // safe state instead of crashing the page. Nothing on the site or in any client's
+    // account is touched by this page (it only reads widget_events), so a failure here
+    // can only ever affect this one screen.
+    return {
+      totalSessions: 0, openedCount: 0, base: 0, funnel: [], reachedContact: null, completed: 0, abandonedContact: null,
+      avgFurthest: 0, stepCount: 0, pdfCount: 0, emailCount: 0,
+      biggestLeak: null, timePerStep: [], typicalFinishMs: null, trend: [], trendTruncated: false, bucketByWeek: false,
+      devices: [], sources: [], perClient: [],
+      error: err?.message || 'Could not process the analytics data.',
+    };
+   }
   }, [events, range]);
 
   const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
@@ -304,6 +325,12 @@ export default function Analytics() {
       {loadError && (
         <div style={{ ...CARD, marginBottom: '16px', border: '1px solid #fca5a5' }}>
           <p style={{ margin: 0, fontSize: '13px', color: '#dc2626', fontFamily: FONT }}>Could not load events: {loadError}. Check that the widget_events read policy for super_admin exists in Supabase.</p>
+        </div>
+      )}
+
+      {!loading && stats.error && (
+        <div style={{ ...CARD, marginBottom: '16px', border: '1px solid #fca5a5' }}>
+          <p style={{ margin: 0, fontSize: '13px', color: '#dc2626', fontFamily: FONT }}>Couldn't process the analytics numbers for this view ({stats.error}). This is a display issue only, nothing on your site or in any client's account was touched. Try a different client or date range, or refresh the page.</p>
         </div>
       )}
 
