@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { calculateMRR, getPlanCounts } from '../../utils/mrrUtils';
+import { calculateRealMRR, billingByClient, getPlanCounts } from '../../utils/mrrUtils';
 import { PLAN_FEES, PLAN_LIMITS, OVERAGE_RATES } from '../../utils/planConfig';
 import { ensureClientData } from '../../utils/ensureClientData';
 
@@ -183,6 +183,7 @@ export default function SuperAdmin() {
   const { profile } = useAuth();
 
   const [clients,    setClients]    = useState([]);
+  const [billingInfo, setBillingInfo] = useState([]);
   const [leads,      setLeads]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
@@ -224,14 +225,17 @@ export default function SuperAdmin() {
 
   async function fetchAll() {
     setLoading(true);
-    const [clientsRes, leadsRes, profilesRes] = await Promise.all([
+    const [clientsRes, leadsRes, profilesRes, billingRes] = await Promise.all([
       supabase.from('clients').select('id, name, email, plan, active, created_at, install_preference').order('created_at', { ascending: false }),
       supabase.from('leads').select('id, client_id, name, created_at, status, estimated_price').order('created_at', { ascending: false }).limit(500),
       supabase.from('profiles').select('id, client_id, role'),
+      supabase.from('client_billing').select('*'),
     ]);
     if (clientsRes.error)  console.error('Failed to fetch clients:', clientsRes.error);
     if (leadsRes.error)    console.error('Failed to fetch leads:', leadsRes.error);
     if (profilesRes.error) console.error('Failed to fetch profiles:', profilesRes.error);
+    if (billingRes.error)  console.error('Failed to fetch client_billing:', billingRes.error);
+    setBillingInfo(billingRes.data || []);
     setClients(clientsRes.data || []);
     setLeads(leadsRes.data     || []);
     setLoading(false);
@@ -249,13 +253,17 @@ export default function SuperAdmin() {
   const thisMonthNew  = clients.filter(c => { const d = new Date(c.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length;
 
   const { starterCount, scaleCount } = getPlanCounts(clients);
-  const mrr = calculateMRR(clients);
+  const billingMap = billingByClient(billingInfo);
+  const mrr = calculateRealMRR(clients, billingInfo);
   const maxPlan = Math.max(starterCount, scaleCount, 1);
 
   const startOfThisMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
   const prevClients       = clients.filter(c => new Date(c.created_at) < startOfThisMonth);
-  const lastMonthMrr      = prevClients.filter(c => c.plan === 'starter').length * PLAN_FEES.starter
-                          + prevClients.filter(c => c.plan === 'scale').length   * PLAN_FEES.scale;
+  const lastMonthMrr      = prevClients.reduce((sum, c) => {
+    const bill = billingMap[c.id];
+    if (bill) return sum + Number(bill.effective_amount || 0);
+    return sum + (PLAN_FEES[c.plan] || 0);
+  }, 0);
   const mrrDiff = mrr - lastMonthMrr;
 
   const leadCountPerClient  = {};
@@ -521,7 +529,10 @@ export default function SuperAdmin() {
 
                           {/* Revenue */}
                           <td style={{ ...TD, fontWeight: '700', color: '#0d1117' }}>
-                            ${(PLAN_FEES[client.plan] || PLAN_FEES.starter)}/mo
+                            ${billingMap[client.id] ? Number(billingMap[client.id].effective_amount || 0) : (PLAN_FEES[client.plan] || PLAN_FEES.starter)}/mo
+                            {billingMap[client.id]?.discount_label && (
+                              <div style={{ fontSize: '10px', fontWeight: '600', color: '#7c3aed', whiteSpace: 'nowrap' }}>{billingMap[client.id].discount_label}</div>
+                            )}
                           </td>
 
                           {/* Estimates Used */}

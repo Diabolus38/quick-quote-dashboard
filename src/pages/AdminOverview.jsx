@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
-import { calculateMRR, getPlanCounts } from '../utils/mrrUtils';
+import { calculateRealMRR, billingByClient, getPlanCounts } from '../utils/mrrUtils';
 import { PLAN_FEES } from '../utils/planConfig';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
@@ -80,6 +80,7 @@ export default function AdminOverview() {
   const navigate    = useNavigate();
 
   const [clients,   setClients]   = useState([]);
+  const [billingInfo, setBillingInfo] = useState([]);
   const [leads,     setLeads]     = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [rankMode,         setRankMode]         = useState('leads');
@@ -92,6 +93,9 @@ export default function AdminOverview() {
       const clientsRes = await supabase.from('clients').select('id, name, email, plan, active, created_at, website_url, notes').order('created_at', { ascending: false }).limit(1000);
       if (clientsRes.error) console.error('Failed to fetch clients:', clientsRes.error);
       setClients(clientsRes.data || []);
+      const billingRes = await supabase.from('client_billing').select('*');
+      if (billingRes.error) console.error('Failed to fetch client_billing:', billingRes.error);
+      setBillingInfo(billingRes.data || []);
     }
     const leadsRes = await supabase.from('leads').select('id, client_id, created_at, status, estimated_price, name, email').order('created_at', { ascending: false }).limit(2000);
     if (leadsRes.error) console.error('Failed to fetch leads:', leadsRes.error);
@@ -119,7 +123,8 @@ export default function AdminOverview() {
   const thisYear   = now.getFullYear();
 
   const { starterCount, scaleCount } = getPlanCounts(clients);
-  const mrr = calculateMRR(clients);
+  const billingMap = billingByClient(billingInfo);
+  const mrr = calculateRealMRR(clients, billingInfo);
 
   const mrrGrowth = clients.filter(c => {
     const d = new Date(c.created_at);
@@ -154,6 +159,7 @@ export default function AdminOverview() {
   const maxPlan     = Math.max(starterCount, scaleCount, 1);
 
   const PLAN_FEE_OV = PLAN_FEES;
+  const clientRevenue = c => billingMap[c.id] ? Number(billingMap[c.id].effective_amount || 0) : (PLAN_FEE_OV[c.plan] || 0);
   const conversionRatePerClient = {};
   clients.forEach(c => {
     const cl = leads.filter(l => l.client_id === c.id);
@@ -162,14 +168,14 @@ export default function AdminOverview() {
   });
   const top5Clients = [...clients]
     .sort((a, b) => rankMode === 'revenue'
-      ? (PLAN_FEE_OV[b.plan] || 0) - (PLAN_FEE_OV[a.plan] || 0)
+      ? clientRevenue(b) - clientRevenue(a)
       : rankMode === 'conversion'
         ? conversionRatePerClient[b.id] - conversionRatePerClient[a.id]
         : (leadCountPerClient[b.id] || 0) - (leadCountPerClient[a.id] || 0))
     .slice(0, 5);
   const top5MaxCount = top5Clients.length > 0
     ? (rankMode === 'revenue'
-        ? PLAN_FEE_OV[top5Clients[0].plan] || 1
+        ? clientRevenue(top5Clients[0]) || 1
         : rankMode === 'conversion'
           ? conversionRatePerClient[top5Clients[0].id] || 1
           : (leadCountPerClient[top5Clients[0].id] || 1))
@@ -449,7 +455,7 @@ export default function AdminOverview() {
               : top5Clients;
             return visibleClients;
           })().map((client, idx) => {
-            const count    = rankMode === 'revenue' ? (PLAN_FEE_OV[client.plan] || 0) : rankMode === 'conversion' ? conversionRatePerClient[client.id] || 0 : (leadCountPerClient[client.id] || 0);
+            const count    = rankMode === 'revenue' ? clientRevenue(client) : rankMode === 'conversion' ? conversionRatePerClient[client.id] || 0 : (leadCountPerClient[client.id] || 0);
             const display  = rankMode === 'revenue' ? `$${count.toLocaleString()}/mo` : rankMode === 'conversion' ? `${count}%` : String(count);
             const pct      = top5MaxCount > 0 ? Math.round((count / top5MaxCount) * 100) : 0;
             const rankColors = [

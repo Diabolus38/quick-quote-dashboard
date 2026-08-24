@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../Layout';
 import { supabase } from '../lib/supabase';
-import { calculateMRR } from '../utils/mrrUtils';
+import { calculateRealMRR, billingByClient } from '../utils/mrrUtils';
 import { PLAN_FEES, PLAN_LIMITS, OVERAGE_RATES } from '../utils/planConfig';
 import { useAuth } from '../context/AuthContext';
 
@@ -61,6 +61,7 @@ export default function Billing() {
   const _now = new Date();
   const [billingMonth,  setBillingMonth]  = useState(`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`);
   const [clients,       setClients]       = useState([]);
+  const [billingInfo,   setBillingInfo]   = useState([]);
   const [leads,         setLeads]         = useState([]);
   const [allLeads,      setAllLeads]      = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -80,19 +81,22 @@ export default function Billing() {
       const ytdStart    = new Date(year, 0, 1).toISOString();
       const windowStart = new Date(year, month - 6, 1).toISOString();
 
-      const [clientsRes, leadsRes, ytdRes, chartRes, allLeadsRes] = await Promise.all([
+      const [clientsRes, leadsRes, ytdRes, chartRes, allLeadsRes, billingRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('leads').select('id, client_id, created_at, status').gte('created_at', monthStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', ytdStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', windowStart).lt('created_at', monthEnd),
         // TODO: paginate this query when total lead count exceeds ~10k
         supabase.from('leads').select('id, client_id, created_at').order('created_at', { ascending: true }).limit(10000),
+        supabase.from('client_billing').select('*'),
       ]);
       setClients(clientsRes.data   || []);
       setLeads(leadsRes.data       || []);
       setYtdLeads(ytdRes.data      || []);
       setChartLeads(chartRes.data  || []);
       setAllLeads(allLeadsRes.data || []);
+      if (billingRes.error) console.error('Failed to fetch client_billing:', billingRes.error);
+      setBillingInfo(billingRes.data || []);
       setLoading(false);
     }
     fetchData();
@@ -180,9 +184,11 @@ export default function Billing() {
     leadsThisMonth[l.client_id] = (leadsThisMonth[l.client_id] || 0) + 1;
   });
 
+  const billingMap = billingByClient(billingInfo);
   const billingRows = clients.map(c => {
     const plan    = c.plan || 'starter';
-    const fee     = PLAN_FEE[plan]     ?? 300;
+    const bill    = billingMap[c.id];
+    const fee     = bill ? Number(bill.effective_amount || 0) : (PLAN_FEE[plan] ?? 300);
     const limit   = PLAN_LIMIT[plan]   ?? 30;
     const rate    = OVERAGE_RATE[plan] ?? 25;
     const used    = (c.billing_period_start && c.billing_period_end)
@@ -198,6 +204,7 @@ export default function Billing() {
       active:        c.active !== false,
       plan,
       fee,
+      discountLabel: bill ? bill.discount_label : null,
       limit,
       used,
       overage,
@@ -227,7 +234,7 @@ export default function Billing() {
     });
     const total = clients.reduce((sum, c) => {
       const plan    = c.plan || 'starter';
-      const fee     = PLAN_FEE[plan]     ?? 300;
+      const fee     = billingMap[c.id] ? Number(billingMap[c.id].effective_amount || 0) : (PLAN_FEE[plan] ?? 300);
       const limit   = PLAN_LIMIT[plan]   ?? 30;
       const rate    = OVERAGE_RATE[plan] ?? 25;
       const used    = leadsInMonth[c.id] || 0;
@@ -240,7 +247,7 @@ export default function Billing() {
   const maxChartTotal = Math.max(...chartData.map(d => d.total), 1);
 
   /* ── Computed totals ── */
-  const totalMRR      = calculateMRR(clients);
+  const totalMRR      = calculateRealMRR(clients, billingInfo);
   const totalOverages = billingRows.reduce((s, r) => s + r.overageCharge, 0);
   const totalRevenue  = totalMRR + totalOverages;
   const activeCount   = clients.filter(c => c.active !== false).length;
@@ -566,6 +573,9 @@ export default function Billing() {
                         onClick={e => e.stopPropagation()}
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', minWidth: '180px' }}>
                         <div style={{ fontSize: '20px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>${row.total.toLocaleString()}</div>
+                        {row.discountLabel && (
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: '#7c3aed', textAlign: 'right' }}>{row.discountLabel}</div>
+                        )}
                         <span
                           onClick={() => {
                             const next = { ...paidStatus, [row.id]: !paidStatus[row.id] };
