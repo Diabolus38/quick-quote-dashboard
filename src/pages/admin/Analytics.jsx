@@ -58,6 +58,8 @@ export default function Analytics() {
   const [clients,        setClients]        = useState([]);
   const [selectedClient, setSelectedClient]  = useState('all');
   const [range,          setRange]           = useState('30');
+  const [customStart,    setCustomStart]     = useState('');
+  const [customEnd,      setCustomEnd]       = useState('');
   const [events,         setEvents]          = useState([]);
   const [loading,        setLoading]         = useState(true);
   const [loadError,      setLoadError]       = useState('');
@@ -77,7 +79,10 @@ export default function Analytics() {
       .order('created_at', { ascending: false })
       .limit(50000);
     if (selectedClient !== 'all') q = q.eq('client_id', selectedClient);
-    if (range !== 'all') {
+    if (customStart || customEnd) {
+      if (customStart) q = q.gte('created_at', new Date(`${customStart}T00:00:00`).toISOString());
+      if (customEnd) q = q.lte('created_at', new Date(`${customEnd}T23:59:59.999`).toISOString());
+    } else if (range !== 'all') {
       const start = new Date(Date.now() - Number(range) * 86400000).toISOString();
       q = q.gte('created_at', start);
     }
@@ -91,7 +96,7 @@ export default function Analytics() {
       setEvents([]);
       setLoading(false);
     });
-  }, [selectedClient, range]);
+  }, [selectedClient, range, customStart, customEnd]);
 
   const stats = useMemo(() => {
    try {
@@ -205,16 +210,8 @@ export default function Analytics() {
     }
     const typicalFinishMs = finishDurations.length ? median(finishDurations) : null;
 
-    // Trend over time: bucket by day for short ranges, by week for long ones (keeps the chart readable).
-    const bucketByWeek = range === '90' || range === 'all';
-    const bucketKey = iso => {
-      const d = new Date(iso);
-      if (!bucketByWeek) return d.toISOString().slice(0, 10);
-      const day = (d.getUTCDay() + 6) % 7; // Monday = 0
-      const monday = new Date(d);
-      monday.setUTCDate(d.getUTCDate() - day);
-      return monday.toISOString().slice(0, 10);
-    };
+    // Trend over time: one bucket per calendar day, always, so every day is visible.
+    const bucketKey = iso => new Date(iso).toISOString().slice(0, 10);
     const trendMap = {};
     for (const s of sessionList) {
       const key = bucketKey(s.first);
@@ -223,8 +220,8 @@ export default function Analytics() {
       if (hasCompleted(s)) t.completed += 1;
     }
     let trend = Object.values(trendMap).sort((a, b) => a.key.localeCompare(b.key));
-    const trendTruncated = trend.length > 26;
-    if (trendTruncated) trend = trend.slice(trend.length - 26);
+    const trendTruncated = trend.length > 366;
+    if (trendTruncated) trend = trend.slice(trend.length - 366);
 
     // Device breakdown.
     const deviceMap = {};
@@ -271,7 +268,7 @@ export default function Analytics() {
     return {
       totalSessions, openedCount, base, funnel, reachedContact, completed, abandonedContact,
       avgFurthest, stepCount: stepOrder.length, pdfCount, emailCount,
-      biggestLeak, timePerStep, typicalFinishMs, trend, trendTruncated, bucketByWeek,
+      biggestLeak, timePerStep, typicalFinishMs, trend, trendTruncated,
       devices, sources, perClient, error: null,
     };
    } catch (err) {
@@ -282,12 +279,12 @@ export default function Analytics() {
     return {
       totalSessions: 0, openedCount: 0, base: 0, funnel: [], reachedContact: null, completed: 0, abandonedContact: null,
       avgFurthest: 0, stepCount: 0, pdfCount: 0, emailCount: 0,
-      biggestLeak: null, timePerStep: [], typicalFinishMs: null, trend: [], trendTruncated: false, bucketByWeek: false,
+      biggestLeak: null, timePerStep: [], typicalFinishMs: null, trend: [], trendTruncated: false,
       devices: [], sources: [], perClient: [],
       error: err?.message || 'Could not process the analytics data.',
     };
    }
-  }, [events, range]);
+  }, [events]);
 
   const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
 
@@ -302,7 +299,7 @@ export default function Analytics() {
 
   const maxTimePerStep = stats.timePerStep.length ? Math.max(...stats.timePerStep.map(r => r.medianMs)) || 1 : 1;
   const maxTrendOpened = stats.trend.length ? Math.max(...stats.trend.map(t => t.opened), 1) : 1;
-  const trendLabelEvery = Math.max(1, Math.ceil(stats.trend.length / 8));
+  const trendLabelEvery = Math.max(1, Math.ceil(stats.trend.length / 20));
   const maxDeviceSessions = stats.devices.length ? Math.max(...stats.devices.map(d => d.sessions)) || 1 : 1;
   const maxSourceSessions = stats.sources.length ? Math.max(...stats.sources.map(s => s.sessions)) || 1 : 1;
 
@@ -314,12 +311,27 @@ export default function Analytics() {
           <option value="all">All clients</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        {RANGES.map(r => (
-          <button key={r.key} type="button" onClick={() => setRange(r.key)}
-            style={{ border: range === r.key ? 'none' : '1px solid #e8ede8', backgroundColor: range === r.key ? '#0d1f12' : '#fff', color: range === r.key ? '#fff' : '#6b7280', borderRadius: '10px', padding: '9px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
-            {r.label}
+        {RANGES.map(r => {
+          const active = range === r.key && !customStart && !customEnd;
+          return (
+            <button key={r.key} type="button" onClick={() => { setRange(r.key); setCustomStart(''); setCustomEnd(''); }}
+              style={{ border: active ? 'none' : '1px solid #e8ede8', backgroundColor: active ? '#0d1f12' : '#fff', color: active ? '#fff' : '#6b7280', borderRadius: '10px', padding: '9px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              {r.label}
+            </button>
+          );
+        })}
+        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, marginLeft: '4px' }}>or pick dates:</span>
+        <input type="date" value={customStart} max={customEnd || undefined} onChange={e => setCustomStart(e.target.value)}
+          style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '8px 10px', fontSize: '13px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', outline: 'none' }} />
+        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>to</span>
+        <input type="date" value={customEnd} min={customStart || undefined} onChange={e => setCustomEnd(e.target.value)}
+          style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '8px 10px', fontSize: '13px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', outline: 'none' }} />
+        {(customStart || customEnd) && (
+          <button type="button" onClick={() => { setCustomStart(''); setCustomEnd(''); }}
+            style={{ border: 'none', background: 'none', color: '#9ca3af', fontSize: '12px', fontFamily: FONT, cursor: 'pointer', textDecoration: 'underline', padding: '4px' }}>
+            clear dates
           </button>
-        ))}
+        )}
       </div>
 
       {loadError && (
@@ -409,8 +421,8 @@ export default function Analytics() {
       <div style={{ ...CARD, marginTop: '16px' }}>
         <p style={SECTION_TITLE}>Sessions over time</p>
         <p style={SECTION_SUB}>
-          {stats.bucketByWeek ? 'Grouped by week.' : 'Grouped by day.'} Opened vs. completed, so you can see if a change to the tool actually moved the needle.
-          {stats.trendTruncated ? ' Showing the most recent 26 periods.' : ''}
+          One bar per day, every day in the selected range. Opened vs. completed, so you can see if a change to the tool actually moved the needle. Scroll sideways for longer ranges, hover a bar for the exact date and counts.
+          {stats.trendTruncated ? ' Showing the most recent 366 days.' : ''}
         </p>
         {stats.trend.length === 0 ? (
           <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No data in this period yet.</p>
@@ -425,13 +437,16 @@ export default function Analytics() {
                 const openedH = Math.max(2, Math.round((t.opened / maxTrendOpened) * 100));
                 const completedH = t.completed ? Math.max(2, Math.round((t.completed / maxTrendOpened) * 100)) : 0;
                 const showLabel = i % trendLabelEvery === 0 || i === stats.trend.length - 1;
+                const dayDate = new Date(`${t.key}T00:00:00Z`);
+                const weekdayShort = dayDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+                const weekdayLong = dayDate.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
                 return (
-                  <div key={t.key} title={`${t.key}: ${t.opened} opened, ${t.completed} completed`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '18px' }}>
+                  <div key={t.key} title={`${weekdayLong} ${t.key}: ${t.opened} opened, ${t.completed} completed`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '18px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '100px' }}>
                       <div style={{ width: '7px', height: `${openedH}%`, backgroundColor: LIME, borderRadius: '2px 2px 0 0' }} />
                       <div style={{ width: '7px', height: `${completedH}%`, backgroundColor: PRIMARY, borderRadius: '2px 2px 0 0' }} />
                     </div>
-                    <span style={{ fontSize: '9px', color: '#9ca3af', fontFamily: FONT, marginTop: '4px', whiteSpace: 'nowrap' }}>{showLabel ? t.key.slice(5) : ''}</span>
+                    <span style={{ fontSize: '9px', color: '#9ca3af', fontFamily: FONT, marginTop: '4px', whiteSpace: 'nowrap' }}>{showLabel ? weekdayShort : ''}</span>
                   </div>
                 );
               })}
