@@ -401,7 +401,7 @@ export default function Billing() {
             });
             clients.forEach(c => {
               const plan    = c.plan || 'starter';
-              const fee     = PLAN_FEE[plan]     ?? 300;
+              const fee     = billingMap[c.id] ? Number(billingMap[c.id].effective_amount || 0) : (PLAN_FEE[plan] ?? 300);
               const limit   = PLAN_LIMIT[plan]   ?? 30;
               const rate    = OVERAGE_RATE[plan] ?? 25;
               const used    = monthCounts[c.id] || 0;
