@@ -58,6 +58,15 @@ function isoDateOffset(daysAgo) {
   return new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10);
 }
 
+// Turns a 2-letter country code like "SE" into "Sweden"; anything else passes through as-is.
+function countryLabel(c) {
+  if (!c) return null;
+  if (/^[A-Za-z]{2}$/.test(c)) {
+    try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(c.toUpperCase()) || c; } catch { /* fall through */ }
+  }
+  return c;
+}
+
 export default function Analytics() {
   const [clients,        setClients]        = useState([]);
   const [selectedClient, setSelectedClient]  = useState('all');
@@ -109,6 +118,7 @@ export default function Analytics() {
       const s = sessions[e.session_id] || (sessions[e.session_id] = {
         opened: false, steps: {}, pdf: false, email: false, first: e.created_at, clientId: e.client_id,
         device: null, referrer: null, language: null, utmSource: null, utmMedium: null, utmCampaign: null,
+        country: null, city: null,
       });
       if (e.created_at < s.first) s.first = e.created_at;
       if (e.event_type === 'bubble_opened')  s.opened = true;
@@ -125,6 +135,8 @@ export default function Analytics() {
       if (!s.utmSource   && d.utm_source)   s.utmSource   = d.utm_source;
       if (!s.utmMedium   && d.utm_medium)   s.utmMedium   = d.utm_medium;
       if (!s.utmCampaign && d.utm_campaign) s.utmCampaign = d.utm_campaign;
+      if (!s.country     && d.country)      s.country     = d.country;
+      if (!s.city        && d.city)         s.city        = d.city;
     }
     const sessionList = Object.values(sessions);
     const totalSessions = sessionList.length;
@@ -247,6 +259,19 @@ export default function Analytics() {
     }
     const sources = Object.values(sourceMap).sort((a, b) => b.sessions - a.sessions).slice(0, 8);
 
+    // Location breakdown: country per session (from the backend's IP lookup), with top cities inside each.
+    const locationMap = {};
+    for (const s of sessionList) {
+      const key = (s.country && countryLabel(s.country)) || 'unknown';
+      const t = locationMap[key] || (locationMap[key] = { key, sessions: 0, completed: 0, cities: {} });
+      t.sessions += 1;
+      if (hasCompleted(s)) t.completed += 1;
+      if (s.city) t.cities[s.city] = (t.cities[s.city] || 0) + 1;
+    }
+    const locations = Object.values(locationMap)
+      .map(l => ({ ...l, topCities: Object.entries(l.cities).sort((a, b) => b[1] - a[1]).slice(0, 3) }))
+      .sort((a, b) => ((a.key === 'unknown') - (b.key === 'unknown')) || b.sessions - a.sessions);
+
     // Per-client breakdown (only meaningful when viewing all clients together).
     const clientMap = {};
     for (const s of sessionList) {
@@ -273,7 +298,7 @@ export default function Analytics() {
       totalSessions, openedCount, base, funnel, reachedContact, completed, abandonedContact,
       avgFurthest, stepCount: stepOrder.length, pdfCount, emailCount,
       biggestLeak, timePerStep, typicalFinishMs, trend, trendTruncated,
-      devices, sources, perClient, error: null,
+      devices, sources, locations, perClient, error: null,
     };
    } catch (err) {
     // Belt and suspenders: if anything above throws on unexpected data, show an empty,
@@ -284,7 +309,7 @@ export default function Analytics() {
       totalSessions: 0, openedCount: 0, base: 0, funnel: [], reachedContact: null, completed: 0, abandonedContact: null,
       avgFurthest: 0, stepCount: 0, pdfCount: 0, emailCount: 0,
       biggestLeak: null, timePerStep: [], typicalFinishMs: null, trend: [], trendTruncated: false,
-      devices: [], sources: [], perClient: [],
+      devices: [], sources: [], locations: [], perClient: [],
       error: err?.message || 'Could not process the analytics data.',
     };
    }
@@ -304,6 +329,7 @@ export default function Analytics() {
   const trendLabelEvery = Math.max(1, Math.ceil(stats.trend.length / 20));
   const maxDeviceSessions = stats.devices.length ? Math.max(...stats.devices.map(d => d.sessions)) || 1 : 1;
   const maxSourceSessions = stats.sources.length ? Math.max(...stats.sources.map(s => s.sessions)) || 1 : 1;
+  const maxLocationSessions = stats.locations.length ? Math.max(...stats.locations.map(l => l.sessions)) || 1 : 1;
 
   return (
     <Layout title="Analytics" subtitle="How visitors move through the widget: from bubble click to completed estimate.">
@@ -458,6 +484,39 @@ export default function Analytics() {
               })}
             </div>
           </>
+        )}
+      </div>
+
+      <div style={{ ...CARD, marginTop: '16px' }}>
+        <p style={SECTION_TITLE}>Where visitors are located</p>
+        <p style={SECTION_SUB}>Country worked out from the visitor's IP when they used the widget, with the most common cities when known (city-level can be inaccurate). Sessions from before this tracking existed show as Unknown, so this fills in as fresh traffic comes in.</p>
+        {stats.locations.filter(l => l.key !== 'unknown').length === 0 ? (
+          <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No location data in this period yet. It only exists on newer sessions, so give it a little time.</p>
+        ) : (
+          <div>
+            {stats.locations.map(l => {
+              const w = Math.max(2, Math.round((l.sessions / maxLocationSessions) * 100));
+              const label = l.key === 'unknown' ? 'Unknown (older sessions)' : l.key;
+              return (
+                <div key={l.key} style={{ marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ width: '160px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right' }}>{label}</span>
+                    <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{l.sessions}</span>
+                      </div>
+                    </div>
+                    <span style={{ width: '70px', flexShrink: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{pct(l.completed, l.sessions)}% finish</span>
+                  </div>
+                  {l.topCities.length > 0 && (
+                    <p style={{ margin: '2px 0 0 172px', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>
+                      {l.topCities.map(([city, n]) => `${city} (${n})`).join(', ')}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
