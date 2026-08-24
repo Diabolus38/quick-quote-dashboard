@@ -54,6 +54,10 @@ function hostnameOf(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
 }
 
+function isoDateOffset(daysAgo) {
+  return new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10);
+}
+
 export default function Analytics() {
   const [clients,        setClients]        = useState([]);
   const [selectedClient, setSelectedClient]  = useState('all');
@@ -289,8 +293,8 @@ export default function Analytics() {
   const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
 
   const tiles = [
-    { label: 'Sessions (bubble opened)', value: stats.openedCount || stats.totalSessions, sub: (stats.openedCount && stats.totalSessions > stats.openedCount) ? `${stats.totalSessions} sessions tracked in total` : 'unique visits that opened the tool' },
-    { label: 'Completed (saw price)', value: stats.completed, sub: `${pct(stats.completed, stats.base)}% of opened` },
+    { label: 'Sessions tracked', value: stats.totalSessions, sub: (stats.openedCount && stats.totalSessions > stats.openedCount) ? `${stats.openedCount} confirmed via bubble-open (see note below)` : 'unique visits in this period' },
+    { label: 'Completed (saw price)', value: stats.completed, sub: `${pct(stats.completed, stats.totalSessions)}% of tracked sessions` },
     { label: 'How far people typically get', value: stats.stepCount ? `${stats.avgFurthest.toFixed(1)} / ${stats.stepCount} steps` : '—', sub: 'average, among sessions that answered anything' },
     { label: 'Abandoned at contact form', value: stats.abandonedContact ?? '—', sub: stats.abandonedContact === null ? 'no contact step seen yet' : 'reached contact, never finished' },
     { label: 'Typical time to finish', value: formatDuration(stats.typicalFinishMs), sub: stats.typicalFinishMs === null ? 'not enough completed sessions yet' : 'middle (median) session, start to price shown' },
@@ -320,7 +324,18 @@ export default function Analytics() {
             </button>
           );
         })}
-        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, marginLeft: '4px' }}>or pick dates:</span>
+        <span style={{ width: '1px', height: '20px', backgroundColor: '#e8ede8', margin: '0 2px' }} />
+        {[{ key: 'today', label: 'Today', days: 0 }, { key: 'yesterday', label: 'Yesterday', days: 1 }].map(d => {
+          const dateStr = isoDateOffset(d.days);
+          const active = customStart === dateStr && customEnd === dateStr;
+          return (
+            <button key={d.key} type="button" onClick={() => { setCustomStart(dateStr); setCustomEnd(dateStr); }}
+              style={{ border: active ? 'none' : '1px solid #e8ede8', backgroundColor: active ? '#0d1f12' : '#fff', color: active ? '#fff' : '#6b7280', borderRadius: '10px', padding: '9px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT }}>
+              {d.label}
+            </button>
+          );
+        })}
+        <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT, marginLeft: '4px' }}>or pick any single day or range:</span>
         <input type="date" value={customStart} max={customEnd || undefined} onChange={e => setCustomStart(e.target.value)}
           style={{ border: '1px solid #e8ede8', borderRadius: '10px', padding: '8px 10px', fontSize: '13px', fontFamily: FONT, backgroundColor: '#fff', color: '#0d1117', outline: 'none' }} />
         <span style={{ fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>to</span>
@@ -356,6 +371,14 @@ export default function Analytics() {
         ))}
       </div>
 
+      {!loading && stats.openedCount > 0 && stats.totalSessions > stats.openedCount * 1.3 && (
+        <div style={{ ...CARD, marginBottom: '16px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '18px 24px' }}>
+          <p style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontFamily: FONT, lineHeight: '1.6' }}>
+            <strong>Heads up:</strong> only {stats.openedCount} of {stats.totalSessions} sessions have a confirmed &quot;bubble opened&quot; event. This is a known gap in the widget's tracking (being looked at separately), not a real drop in traffic. Every number on this page uses the full {stats.totalSessions}, not just the confirmed {stats.openedCount}.
+          </p>
+        </div>
+      )}
+
       {!loading && stats.biggestLeak && (
         <div style={{ ...CARD, marginBottom: '16px', backgroundColor: '#fff7ed', border: '1px solid #fed7aa', padding: '18px 24px' }}>
           <p style={{ margin: 0, fontSize: '13px', color: '#9a3412', fontFamily: FONT, lineHeight: '1.6' }}>
@@ -366,7 +389,7 @@ export default function Analytics() {
 
       <div style={CARD}>
         <p style={SECTION_TITLE}>Funnel</p>
-        <p style={SECTION_SUB}>Unique sessions reaching each step, out of every session tracked (not just confirmed bubble-opens — some older sessions logged steps before that specific event existed; see the "Sessions (bubble opened)" tile above for that count). Step order is derived from real visitor timing, not hardcoded.</p>
+        <p style={SECTION_SUB}>Unique sessions reaching each step, out of every session tracked (not just confirmed bubble-opens — see the note above if the numbers here look bigger than the confirmed bubble-open count). Step order is derived from real visitor timing, not hardcoded.</p>
         {loading ? (
           <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Loading…</p>
         ) : stats.funnel.length === 0 ? (
@@ -509,7 +532,7 @@ export default function Analytics() {
       {selectedClient === 'all' && stats.perClient.length > 1 && (
         <div style={{ ...CARD, marginTop: '16px' }}>
           <p style={SECTION_TITLE}>How each client is doing</p>
-          <p style={SECTION_SUB}>Same numbers as above, split out per client. &quot;Most common stopping point&quot; only shows once a client has at least 5 sessions, so one or two visitors don't look like a pattern.</p>
+          <p style={SECTION_SUB}>Same numbers as above, split out per client. &quot;Most common stopping point&quot; only shows once a client has at least 5 sessions, so one or two visitors don't look like a pattern. Click a row to filter the whole page down to just that client.</p>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
               <thead>
@@ -523,7 +546,10 @@ export default function Analytics() {
                 {stats.perClient.map(c => {
                   const name = clients.find(cl => cl.id === c.clientId)?.name || c.clientId;
                   return (
-                    <tr key={c.clientId}>
+                    <tr key={c.clientId} onClick={() => { setSelectedClient(c.clientId); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      onMouseOver={e => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
+                      onMouseOut={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                      style={{ cursor: 'pointer' }} title={`Click to filter the page to ${name}`}>
                       <td style={{ padding: '10px', fontSize: '13px', color: '#0d1117', borderBottom: '1px solid #f3f4f6' }}>{name}</td>
                       <td style={{ padding: '10px', fontSize: '13px', color: '#0d1117', borderBottom: '1px solid #f3f4f6' }}>{c.sessions}</td>
                       <td style={{ padding: '10px', fontSize: '13px', color: '#0d1117', borderBottom: '1px solid #f3f4f6' }}>{pct(c.completed, c.sessions)}%</td>
