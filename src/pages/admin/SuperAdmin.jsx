@@ -412,9 +412,9 @@ export default function SuperAdmin() {
               <div style={CARD}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', fontSize: '22px', fontWeight: '800', color: LIME }}>$</div>
                 <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Monthly Revenue</p>
-                <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>{mrr.toLocaleString()} kr</p>
-                {mrrDiff > 0 && <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ +{mrrDiff.toLocaleString()} kr vs last month</p>}
-                {mrrDiff < 0 && <p style={{ margin: 0, fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>↓ −{Math.abs(mrrDiff).toLocaleString()} kr vs last month</p>}
+                <p style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px', lineHeight: 1 }}>${mrr.toLocaleString()}</p>
+                {mrrDiff > 0 && <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>↑ +${mrrDiff.toLocaleString()} vs last month</p>}
+                {mrrDiff < 0 && <p style={{ margin: 0, fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>↓ −${Math.abs(mrrDiff).toLocaleString()} vs last month</p>}
                 {mrrDiff === 0 && <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>Same as last month.</p>}
               </div>
 
@@ -644,7 +644,7 @@ export default function SuperAdmin() {
 
                 <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid #e8ede8' }}>
                   <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total MRR</p>
-                  <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>{mrr.toLocaleString()} kr</p>
+                  <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0d1117', letterSpacing: '-0.5px' }}>${mrr.toLocaleString()}</p>
                 </div>
               </div>
             </div>
