@@ -235,9 +235,9 @@ Authentication cookies — Essential. Set by Supabase to keep you logged in to t
 Local storage — Used for UI preferences only. Contains no personal data.
 
 We do not use:
-- Google Analytics, Facebook Pixel, or any third-party analytics or tracking scripts
-- Advertising or retargeting cookies
-- Any tool that tracks visitors across other websites
+• Google Analytics, Facebook Pixel, or any third-party analytics or tracking scripts
+• Advertising or retargeting cookies
+• Any tool that tracks visitors across other websites
 
 The estimator widget embedded on your website sets no cookies on your visitors. It does log basic, non-cookie interaction data (which steps were used, device type, approximate location) to help contractors and us improve the tool — see "End Customer Data" above for details.`}</Body>
             </SectionCard>
