@@ -292,9 +292,7 @@ export default function Analytics() {
 
   const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
 
-  const tiles = [
-    { label: 'Sessions tracked', value: stats.totalSessions, sub: (stats.openedCount && stats.totalSessions > stats.openedCount) ? `${stats.openedCount} confirmed via bubble-open (see note below)` : 'unique visits in this period' },
-    { label: 'Completed (saw price)', value: stats.completed, sub: `${pct(stats.completed, stats.totalSessions)}% of tracked sessions` },
+  const secondaryTiles = [
     { label: 'How far people typically get', value: stats.stepCount ? `${stats.avgFurthest.toFixed(1)} / ${stats.stepCount} steps` : '—', sub: 'average, among sessions that answered anything' },
     { label: 'Abandoned at contact form', value: stats.abandonedContact ?? '—', sub: stats.abandonedContact === null ? 'no contact step seen yet' : 'reached contact, never finished' },
     { label: 'Typical time to finish', value: formatDuration(stats.typicalFinishMs), sub: stats.typicalFinishMs === null ? 'not enough completed sessions yet' : 'middle (median) session, start to price shown' },
@@ -361,23 +359,32 @@ export default function Analytics() {
         </div>
       )}
 
+      <div style={{ ...CARD, marginBottom: '16px' }}>
+        <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#9ca3af', fontFamily: FONT }}>At a glance</p>
+        <p style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '800', color: '#0d1117', fontFamily: FONT, lineHeight: '1.35' }}>
+          {loading ? 'Loading…' : (
+            <>{stats.totalSessions} {stats.totalSessions === 1 ? 'person' : 'people'} used the tool, <span style={{ color: stats.completed > 0 ? PRIMARY : '#9ca3af' }}>{stats.completed} finished</span> and saw a price ({pct(stats.completed, stats.totalSessions)}%)</>
+          )}
+        </p>
+        {!loading && stats.openedCount > 0 && stats.totalSessions > stats.openedCount * 1.3 && (
+          <details style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', fontFamily: FONT }}>
+            <summary style={{ cursor: 'pointer', color: '#2563eb', fontWeight: '600' }}>Why does the confirmed &quot;bubble opened&quot; count look so much smaller than {stats.totalSessions}?</summary>
+            <p style={{ margin: '8px 0 0', lineHeight: '1.6', maxWidth: '760px' }}>
+              Only {stats.openedCount} of these {stats.totalSessions} sessions have a confirmed &quot;bubble opened&quot; tracking event. That doesn't mean the rest skipped opening the tool, they had to open it to reach any step below. It means the widget's separate tracking signal for &quot;bubble opened&quot; is broken right now and only catches a fraction of real opens (a widget/backend bug, not a dashboard bug, being fixed separately). Every other number on this page, including the {stats.totalSessions} total, comes from real tracked activity and is accurate.
+            </p>
+          </details>
+        )}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '14px', marginBottom: '16px' }}>
-        {tiles.map(t => (
+        {secondaryTiles.map(t => (
           <div key={t.label} style={CARD}>
             <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#9ca3af', fontFamily: FONT }}>{t.label}</p>
-            <p style={{ margin: '0 0 4px', fontSize: '26px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>{loading ? '…' : t.value}</p>
+            <p style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', color: '#0d1117', fontFamily: FONT }}>{loading ? '…' : t.value}</p>
             <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{t.sub}</p>
           </div>
         ))}
       </div>
-
-      {!loading && stats.openedCount > 0 && stats.totalSessions > stats.openedCount * 1.3 && (
-        <div style={{ ...CARD, marginBottom: '16px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '18px 24px' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontFamily: FONT, lineHeight: '1.6' }}>
-            <strong>Heads up:</strong> this doesn't mean {stats.totalSessions - stats.openedCount} of these {stats.totalSessions} people skipped opening the tool. They had to open it to reach any of the steps below. It means the widget's separate tracking signal for &quot;bubble opened&quot; is broken right now and only catches a fraction of real opens (a widget/backend bug, not a dashboard bug, being fixed separately). Every other number on this page, including the {stats.totalSessions} total, comes from real tracked activity and is accurate. Only the small &quot;confirmed via bubble-open&quot; figure undercounts.
-          </p>
-        </div>
-      )}
 
       {!loading && stats.biggestLeak && (
         <div style={{ ...CARD, marginBottom: '16px', backgroundColor: '#fff7ed', border: '1px solid #fed7aa', padding: '18px 24px' }}>
@@ -389,7 +396,7 @@ export default function Analytics() {
 
       <div style={CARD}>
         <p style={SECTION_TITLE}>Funnel</p>
-        <p style={SECTION_SUB}>Unique sessions reaching each step, out of every session tracked (not just confirmed bubble-opens — see the note above if the numbers here look bigger than the confirmed bubble-open count). Step order is derived from real visitor timing, not hardcoded.</p>
+        <p style={SECTION_SUB}>Unique sessions reaching each step, out of every session tracked (not just confirmed bubble-opens, see the &quot;why&quot; link above if the numbers here look bigger than the confirmed bubble-open count). Step order is derived from real visitor timing, not hardcoded.</p>
         {loading ? (
           <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Loading…</p>
         ) : stats.funnel.length === 0 ? (
@@ -410,30 +417,6 @@ export default function Analytics() {
                     </div>
                   </div>
                   <span style={{ width: '70px', flexShrink: 0, fontSize: '11px', color: drop > 30 ? '#dc2626' : '#9ca3af', fontWeight: drop > 30 ? '700' : '500', fontFamily: FONT }}>{drop !== null && drop > 0 ? `−${drop}%` : ''}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div style={{ ...CARD, marginTop: '16px' }}>
-        <p style={SECTION_TITLE}>Time spent on each step</p>
-        <p style={SECTION_SUB}>How long visitors typically stay on each step before moving to the next one. Uses the middle (median) session so one person who left their tab open doesn't skew it, and leaves out any gap longer than 30 minutes for the same reason.</p>
-        {stats.timePerStep.length === 0 ? (
-          <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Not enough sessions with two or more steps yet.</p>
-        ) : (
-          <div>
-            {stats.timePerStep.map(row => {
-              const w = Math.max(2, Math.round((row.medianMs / maxTimePerStep) * 100));
-              return (
-                <div key={row.step} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <span style={{ width: '160px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right' }}>{row.label}</span>
-                  <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{formatDuration(row.medianMs)}</span>
-                    </div>
-                  </div>
                 </div>
               );
             })}
@@ -478,56 +461,85 @@ export default function Analytics() {
         )}
       </div>
 
-      <div style={{ ...CARD, marginTop: '16px' }}>
-        <p style={SECTION_TITLE}>Mobile vs. desktop</p>
-        <p style={SECTION_SUB}>What device visitors are using, and whether one finishes more often than another.</p>
-        {stats.devices.length === 0 ? (
-          <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No data in this period yet.</p>
-        ) : (
-          <div>
-            {stats.devices.map(d => {
-              const w = Math.max(2, Math.round((d.sessions / maxDeviceSessions) * 100));
-              const label = d.key === 'unknown' ? 'Unknown (older data)' : DEVICE_LABELS[d.key];
-              return (
-                <div key={d.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <span style={{ width: '130px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right' }}>{label}</span>
-                  <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{d.sessions}</span>
+      <details style={{ ...CARD, marginTop: '16px' }}>
+        <summary style={{ cursor: 'pointer', fontSize: '15px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>More detail: time per step, device, traffic source</summary>
+        <div style={{ marginTop: '20px' }}>
+          <div style={{ marginBottom: '28px' }}>
+            <p style={SECTION_TITLE}>Time spent on each step</p>
+            <p style={SECTION_SUB}>How long visitors typically stay on each step before moving to the next one. Uses the middle (median) session so one person who left their tab open doesn't skew it, and leaves out any gap longer than 30 minutes for the same reason.</p>
+            {stats.timePerStep.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Not enough sessions with two or more steps yet.</p>
+            ) : (
+              <div>
+                {stats.timePerStep.map(row => {
+                  const w = Math.max(2, Math.round((row.medianMs / maxTimePerStep) * 100));
+                  return (
+                    <div key={row.step} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <span style={{ width: '160px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right' }}>{row.label}</span>
+                      <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{formatDuration(row.medianMs)}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <span style={{ width: '70px', flexShrink: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{pct(d.completed, d.sessions)}% finish</span>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div style={{ ...CARD, marginTop: '16px' }}>
-        <p style={SECTION_TITLE}>Where visitors came from</p>
-        <p style={SECTION_SUB}>Grouped by the campaign tag on the link (utm_source — for example a Facebook ad or newsletter link tagged with ?utm_source=facebook) when there is one, otherwise by the website that linked here. Top 8 shown.</p>
-        {stats.sources.length === 0 ? (
-          <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No data in this period yet.</p>
-        ) : (
-          <div>
-            {stats.sources.map(src => {
-              const w = Math.max(2, Math.round((src.sessions / maxSourceSessions) * 100));
-              return (
-                <div key={src.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <span style={{ width: '160px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{src.key}</span>
-                  <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{src.sessions}</span>
+          <div style={{ marginBottom: '28px' }}>
+            <p style={SECTION_TITLE}>Mobile vs. desktop</p>
+            <p style={SECTION_SUB}>What device visitors are using, and whether one finishes more often than another.</p>
+            {stats.devices.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No data in this period yet.</p>
+            ) : (
+              <div>
+                {stats.devices.map(d => {
+                  const w = Math.max(2, Math.round((d.sessions / maxDeviceSessions) * 100));
+                  const label = d.key === 'unknown' ? 'Unknown (older data)' : DEVICE_LABELS[d.key];
+                  return (
+                    <div key={d.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <span style={{ width: '130px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right' }}>{label}</span>
+                      <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{d.sessions}</span>
+                        </div>
+                      </div>
+                      <span style={{ width: '70px', flexShrink: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{pct(d.completed, d.sessions)}% finish</span>
                     </div>
-                  </div>
-                  <span style={{ width: '70px', flexShrink: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{pct(src.completed, src.sessions)}% finish</span>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          <div>
+            <p style={SECTION_TITLE}>Where visitors came from</p>
+            <p style={SECTION_SUB}>Grouped by the campaign tag on the link (utm_source — for example a Facebook ad or newsletter link tagged with ?utm_source=facebook) when there is one, otherwise by the website that linked here. Top 8 shown.</p>
+            {stats.sources.length === 0 ? (
+              <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No data in this period yet.</p>
+            ) : (
+              <div>
+                {stats.sources.map(src => {
+                  const w = Math.max(2, Math.round((src.sessions / maxSourceSessions) * 100));
+                  return (
+                    <div key={src.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <span style={{ width: '160px', flexShrink: 0, fontSize: '12.5px', fontWeight: '500', color: '#374151', fontFamily: FONT, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{src.key}</span>
+                      <div style={{ flex: 1, height: '22px', backgroundColor: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ width: `${w}%`, height: '100%', backgroundColor: LIME, borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ marginLeft: '10px', fontSize: '12px', fontWeight: '700', color: '#0d1f12', fontFamily: FONT, whiteSpace: 'nowrap' }}>{src.sessions}</span>
+                        </div>
+                      </div>
+                      <span style={{ width: '70px', flexShrink: 0, fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>{pct(src.completed, src.sessions)}% finish</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </details>
 
       {selectedClient === 'all' && stats.perClient.length > 1 && (
         <div style={{ ...CARD, marginTop: '16px' }}>
