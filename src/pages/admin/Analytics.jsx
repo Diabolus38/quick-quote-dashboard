@@ -292,7 +292,7 @@ export default function Analytics() {
   const pct = (n, d) => (d > 0 ? Math.round((n / d) * 100) : 0);
 
   const tiles = [
-    { label: 'Sessions (bubble opened)', value: stats.openedCount || stats.totalSessions, sub: 'unique visits that opened the tool' },
+    { label: 'Sessions (bubble opened)', value: stats.openedCount || stats.totalSessions, sub: (stats.openedCount && stats.totalSessions > stats.openedCount) ? `${stats.totalSessions} sessions tracked in total` : 'unique visits that opened the tool' },
     { label: 'Completed (saw price)', value: stats.completed, sub: `${pct(stats.completed, stats.base)}% of opened` },
     { label: 'How far people typically get', value: stats.stepCount ? `${stats.avgFurthest.toFixed(1)} / ${stats.stepCount} steps` : '—', sub: 'average, among sessions that answered anything' },
     { label: 'Abandoned at contact form', value: stats.abandonedContact ?? '—', sub: stats.abandonedContact === null ? 'no contact step seen yet' : 'reached contact, never finished' },
@@ -354,14 +354,14 @@ export default function Analytics() {
 
       <div style={CARD}>
         <p style={SECTION_TITLE}>Funnel</p>
-        <p style={SECTION_SUB}>Unique sessions reaching each step. Step order is derived from real visitor timing, not hardcoded.</p>
+        <p style={SECTION_SUB}>Unique sessions reaching each step, out of every session tracked (not just confirmed bubble-opens — some older sessions logged steps before that specific event existed; see the "Sessions (bubble opened)" tile above for that count). Step order is derived from real visitor timing, not hardcoded.</p>
         {loading ? (
           <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>Loading…</p>
         ) : stats.funnel.length === 0 ? (
           <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No step events in this period yet. Data appears here as visitors use the tool.</p>
         ) : (
           <div>
-            {[{ step: '_opened', label: 'Bubble opened', sessions: stats.base, isContact: false, isResult: false }, ...stats.funnel].map((row, i, arr) => {
+            {[{ step: '_all', label: 'All tracked sessions', sessions: stats.totalSessions, isContact: false, isResult: false }, ...stats.funnel].map((row, i, arr) => {
               const max = arr[0].sessions || 1;
               const w = Math.max(2, Math.round((row.sessions / max) * 100));
               const prev = i > 0 ? arr[i - 1].sessions : null;
