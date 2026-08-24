@@ -374,7 +374,7 @@ export default function Analytics() {
       {!loading && stats.openedCount > 0 && stats.totalSessions > stats.openedCount * 1.3 && (
         <div style={{ ...CARD, marginBottom: '16px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '18px 24px' }}>
           <p style={{ margin: 0, fontSize: '13px', color: '#1e3a8a', fontFamily: FONT, lineHeight: '1.6' }}>
-            <strong>Heads up:</strong> only {stats.openedCount} of {stats.totalSessions} sessions have a confirmed &quot;bubble opened&quot; event. This is a known gap in the widget's tracking (being looked at separately), not a real drop in traffic. Every number on this page uses the full {stats.totalSessions}, not just the confirmed {stats.openedCount}.
+            <strong>Heads up:</strong> this doesn't mean {stats.totalSessions - stats.openedCount} of these {stats.totalSessions} people skipped opening the tool. They had to open it to reach any of the steps below. It means the widget's separate tracking signal for &quot;bubble opened&quot; is broken right now and only catches a fraction of real opens (a widget/backend bug, not a dashboard bug, being fixed separately). Every other number on this page, including the {stats.totalSessions} total, comes from real tracked activity and is accurate. Only the small &quot;confirmed via bubble-open&quot; figure undercounts.
           </p>
         </div>
       )}
