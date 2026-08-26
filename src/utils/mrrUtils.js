@@ -21,7 +21,7 @@ export function calculateMRR(clients) {
 export function calculateRealMRR(clients, billingRows) {
   if (!billingRows || billingRows.length === 0) return calculateMRR(clients);
   return billingRows
-    .filter(b => b.status === 'active')
+    .filter(b => b.status === 'active' || b.status === 'past_due')
     .reduce((sum, b) => sum + Number(b.effective_amount || 0), 0);
 }
 
