@@ -57,7 +57,7 @@ function exportBillingCSV(rows) {
 }
 
 export default function Billing() {
-  const { profile } = useAuth();
+  const { profile } = useAuth(); // eslint-disable-line no-unused-vars -- kept for future per-admin preferences
   const _now = new Date();
   const [billingMonth,  setBillingMonth]  = useState(`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}`);
   const [clients,       setClients]       = useState([]);
@@ -70,7 +70,8 @@ export default function Billing() {
   const [invoiceStatus, setInvoiceStatus] = useState({});
   const [upgradeStatus, setUpgradeStatus] = useState({});
   const [expandedRow,   setExpandedRow]   = useState(null);
-  const [paidStatus,    setPaidStatus]    = useState(() => { try { return JSON.parse(localStorage.getItem(`qq360_paid_status_${profile?.id || 'anon'}`) || '{}'); } catch { return {}; } });
+  const [invoices,      setInvoices]      = useState([]);
+  const [payouts,       setPayouts]       = useState([]);
   const [ytdLeads,      setYtdLeads]      = useState([]);
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function Billing() {
       const ytdStart    = new Date(year, 0, 1).toISOString();
       const windowStart = new Date(year, month - 6, 1).toISOString();
 
-      const [clientsRes, leadsRes, ytdRes, chartRes, allLeadsRes, billingRes] = await Promise.all([
+      const [clientsRes, leadsRes, ytdRes, chartRes, allLeadsRes, billingRes, invoicesRes, payoutsRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('leads').select('id, client_id, created_at, status').gte('created_at', monthStart).lt('created_at', monthEnd),
         supabase.from('leads').select('id, client_id, created_at').gte('created_at', ytdStart).lt('created_at', monthEnd),
@@ -89,6 +90,8 @@ export default function Billing() {
         // TODO: paginate this query when total lead count exceeds ~10k
         supabase.from('leads').select('id, client_id, created_at').order('created_at', { ascending: true }).limit(10000),
         supabase.from('client_billing').select('*'),
+        supabase.from('billing_invoices').select('*').order('created_at', { ascending: false }),
+        supabase.from('billing_payouts').select('*').order('created_at', { ascending: false }),
       ]);
       setClients(clientsRes.data   || []);
       setLeads(leadsRes.data       || []);
@@ -97,6 +100,9 @@ export default function Billing() {
       setAllLeads(allLeadsRes.data || []);
       if (billingRes.error) console.error('Failed to fetch client_billing:', billingRes.error);
       setBillingInfo(billingRes.data || []);
+      // These two tables are filled by the backend's Stripe sync; empty until that ships.
+      setInvoices(invoicesRes.error ? [] : (invoicesRes.data || []));
+      setPayouts(payoutsRes.error ? [] : (payoutsRes.data || []));
       setLoading(false);
     }
     fetchData();
@@ -252,11 +258,26 @@ export default function Billing() {
   const totalRevenue  = totalMRR + totalOverages;
   const activeCount   = clients.filter(c => c.active !== false).length;
 
-  const collectedRevenue = billingRows.filter(r => paidStatus[r.id]).reduce((s, r) => s + r.total, 0);
+  /* ── Real payment data (from Stripe via billing_invoices / billing_payouts) ── */
+  const hasInvoiceData = invoices.length > 0;
+  const invoicesByClient = {};
+  for (const inv of invoices) {
+    (invoicesByClient[inv.client_id] = invoicesByClient[inv.client_id] || []).push(inv);
+  }
+  const invInSelMonth = inv => { const d = inv.created_at ? new Date(inv.created_at) : null; return d && d.getFullYear() === selYear && d.getMonth() === selMonthNum - 1; };
+  const collectedRevenue = invoices.filter(i => i.status === 'paid' && invInSelMonth(i)).reduce((s, i) => s + Number(i.amount_paid || 0), 0);
+  const openInvoices = invoices.filter(i => i.status === 'open' || i.status === 'uncollectible');
+  const outstandingTotal = openInvoices.reduce((s, i) => s + Number(i.amount_due || 0), 0);
+  const lifetimeByClient = {};
+  for (const inv of invoices) { if (inv.status === 'paid') lifetimeByClient[inv.client_id] = (lifetimeByClient[inv.client_id] || 0) + Number(inv.amount_paid || 0); }
+  const pastDueClients = billingInfo.filter(b => b.status === 'past_due');
+  const clientName = id => clients.find(c => c.id === id)?.name || 'Unknown client';
+  const cardExpiringSoon = b => { if (!b?.card_exp_year || !b?.card_exp_month) return false; const exp = new Date(b.card_exp_year, b.card_exp_month, 1); return (exp - _now) < 60 * 86400000; };
+  const fmtDate = iso => { if (!iso) return null; const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; };
 
   const statCards = [
     { label: 'Monthly Revenue',      value: `$${totalRevenue.toLocaleString()}`,     bg: '#ecfccb', color: '#3f6212' },
-    { label: 'Collected Revenue',    value: `$${collectedRevenue.toLocaleString()}`, bg: '#dcfce7', color: '#166534' },
+    { label: 'Collected Revenue',    value: hasInvoiceData ? `$${collectedRevenue.toLocaleString()}` : '—', bg: '#dcfce7', color: '#166534' },
     { label: 'Pending Overages',     value: `$${totalOverages.toLocaleString()}`,    bg: '#fef9c3', color: '#854d0e' },
     { label: 'Active Subscriptions', value: activeCount,                              bg: '#dbeafe', color: '#1d4ed8' },
   ];
@@ -349,6 +370,32 @@ export default function Billing() {
             </button>
           </div>
         </div>
+
+        {/* ── Failed payment alert ── */}
+        {pastDueClients.length > 0 && (
+          <div style={{ ...CARD, marginBottom: '20px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', padding: '18px 24px' }}>
+            {pastDueClients.map(b => {
+              const cInvs = (invoicesByClient[b.client_id] || []).filter(i => i.status === 'open' || i.status === 'uncollectible');
+              const retry = cInvs.map(i => i.next_payment_attempt).filter(Boolean).sort()[0] || null;
+              const payLink = cInvs.map(i => i.hosted_invoice_url).filter(Boolean)[0] || null;
+              return (
+                <div key={b.client_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#dc2626', fontFamily: FONT, fontWeight: '600' }}>
+                    ⚠ {clientName(b.client_id)}'s payment failed, their subscription is past due.
+                    {retry ? ` Stripe retries automatically on ${fmtDate(retry)}.` : ' Stripe will retry the card automatically.'}
+                    {b.card_last4 ? ` Card on file: ${b.card_brand || 'card'} •••• ${b.card_last4}.` : ''}
+                  </p>
+                  {payLink && (
+                    <button type="button" onClick={() => { navigator.clipboard.writeText(payLink); }}
+                      style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                      Copy payment link
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* ── Stat Cards ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
@@ -576,15 +623,21 @@ export default function Billing() {
                         {row.discountLabel && (
                           <div style={{ fontSize: '10px', fontWeight: '600', color: '#7c3aed', textAlign: 'right' }}>{row.discountLabel}</div>
                         )}
-                        <span
-                          onClick={() => {
-                            const next = { ...paidStatus, [row.id]: !paidStatus[row.id] };
-                            setPaidStatus(next);
-                            localStorage.setItem(`qq360_paid_status_${profile?.id || 'anon'}`, JSON.stringify(next));
-                          }}
-                          style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', backgroundColor: paidStatus[row.id] ? '#dcfce7' : '#fef9c3', color: paidStatus[row.id] ? '#166534' : '#854d0e' }}>
-                          {paidStatus[row.id] ? 'Paid' : 'Pending'}
-                        </span>
+                        {(() => {
+                          const cInvs = (invoicesByClient[row.id] || []).filter(invInSelMonth);
+                          const hasOpen = cInvs.some(i => i.status === 'open' || i.status === 'uncollectible');
+                          const hasPaid = cInvs.some(i => i.status === 'paid');
+                          const chip = hasOpen ? { t: 'Unpaid', bg: '#fee2e2', c: '#dc2626' } : hasPaid ? { t: 'Paid', bg: '#dcfce7', c: '#166534' } : { t: hasInvoiceData ? 'No invoice' : 'Awaiting sync', bg: '#f3f4f6', c: '#6b7280' };
+                          return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: chip.bg, color: chip.c }}>{chip.t}</span>;
+                        })()}
+                        {billingMap[row.id]?.card_last4 && (
+                          <div style={{ fontSize: '11px', color: cardExpiringSoon(billingMap[row.id]) ? '#d97706' : '#9ca3af', fontFamily: FONT, fontWeight: '600' }}>
+                            {billingMap[row.id].card_brand || 'card'} •••• {billingMap[row.id].card_last4} · exp {billingMap[row.id].card_exp_month}/{String(billingMap[row.id].card_exp_year).slice(-2)}{cardExpiringSoon(billingMap[row.id]) ? ' ⚠ expiring soon' : ''}
+                          </div>
+                        )}
+                        {lifetimeByClient[row.id] > 0 && (
+                          <div style={{ fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Lifetime paid: ${lifetimeByClient[row.id].toLocaleString()}</div>
+                        )}
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button type="button" onClick={() => sendInvoice(row)} disabled={invSt === 'sending'}
                             style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '500', backgroundColor: invSt === 'sent' ? '#dcfce7' : invSt === 'failed' ? '#fee2e2' : '#f4f6f4', color: invSt === 'sent' ? '#166534' : invSt === 'failed' ? '#dc2626' : '#374151', border: 'none', borderRadius: '8px', cursor: invSt === 'sending' ? 'not-allowed' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
@@ -669,22 +722,17 @@ export default function Billing() {
           {/* Totals row */}
           {upsellRows.length > 0 && (
             <div style={{ padding: '16px 24px', borderTop: '2px solid #e8ede8', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '24px', backgroundColor: '#fafafa', flexWrap: 'wrap' }}>
-              {(() => {
-                const paidRows    = billingRows.filter(r => paidStatus[r.id]);
-                const pendingRows = billingRows.filter(r => !paidStatus[r.id]);
-                const outstanding = pendingRows.reduce((s, r) => s + r.total, 0);
-                return (
-                  <>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#166534' }}>
-                      Paid: {paidRows.length} client{paidRows.length !== 1 ? 's' : ''} · ${collectedRevenue.toLocaleString()} collected
-                    </span>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#d97706' }}>
-                      Pending: {pendingRows.length} client{pendingRows.length !== 1 ? 's' : ''} · ${outstanding.toLocaleString()} outstanding
-                    </span>
-                    <div style={{ width: '1px', height: '24px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
-                  </>
-                );
-              })()}
+              {hasInvoiceData && (
+                <>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#166534' }}>
+                    Collected this month: ${collectedRevenue.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: openInvoices.length > 0 ? '#dc2626' : '#d97706' }}>
+                    Unpaid invoices: {openInvoices.length} · ${outstandingTotal.toLocaleString()} outstanding
+                  </span>
+                  <div style={{ width: '1px', height: '24px', backgroundColor: '#e8ede8', flexShrink: 0 }} />
+                </>
+              )}
               <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: '600' }}>
                 MRR: <span style={{ color: '#0d1117' }}>${totalMRR.toLocaleString()}</span>
               </span>
@@ -694,6 +742,68 @@ export default function Billing() {
               <span style={{ fontSize: '14px', fontWeight: '700', color: '#0d1117' }}>
                 Total: ${totalRevenue.toLocaleString()}
               </span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Payment history (real Stripe invoices) ── */}
+        <div style={{ ...CARD, marginTop: '28px' }}>
+          <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Payment history</p>
+          <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Every real Stripe invoice: what was charged, what was paid, what failed. Click an amount to open the actual invoice.</p>
+          {invoices.length === 0 ? (
+            <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No invoices synced yet. The backend's Stripe invoice sync hasn't delivered data — this section fills itself the moment it does.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
+                <thead>
+                  <tr>
+                    {['Client', 'Date', 'Amount', 'Status', 'Next retry'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.4px', padding: '0 10px 8px', borderBottom: '1px solid #e8ede8' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map(inv => {
+                    const st = inv.status === 'paid' ? { t: 'Paid', bg: '#dcfce7', c: '#166534' }
+                      : (inv.status === 'open' || inv.status === 'uncollectible') ? { t: 'Failed / unpaid', bg: '#fee2e2', c: '#dc2626' }
+                      : { t: inv.status || '—', bg: '#f3f4f6', c: '#6b7280' };
+                    return (
+                      <tr key={inv.id}>
+                        <td style={{ padding: '10px', fontSize: '13px', color: '#0d1117', borderBottom: '1px solid #f3f4f6' }}>{clientName(inv.client_id)}</td>
+                        <td style={{ padding: '10px', fontSize: '13px', color: '#0d1117', borderBottom: '1px solid #f3f4f6' }}>{fmtDate(inv.created_at) || '—'}</td>
+                        <td style={{ padding: '10px', fontSize: '13px', fontWeight: '700', color: '#0d1117', borderBottom: '1px solid #f3f4f6' }}>
+                          {inv.hosted_invoice_url
+                            ? <a href={inv.hosted_invoice_url} target="_blank" rel="noreferrer" style={{ color: '#0d1117', textDecoration: 'underline' }}>${Number(inv.amount_due || 0).toLocaleString()}</a>
+                            : <>${Number(inv.amount_due || 0).toLocaleString()}</>}
+                        </td>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #f3f4f6' }}>
+                          <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: st.bg, color: st.c }}>{st.t}</span>
+                        </td>
+                        <td style={{ padding: '10px', fontSize: '13px', color: '#9ca3af', borderBottom: '1px solid #f3f4f6' }}>{inv.next_payment_attempt ? fmtDate(inv.next_payment_attempt) : '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* ── Payouts to your bank ── */}
+        <div style={{ ...CARD, marginTop: '28px' }}>
+          <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: '700', color: '#0d1117', fontFamily: FONT }}>Payouts to your bank</p>
+          <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>When Stripe actually sends collected money to your bank account.</p>
+          {payouts.length === 0 ? (
+            <p style={{ fontSize: '13px', color: '#9ca3af', fontFamily: FONT }}>No payouts synced yet. Fills in once the backend's payout sync is live.</p>
+          ) : (
+            <div>
+              {payouts.map(po => (
+                <div key={po.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f3f4f6', fontFamily: FONT }}>
+                  <span style={{ fontSize: '13px', color: '#0d1117', fontWeight: '700' }}>${Number(po.amount || 0).toLocaleString()}</span>
+                  <span style={{ fontSize: '12px', color: po.status === 'paid' ? '#166534' : po.status === 'failed' ? '#dc2626' : '#854d0e', fontWeight: '600' }}>{po.status}</span>
+                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>{po.arrival_date ? `arrives ${fmtDate(po.arrival_date)}` : ''}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
