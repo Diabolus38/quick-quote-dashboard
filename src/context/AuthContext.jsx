@@ -102,6 +102,19 @@ export default function AuthProvider({ children }) {
     const fullName     = session.user.user_metadata?.full_name || '';
     const userEmail    = session.user.email;
 
+    // Safety re-check: never create client rows if ANY profile already exists for this user.
+    // fetchProfile returning null can be a transient failure (network hiccup), and blindly
+    // proceeding here is what once auto-created a ghost "starter" client for the super admin.
+    const { data: existingProfileRow } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+    if (existingProfileRow) {
+      console.warn('ensureNewUserData: profile already exists, skipping account creation for', userEmail);
+      return fetchProfile(session.user.id);
+    }
+
     console.log('ensureNewUserData: creating account for', userEmail, 'plan:', selectedPlan);
 
     await supabase.from('profiles').insert({
@@ -228,6 +241,7 @@ export default function AuthProvider({ children }) {
       try {
         const existingProfile = await fetchProfile(session.user.id);
         if (existingProfile?.client_id) return;
+        if (existingProfile?.role === 'super_admin') return; // super admin has no client on purpose - do not "repair" it
         console.warn('handleSession: re-running — client_id is null on already-initialized session');
         initialized.current  = false;
         initializing.current = false;
