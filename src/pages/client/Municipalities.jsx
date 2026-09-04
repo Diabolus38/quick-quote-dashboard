@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 import useClientPlan from '../../hooks/useClientPlan';
+import ConfirmDeleteModal from '../../components/ConfirmDeleteModal';
 import UpgradeLock from '../../components/UpgradeLock';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
@@ -76,6 +77,7 @@ function MunicipalitiesContent({ clientId }) {
   const [zoneEditId,        setZoneEditId]        = useState(null);
   const [zoneEditName,      setZoneEditName]      = useState('');
   const [zoneEditPrice,     setZoneEditPrice]     = useState('');
+  const [zoneToDelete,      setZoneToDelete]      = useState(null);
   const [lastSavedMuni,     setLastSavedMuni]     = useState(() => localStorage.getItem(`qq360_last_saved_municipalities_${profile?.id || 'anon'}`) || '');
 
   useEffect(() => {
@@ -147,7 +149,6 @@ function MunicipalitiesContent({ clientId }) {
   }
 
   async function handleZoneDelete(zoneName) {
-    if (!window.confirm(`Delete zone "${zoneName}" and all its municipalities? This cannot be undone.`)) return;
     const { error } = await supabase.from('client_municipalities')
       .delete().eq('client_id', clientId).eq('zone', zoneName);
     if (error) { console.error('handleZoneDelete error:', error); return; }
@@ -170,6 +171,7 @@ function MunicipalitiesContent({ clientId }) {
   }
 
   async function removeMunicipality(rowId) {
+    if (!window.confirm('Remove this municipality from the zone?')) return;
     const { error } = await supabase.from('client_municipalities').delete().eq('id', rowId);
     if (error) { console.error('removeMunicipality error:', error); return; }
     const { data: allRows } = await supabase.from('client_municipalities').select('*').eq('client_id', clientId);
@@ -282,7 +284,7 @@ function MunicipalitiesContent({ clientId }) {
                         style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #e8ede8', borderRadius: '8px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer', fontFamily: FONT }}>
                         Edit
                       </button>
-                      <button type="button" onClick={() => handleZoneDelete(z.name)}
+                      <button type="button" onClick={() => setZoneToDelete(z.name)}
                         style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}>×</button>
                     </div>
                   </div>
@@ -379,6 +381,15 @@ function MunicipalitiesContent({ clientId }) {
         </div>
         {lastSavedMuni && <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#9ca3af', fontFamily: FONT }}>Last saved: {(() => { const d = new Date(lastSavedMuni); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()}</p>}
       </div>
+      <ConfirmDeleteModal
+        open={!!zoneToDelete}
+        title={`Delete zone "${zoneToDelete}"?`}
+        message={`This will permanently delete the zone and all its municipalities. This cannot be undone.`}
+        requiredText="DELETE"
+        confirmLabel="Delete Zone"
+        onConfirm={() => { const name = zoneToDelete; setZoneToDelete(null); handleZoneDelete(name); }}
+        onCancel={() => setZoneToDelete(null)}
+      />
     </>
   );
 }

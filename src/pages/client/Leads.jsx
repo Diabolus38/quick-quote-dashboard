@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 import useClientPlan from '../../hooks/useClientPlan';
+import ConfirmDeleteModal from '../../components/ConfirmDeleteModal';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -60,6 +61,7 @@ export default function Leads() {
   const [currentPage,  setCurrentPage]  = useState(1);
   const [showToast,    setShowToast]    = useState(false);
   const [csvLockMsg,   setCsvLockMsg]   = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState(null);
   const [trialExpired,      setTrialExpired]      = useState(false);
   const [planEmailSent,     setPlanEmailSent]     = useState(false);
   const [installPreference, setInstallPreference] = useState(null);
@@ -143,7 +145,6 @@ export default function Leads() {
   }
 
   async function handleDeleteLead(leadId) {
-    if (!window.confirm('Delete this lead? This cannot be undone.')) return;
     await supabase.from('leads').delete().eq('id', leadId);
     setLeads(prev => prev.filter(l => l.id !== leadId));
   }
@@ -457,7 +458,7 @@ export default function Leads() {
                       )}
                       {visibleCols.has('Status') && <span><select value={lead.status||'New'} disabled={plan === 'starter'} title={plan === 'starter' ? 'Lead status tracking is available on the Scale plan' : undefined} onChange={e=>{ if (plan === 'starter') return; updateStatus(lead.id,e.target.value); }} style={{ border: '1px solid #e8ede8', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: '600', color: STATUS_COLORS[lead.status]||'#374151', backgroundColor: '#fff', cursor: plan === 'starter' ? 'not-allowed' : 'pointer', outline: 'none', fontFamily: FONT }}>{['New','Contacted','In Progress','Closed Won','Closed Lost'].map(s=><option key={s} value={s}>{s}</option>)}</select></span>}
                       {visibleCols.has('Lead Quality') && (() => { const sc = getLeadScore(lead); const q = sc >= 7 ? { label: 'Hot', bg: '#fee2e2', color: '#dc2626' } : sc >= 4 ? { label: 'Warm', bg: '#fef9c3', color: '#d97706' } : { label: 'Cold', bg: '#f3f4f6', color: '#6b7280' }; return <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: q.bg, color: q.color }}>{q.label}</span>; })()}
-                      {visibleCols.has('Actions') && <span style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={()=>navigate(`/client/leads/${lead.id}`)} style={{ fontSize: '12px', color: PRIMARY, backgroundColor: '#ecfccb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>View</button><button type="button" onClick={()=>handleDeleteLead(lead.id)} style={{ fontSize: '12px', color: '#dc2626', backgroundColor: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>Delete</button></span>}
+                      {visibleCols.has('Actions') && <span style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={()=>navigate(`/client/leads/${lead.id}`)} style={{ fontSize: '12px', color: PRIMARY, backgroundColor: '#ecfccb', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>View</button><button type="button" onClick={()=>setLeadToDelete(lead.id)} style={{ fontSize: '12px', color: '#dc2626', backgroundColor: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', padding: '4px 10px', fontFamily: FONT }}>Delete</button></span>}
                     </div>
                   );
                 })
@@ -492,6 +493,16 @@ export default function Leads() {
         )}
 
       </div>
+
+      <ConfirmDeleteModal
+        open={leadToDelete !== null}
+        title="Delete this lead?"
+        message="This permanently deletes the lead, including the customer's contact details and their quote. There is no undo."
+        requiredText="DELETE"
+        confirmLabel="Delete lead"
+        onConfirm={() => { const id = leadToDelete; setLeadToDelete(null); handleDeleteLead(id); }}
+        onCancel={() => setLeadToDelete(null)}
+      />
     </ClientLayout>
   );
 }

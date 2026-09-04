@@ -4,6 +4,7 @@ import Layout from '../../Layout';
 import { supabase } from '../../lib/supabase';
 import { PLAN_FEES, PLAN_LIMITS } from '../../utils/planConfig';
 import { ensureClientData } from '../../utils/ensureClientData';
+import ConfirmDeleteModal from '../../components/ConfirmDeleteModal';
 
 const FONT    = "'Plus Jakarta Sans', sans-serif";
 const PRIMARY = '#166534';
@@ -108,6 +109,7 @@ export default function ClientDetail() {
   const [sendingWelcome, setSendingWelcome] = useState(false);
   const [changePlan,     setChangePlan]     = useState('');
   const [planSaveMsg,    setPlanSaveMsg]    = useState('');
+  const [showDeleteClient, setShowDeleteClient] = useState(false);
   const [planSaved,      setPlanSaved]      = useState(false);
   const [lastActivity,   setLastActivity]   = useState(null);
   const [setupChecklist, setSetupChecklist] = useState(null);
@@ -247,7 +249,7 @@ export default function ClientDetail() {
   }
 
   async function handleDeleteClient() {
-    if (!window.confirm('Permanently delete this client and all their data? This cannot be undone.')) return;
+    setShowDeleteClient(false);
     // Cascade: delete all dependent rows before deleting the client row itself
     await supabase.from('leads').delete().eq('client_id', id);
     await supabase.from('client_settings').delete().eq('client_id', id);
@@ -664,7 +666,7 @@ export default function ClientDetail() {
                 {isActive ? 'Deactivate Account' : 'Reactivate Account'}
               </button>
 
-              <button type="button" onClick={handleDeleteClient}
+              <button type="button" onClick={() => setShowDeleteClient(true)}
                 style={{ backgroundColor: '#fff', border: '2px solid #dc2626', color: '#dc2626', borderRadius: '10px', padding: '10px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, width: '100%', marginBottom: '8px' }}>
                 Delete Client
               </button>
@@ -693,6 +695,16 @@ export default function ClientDetail() {
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        open={showDeleteClient}
+        title="Delete this client forever?"
+        message={`This permanently deletes ${client?.name || 'this client'} and ALL their data: leads, settings, pricing, questions, municipalities and logins. There is no undo. Note: this does NOT cancel their Stripe subscription, do that in Stripe separately.`}
+        requiredText="DELETE"
+        confirmLabel="Delete client forever"
+        onConfirm={handleDeleteClient}
+        onCancel={() => setShowDeleteClient(false)}
+      />
     </Layout>
   );
 }

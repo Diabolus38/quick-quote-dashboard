@@ -7,6 +7,7 @@ import ClientLayout from '../../ClientLayout';
 import TrialExpiredOverlay from '../../components/TrialExpiredOverlay';
 import useClientPlan from '../../hooks/useClientPlan';
 import UpgradeLock from '../../components/UpgradeLock';
+import ConfirmDeleteModal from '../../components/ConfirmDeleteModal';
 
 const FONT    = "'Plus Jakarta Sans', system-ui, sans-serif";
 const PRIMARY = '#166534';
@@ -1191,9 +1192,10 @@ function AccountSection({ setHasUnsaved, setSaveRef }) {
 function DangerZoneSection() {
   const { profile } = useAuth();
   const [msg, setMsg] = useState('');
+  const [showDeleteLeads, setShowDeleteLeads] = useState(false);
 
   async function handleDeleteLeads() {
-    if (!window.confirm('Permanently delete all your leads? This cannot be undone.')) return;
+    setShowDeleteLeads(false);
     await supabase.from('leads').delete().eq('client_id', profile.client_id);
     setMsg('All leads deleted.');
     setTimeout(() => setMsg(''), 3000);
@@ -1226,7 +1228,7 @@ function DangerZoneSection() {
             <p style={{ margin: '0 0 2px', fontSize: '13.5px', fontWeight: '600', color: '#0d1117', fontFamily: FONT }}>Delete All My Leads</p>
             <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontFamily: FONT }}>Permanently removes all leads from your account.</p>
           </div>
-          <button type="button" onClick={handleDeleteLeads}
+          <button type="button" onClick={() => setShowDeleteLeads(true)}
             style={{ backgroundColor: '#fff', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '16px' }}>
             Delete All Leads
           </button>
@@ -1243,6 +1245,16 @@ function DangerZoneSection() {
         </div>
       </div>
       {msg && <p style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', fontFamily: FONT, marginTop: '8px' }}>{msg}</p>}
+
+      <ConfirmDeleteModal
+        open={showDeleteLeads}
+        title="Delete ALL your leads?"
+        message="This permanently deletes every lead in your account, including all customer contact details and quotes. There is no undo."
+        requiredText="DELETE"
+        confirmLabel="Delete all leads"
+        onConfirm={handleDeleteLeads}
+        onCancel={() => setShowDeleteLeads(false)}
+      />
     </>
   );
 }
